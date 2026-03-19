@@ -1,0 +1,65 @@
+@use "../abstracts" as *;
+
+.react-modal-sheet-root {
+  z-index: 1000000 !important;
+}
+.react-modal-sheet-backdrop {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  animation-duration: 0s !important;
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+  will-change: auto !important;
+}
+
+// data attribute로도 시도
+[data-rsbs-backdrop] {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+}
+.react-modal-sheet-container {
+  border-radius: 32px 32px 0 0 !important;
+}
+.react-modal-sheet-drag-indicator {
+  width: 25px !important;
+  background-color: #808080 !important;
+}
+.react-modal-sheet-header {
+  height: auto !important;
+  padding-top: 5px;
+  padding-bottom: 23px;
+}
+
+.bottom-sheet {
+  padding: 0 24px 34px;
+}
+.bottom-sheet-header {
+  @include flex(0px);
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ededed;
+  h3 {
+    @include fontDefinition($font-ds-20, $font-w-700, $line-h-140);
+    color: #111;
+  }
+  .bt-sh-btn-wrap {
+    margin-left: auto;
+  }
+}
+.bottom-sheet-footer {
+  @include flex(8px);
+  align-items: center;
+  button {
+    flex: 1;
+  }
+}
+.bottom-sheet {
+  &.time {
+    padding: 0;
+    .bottom-sheet-header {
+      padding: 0 24px 12px;
+      border-bottom: 1px solid #ededed;
+    }
+  }
+}

@@ -1,0 +1,1417 @@
+@use '../abstracts' as *;
+.tooltip-btn {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  .tooltip-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    background: url('/assets/images/contents/tooltip_icon.svg') no-repeat center;
+    background-size: cover;
+    transition: all 0.15s ease-in-out;
+  }
+  .tooltip-txt {
+    @include flex(3px);
+    flex-direction: column;
+    background-color: #999;
+    border: 1px solid #ebebeb;
+    border-radius: 16px;
+    max-width: 150px;
+    @include fontDefinition($font-ds-14, $font-w-400, $line-h-140);
+    color: #fff;
+    padding: 10px;
+    text-align: left;
+    word-break: break-all;
+    h4 {
+      font-weight: 600;
+    }
+  }
+}
+
+.filed-guide {
+  position: relative;
+  margin-top: 12px;
+  padding-left: 15px;
+  span {
+    display: block;
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #505050;
+    i {
+      color: #0168ff;
+      font-weight: $font-w-600;
+    }
+  }
+  &:before {
+    content: '※';
+    position: absolute;
+    left: 0;
+    top: 0;
+    @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+    color: #505050;
+  }
+}
+
+// sub common
+.sub-tit-wrap {
+  @include flex(0px);
+  align-items: center;
+  padding: 8px 24px 16px;
+  background-color: #fff;
+  &.contract {
+    padding: 14px 24px;
+  }
+  .sub-tit {
+    @include fontDefinition($font-ds-20, $font-w-700, $line-h-140);
+    color: #111111;
+    span {
+      display: block;
+    }
+    .sub-s-txt {
+      @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+      color: #222;
+    }
+    .sub-xs-txt {
+      @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+      color: #222;
+    }
+    .sub-tit-code {
+      @include fontDefinition($font-ds-14, $font-w-400, $line-h-140);
+      color: #767676;
+    }
+  }
+  .sub-btn-wrap {
+    margin-left: auto;
+    flex: none;
+  }
+}
+.sub-content-body {
+  padding: 24px 24px 32px;
+}
+.sub-cont-wrap {
+  margin-bottom: 24px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+.sub-item-bx {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 24px 20px 28px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 0 1px 0 rgba(0, 0, 0, 0),
+    0 0 1px 0 rgba(0, 0, 0, 0.01),
+    0 0 1px 0 rgba(0, 0, 0, 0.03),
+    0 0 1px 0 rgba(0, 0, 0, 0.04);
+  margin-bottom: 12px;
+  &.s {
+    margin-bottom: 6px;
+  }
+  &:last-child {
+    margin-bottom: 0;
+    &.s {
+      margin-bottom: 0;
+    }
+  }
+}
+.auto-right {
+  margin-left: auto;
+  flex: none;
+}
+.sub-cont-tit-wrap {
+  @include flex(0px);
+  align-items: center;
+  margin-bottom: 12px;
+  .sub-cont-tit {
+    @include fontDefinition($font-ds-20, $font-w-700, $line-h-140);
+    color: #111111;
+    &.s {
+      @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+    }
+  }
+}
+.sub-btn-txt {
+  @include fontDefinition($font-ds-16, $font-w-500, $line-h-140);
+  color: #767676;
+}
+.sub-cont-btn-wrap {
+  margin-left: auto;
+  flex: none;
+}
+.sub-edit-btn {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background: url('/assets/images/contents/sub_edit.svg') no-repeat center
+    center;
+  background-size: cover;
+}
+.sub-down-btn {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background: url('/assets/images/contents/sub_down_btn.svg') no-repeat center
+    center;
+  background-size: cover;
+}
+.sub-arr-btn {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background: url('/assets/images/contents/sub_arr.svg') no-repeat center center;
+  background-size: cover;
+}
+.data-filed {
+  margin-bottom: 24px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+  .tit-head {
+    @include flex(8px);
+    align-items: center;
+    margin-bottom: 10px;
+    .filed-tit {
+      margin-bottom: 0;
+    }
+  }
+  .filed-tit {
+    @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+    color: #111111;
+    margin-bottom: 10px;
+    &.sub {
+      @include fontDefinition($font-ds-16, $font-w-500, $line-h-140);
+      color: #505050;
+    }
+  }
+}
+.warning {
+  @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+  color: #f00;
+}
+.s-txt {
+  @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+  color: #505050;
+  letter-spacing: -0.375px;
+}
+
+// 점포정보 관리
+.search-bx {
+  @include flex(0px);
+  border-radius: 6px;
+  background-color: #fff;
+  margin-bottom: 18px;
+  &.staff {
+    margin-bottom: 28px;
+  }
+  .search-count {
+    flex: 1;
+    padding: 9px 20px;
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #111111;
+    span {
+      font-weight: $font-w-700;
+    }
+  }
+  .search-btn {
+    flex: none;
+    @include flex(4px);
+    align-items: center;
+    justify-content: center;
+    width: 62px;
+    height: auto;
+    border-radius: 0 6px 6px 0;
+    background-color: #77828d;
+    color: #fff;
+    @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+    transition: all 0.15s ease-in-out;
+    .icon-search {
+      display: none;
+    }
+    &.act {
+      background-color: #0168ff;
+      .icon-search {
+        display: block;
+        width: 10px;
+        height: 10px;
+        background: url('/assets/images/contents/search_dot.svg') no-repeat
+          center center;
+        background-size: cover;
+        transform: translateY(-1px);
+      }
+    }
+  }
+}
+
+// 페이지네이션
+.content-pagination {
+  background-color: #f4f5f6;
+  padding: 24px;
+  padding-top: 0;
+}
+.pagination-wrap {
+  @include flex(8px);
+  align-items: center;
+  justify-content: center;
+  .page-num {
+    @include flex(3px);
+    align-items: center;
+    padding: 0 13px;
+    span {
+      @include fontDefinition($font-ds-16, $font-w-400, $line-h-140);
+      color: #111;
+      &.current {
+        font-weight: $font-w-700;
+        color: #f37362;
+      }
+    }
+  }
+}
+.page-btn {
+  @include flex(8px);
+  align-items: center;
+  height: 42px;
+  padding: 0 22px;
+  border-radius: 100px;
+  background-color: #717171;
+  color: #fff;
+  @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+  transition: all 0.15s ease-in-out;
+  .icon-arrow {
+    display: block;
+    width: 7px;
+    height: 12px;
+    background: url('/assets/images/contents/cont_page_arr.svg') no-repeat
+      center center;
+    background-size: cover;
+    &.right {
+      transform: rotate(180deg);
+    }
+  }
+  &:disabled {
+    background-color: #e4e4e5;
+    color: #767676;
+    cursor: default;
+    .icon-arrow {
+      background: url('/assets/images/contents/cont_page_arr_disabled.svg')
+        no-repeat center center;
+    }
+  }
+}
+
+// 점포 목록
+.store-list-name {
+  @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+  color: #111111;
+  margin-bottom: 10px;
+}
+
+// 점포 상세 페이지
+.store-img-item {
+  @include flex(8px);
+  align-items: center;
+  margin-bottom: 8px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+  .store-img-tit {
+    @include flex(2px);
+    align-items: center;
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #111111;
+    .img-tit {
+      @include ellipsis(1);
+    }
+  }
+}
+.store-img-btn-wrap {
+  margin-left: auto;
+  flex: none;
+  @include flex(6px);
+  align-items: center;
+  .img-delete {
+    display: block;
+    width: 24px;
+    height: 24px;
+    background: url('/assets/images/contents/img_del.svg') no-repeat center
+      center;
+    background-size: cover;
+  }
+  .img-show {
+    display: block;
+    width: 24px;
+    height: 24px;
+    background: url('/assets/images/contents/img_show.svg') no-repeat center
+      center;
+    background-size: cover;
+  }
+}
+
+// 점포 사진
+.store-img-list-tit {
+  @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+  color: #111111;
+  margin-bottom: 10px;
+}
+.store-img-list {
+  @include flex(8px);
+  flex-direction: column;
+}
+.store-img-bx {
+  @include flex(8px);
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #f4f5f6;
+  border-radius: 6px;
+  .store-img-tit {
+    @include flex(2px);
+    align-items: center;
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #505050;
+    .img-tit {
+      @include ellipsis(1);
+    }
+  }
+}
+.day-btn {
+  display: block;
+  height: 48px;
+  width: 100%;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+  color: #111;
+  transition: all 0.15s ease-in-out;
+  &.act {
+    background-color: #f4f5f6;
+  }
+}
+
+/************************ 직원 관리 ************************/
+.staff-list-item {
+  margin-bottom: 28px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+.staff-item-header {
+  @include flex(0px);
+  align-items: center;
+  margin-bottom: 16px;
+  .staff-invite-btn {
+    position: relative;
+    padding-left: 28px;
+    @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+    color: #0168ff;
+    &.check {
+      color: #f37362;
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        background: url('/assets/images/contents/invite_check.svg') no-repeat
+          center center;
+        background-size: cover;
+      }
+    }
+  }
+}
+.head-staff-info {
+  @include flex(8px);
+  align-items: center;
+  .staff-icon {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    .contract-tip {
+      position: absolute;
+      top: -19px;
+      left: -6px;
+      display: block;
+      width: 59px;
+      height: 39px;
+      background: url('/assets/images/contents/contract_tip.png') no-repeat
+        center center;
+      background-size: cover;
+      z-index: 2;
+    }
+  }
+  .staff-info-data {
+    .staff-name {
+      @include flex(8px);
+      align-items: center;
+      span {
+        @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+        color: #111111;
+      }
+      .memo {
+        display: block;
+        width: 24px;
+        height: 24px;
+        background: url('/assets/images/contents/include_memo.svg') no-repeat
+          center center;
+        background-size: cover;
+      }
+    }
+    .staff-job {
+      margin-top: 5px;
+      @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+      color: #111;
+    }
+  }
+}
+.contract-link {
+  display: block;
+  text-align: left;
+  width: 100%;
+  background-color: #fff;
+  padding: 12px 20px;
+  border-radius: 16px;
+  .contract-inner {
+    @include flex(8px);
+    align-items: center;
+    .contract-tit {
+      @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+      color: #111111;
+    }
+  }
+}
+.contract-arr {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background: url('/assets/images/contents/contract_arr.svg') no-repeat center
+    center;
+  background-size: cover;
+}
+
+// 직원 초대
+.radio-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.pay-table-header {
+  @include flex(0px);
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #111;
+  .pay-table-tit {
+    @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+    color: #111111;
+  }
+  .total-pay {
+    @include fontDefinition($font-ds-18, $font-w-700, $line-h-140);
+    color: #b7584b;
+  }
+}
+
+// 근로계약 등록 / 수정
+.employment-header {
+  @include flex(8px);
+  align-items: center;
+  margin-bottom: 24px;
+  .employment-icon {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    align-self: start;
+    margin-right: 4px;
+  }
+}
+.employment-bx {
+  padding: 24px 0;
+  border-bottom: 1px solid #e4e4e5;
+  &:first-child {
+    padding-top: 0;
+  }
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+.employment-num {
+  @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+  color: #111111;
+  margin-bottom: 10px;
+}
+.employment-info {
+  @include flex(4px);
+  flex-direction: column;
+  .employment-name {
+    @include flex(8px);
+    align-items: center;
+    .name {
+      @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+      color: #111111;
+    }
+  }
+  .employment-job {
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #111111;
+  }
+  .employment-contract {
+    @include flex(0px);
+    align-items: center;
+    .employ-cont-item {
+      position: relative;
+      @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+      color: #111111;
+      padding: 0 6px;
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 9px;
+        background-color: #999a9a;
+      }
+      &:first-child {
+        padding-left: 0;
+      }
+      &:last-child {
+        padding-right: 0;
+        &::before {
+          display: none;
+        }
+      }
+    }
+  }
+}
+.employment-btn {
+  width: 24px;
+  height: 24px;
+  background: url('/assets/images/contents/employment_btn.svg') no-repeat center
+    center;
+  background-size: cover;
+}
+.total-pay-wrap {
+  @include flex(8px);
+  flex-direction: column;
+  padding-top: 18px;
+  .total-pay-bx {
+    @include flex(8px);
+    align-items: center;
+    padding: 13px 12px;
+    border-radius: 10px;
+    background-color: #f4f5f6;
+    .total-pay-tit {
+      @include fontDefinition($font-ds-15, $font-w-700, $line-h-140);
+      color: #111111;
+    }
+    .total-pay-val {
+      margin-left: auto;
+      @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+      color: #111111;
+    }
+    &.year {
+      background-color: #fef1ef;
+      .total-pay-tit {
+        color: #b7584b;
+      }
+      .total-pay-val {
+        color: #b7584b;
+      }
+    }
+  }
+}
+
+// 직원 상세 페이지
+.memo-wrap {
+  @include flex(14px);
+  .memo-icon {
+    flex: none;
+    display: block;
+    width: 24px;
+    height: 24px;
+    background: url('/assets/images/contents/memo_icon_black.svg') no-repeat
+      center center;
+    background-size: cover;
+  }
+  .memo-txt {
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #111111;
+  }
+}
+
+.staff-detail-info-bx {
+  @include flex(18px);
+  align-items: center;
+  .staff-icon {
+    flex: none;
+    position: relative;
+    width: 54px;
+    height: 54px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    .staff-icon-img {
+      display: block;
+      position: absolute;
+      top: -19px;
+      left: -6px;
+      width: 67px;
+      height: 39px;
+      background: url('/assets/images/contents/staff_request_tip.png') no-repeat
+        center center;
+      background-size: cover;
+      z-index: 1;
+    }
+  }
+}
+.staff-detail-info {
+  .staff-name {
+    @include flex(8px);
+    align-items: center;
+    margin-bottom: 8px;
+    span {
+      display: block;
+      @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+      color: #111111;
+    }
+    .staff-job {
+      @include flex(0px);
+      align-items: center;
+      span {
+        position: relative;
+        display: block;
+        @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+        color: #111111;
+        padding: 0 4px;
+        &::before {
+          content: '';
+          position: absolute;
+          top: 5px;
+          right: 0;
+          width: 1px;
+          height: 9px;
+          background-color: #999a9a;
+        }
+        &:first-child {
+          padding-left: 0;
+        }
+        &:last-child {
+          padding-right: 0;
+          &::before {
+            display: none;
+          }
+        }
+      }
+    }
+  }
+  .staff-data {
+    @include flex(5px);
+    align-items: center;
+  }
+}
+
+.staff-invite-btn-wrap {
+  @include flex(8px);
+  align-items: center;
+  margin-top: 20px;
+
+  .staff-invite-btn {
+    @include flex(3px);
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    background-color: #444;
+    border-radius: 100px;
+    width: 100%;
+    height: 44px;
+    @include fontDefinition($font-ds-14, $font-w-600, $line-h-140);
+    color: #fff;
+  }
+  .staff-edit-btn {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    background: url('/assets/images/contents/edit_icon_l.svg') no-repeat center
+      center;
+    background-size: cover;
+  }
+}
+
+.qualifications-wrap {
+  @include flex(10px);
+  flex-direction: column;
+  .qualifications-item {
+    position: relative;
+    @include flex(8px);
+    align-items: center;
+    .qualifications-item-tit {
+      @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+      color: #111111;
+    }
+    .qualifications-item-date {
+      margin-left: auto;
+      @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+      color: #505050;
+    }
+  }
+}
+.career-wrap {
+  @include flex(18px);
+  flex-direction: column;
+  .career-item {
+    .career-item-tit {
+      @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+      color: #111111;
+      margin-bottom: 5px;
+    }
+    .career-item-desc {
+      span {
+        @include fontDefinition($font-ds-15, $font-w-400, $line-h-150);
+        color: #505050;
+      }
+    }
+  }
+}
+
+// 급여 상세 페이지
+.pay-title {
+  @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+  margin-bottom: 12px;
+  color: #111111;
+}
+.pay-head-btn-wrap {
+  @include flex(0px);
+  align-items: center;
+  .pay-head-btn {
+    @include flex(8px);
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 24px 0;
+    background-color: #444;
+    @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+    color: #fff;
+    border-right: 1px solid #767676;
+    &:last-child {
+      border-right: none;
+    }
+    i {
+      display: block;
+      width: 24px;
+      height: 24px;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      &.email-icon {
+        background-image: url('/assets/images/contents/pay_email.svg');
+      }
+      &.download-icon {
+        background-image: url('/assets/images/contents/pay_down.svg');
+      }
+    }
+  }
+}
+.pay-data-list {
+  @include flex(8px);
+  flex-direction: column;
+}
+.pay-data-item {
+  @include flex(8px);
+  align-items: center;
+  .pay-data-item-tit {
+    @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+    color: #767676;
+  }
+  .pay-data-item-value {
+    margin-left: auto;
+    @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+    color: #111111;
+  }
+  &.top {
+    .pay-data-item-tit {
+      color: #111;
+      font-weight: $font-w-600;
+    }
+    .pay-data-item-value {
+      color: #b7584b;
+    }
+  }
+}
+.pay-data-guide {
+  @include flex(12px);
+  flex-direction: column;
+  dt {
+    @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+    color: #111111;
+  }
+  dd {
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #505050;
+    .guide-filed-tit {
+      font-weight: $font-w-500;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+// 파트타이머 급여 상세 페이지
+.work-time-edit {
+  @include flex(8px);
+  align-items: center;
+  width: 100%;
+  @include flex(8px);
+  align-items: center;
+  padding: 12px 20px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow:
+    0 0 1px 0 rgba(0, 0, 0, 0),
+    0 0 1px 0 rgba(0, 0, 0, 0.01),
+    0 0 1px 0 rgba(0, 0, 0, 0.03),
+    0 0 1px 0 rgba(0, 0, 0, 0.04);
+  margin-bottom: 12px;
+  border: 1px solid #3e4959;
+  .work-time-edit-tit {
+    @include flex(8px);
+    align-items: center;
+    @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+    color: #111111;
+    .time-edit-icon {
+      display: block;
+      width: 24px;
+      height: 24px;
+      background: url('/assets/images/contents/time_edit_icon.svg') no-repeat
+        center center;
+      background-size: cover;
+    }
+  }
+}
+
+// 파트타이머 급여 미리보기 페이지
+.pay-stub-wrap {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.pay-stub-item {
+  padding: 24px 20px;
+  .pay-stub-item-head {
+    @include flex(8px);
+    align-items: flex-end;
+    .pay-stub-item-head-tit {
+      @include fontDefinition(inherit, inherit, $line-h-140);
+      color: inherit;
+      span {
+        display: block;
+      }
+    }
+    .pay-stub-item-head-val {
+      margin-left: auto;
+      @include fontDefinition(inherit, inherit, $line-h-140);
+      color: inherit;
+    }
+  }
+  &.last-week {
+    background-color: #4e596e;
+    border-top: 1px solid #717a8b;
+    &.s {
+      border-top: 1px solid #717a8b;
+      padding: 16px 20px;
+    }
+    .pay-stub-item-head {
+      color: #fff;
+      font-size: $font-ds-18;
+      font-weight: $font-w-700;
+    }
+    .pay-stub-table-list {
+      color: #dcdee2;
+    }
+  }
+  &.day {
+    background-color: #fff;
+    border-top: 1px solid #eff0f1;
+    .pay-stub-item-head {
+      color: #111;
+      font-size: $font-ds-16;
+      font-weight: $font-w-500;
+      .pay-stub-item-head-val {
+        font-weight: $font-w-600;
+      }
+    }
+    .pay-stub-table-list {
+      color: #767676;
+    }
+  }
+  &.week {
+    background-color: #e7e8eb;
+    border-top: 1px solid #f4f5f6;
+    .pay-stub-item-head {
+      color: #111;
+      font-size: $font-ds-18;
+      font-weight: $font-w-700;
+    }
+    .pay-stub-table-list {
+      color: #767676;
+    }
+  }
+  &.total {
+    background-color: #27303c;
+    padding: 16px 20px;
+    .pay-stub-item-head {
+      color: #fff;
+      font-size: $font-ds-20;
+      font-weight: $font-w-700;
+    }
+  }
+  &.total-real {
+    background-color: #736d66;
+    padding: 16px 20px;
+    .pay-stub-item-head {
+      color: #fff;
+      font-size: $font-ds-20;
+      font-weight: $font-w-700;
+    }
+  }
+}
+.pay-stub-table-list {
+  @include flex(8px);
+  flex-direction: column;
+  margin-top: 10px;
+  .pay-stub-table-list-item {
+    @include flex(8px);
+    align-items: center;
+    .pay-stub-table-list-tit {
+      @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+      color: inherit;
+    }
+    .pay-stub-table-list-val {
+      margin-left: auto;
+      @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+      color: inherit;
+    }
+  }
+}
+.pay-stub-table {
+  width: 100%;
+  table-layout: fixed;
+  th {
+    padding: 4px;
+    @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+    color: #767676;
+    text-align: center;
+  }
+  td {
+    padding: 4px;
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #767676;
+    text-align: right;
+  }
+}
+
+// 파트타이머 근무시간 수정
+.work-time-info {
+  @include flex(8px);
+  flex-direction: column;
+  margin-bottom: 22px;
+  .work-time-info-item {
+    @include flex(8px);
+    align-items: center;
+
+    .work-time-info-val {
+      @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+      color: #111111;
+    }
+  }
+}
+.work-time-data-wrap {
+  @include flex(12px);
+  flex-direction: column;
+}
+.work-time-data-item {
+  .work-time-data-item-tit {
+    @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+    color: #505050;
+    margin-bottom: 8px;
+  }
+}
+
+// 출퇴근 상세 페이지
+.commute-profile {
+  padding: 8px 0 28px;
+  text-align: center;
+  .profile-img {
+    display: inline-block;
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.1);
+    margin-bottom: 12px;
+  }
+}
+.profile-info {
+  @include flex(8px);
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  .profile-name {
+    @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+    color: #111111;
+  }
+  .profile-job {
+    @include flex(0px);
+    align-items: center;
+    span {
+      position: relative;
+      @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+      color: #111;
+      padding: 0 4px;
+      &::before {
+        content: '';
+        position: absolute;
+        top: 5px;
+        right: 0;
+        width: 1px;
+        height: 9px;
+        background-color: #999a9a;
+      }
+      &:first-child {
+        padding-left: 0;
+      }
+      &:last-child {
+        padding-right: 0;
+        &::before {
+          display: none;
+        }
+      }
+    }
+  }
+}
+.profile-data {
+  @include flex(8px);
+  align-items: center;
+  justify-content: center;
+}
+
+.commute-time-wrap {
+  @include flex(8px);
+  .commute-time-tit {
+    @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+    color: #767676;
+  }
+}
+.commute-time-data {
+  margin-left: auto;
+  .commute-time-data-time {
+    @include flex(6px);
+    align-items: center;
+    justify-content: flex-end;
+    span {
+      @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+      color: #111111;
+    }
+  }
+  .commute-time-data-work {
+    @include flex(10px);
+    align-items: center;
+    margin-top: 10px;
+    .commute-time-data-work-item {
+      @include flex(6px);
+      align-items: center;
+      .time {
+        @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+        color: #111;
+      }
+    }
+  }
+}
+
+.commute-list-wrap {
+  background-color: #ffff;
+  border-radius: 16px;
+  margin-top: 12px;
+}
+.commute-list-item {
+  @include flex(8px);
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f2f3f4;
+  &.rest {
+    opacity: 0.5;
+  }
+  &:last-child {
+    border-bottom: none;
+  }
+  .commute-list-tit {
+    @include fontDefinition($font-ds-15, $font-w-500, $line-h-140);
+    color: #767676;
+    span {
+      display: block;
+    }
+    .badge {
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+  }
+}
+
+.commute-list-data {
+  margin-left: auto;
+  @include flex(16px);
+  flex-direction: column;
+  .commute-list-data-item {
+    .commute-list-data-time {
+      text-align: right;
+      @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+      color: #767676;
+      margin-bottom: 5px;
+    }
+    .commute-list-data-work {
+      @include flex(6px);
+      align-items: center;
+      justify-content: flex-end;
+
+      .time {
+        @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+        color: #111;
+      }
+    }
+  }
+}
+
+// 점포별 근무 계획표
+.plan-table-item {
+  margin-bottom: 28px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+.plan-table-header {
+  @include flex(8px);
+  align-items: center;
+  margin-bottom: 12px;
+  .plan-table-day {
+    @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+    color: #111;
+  }
+}
+.plan-table-content {
+  .sub-item-bx {
+    &.full {
+      color: #3477f5;
+      .half {
+        background-color: #9fbffa;
+        border: 1px solid #9fbffa;
+      }
+    }
+    &.part {
+      color: #11b076;
+      .half {
+        background-color: #8bd5ba;
+        border: 1px solid #8bd5ba;
+      }
+    }
+    &.temporary {
+      color: #886436;
+      .half {
+        background-color: #886436;
+        border: 1px solid #886436;
+      }
+    }
+  }
+}
+
+.plan-staff-head {
+  @include flex(8px);
+  align-items: center;
+  .plan-staff-info {
+    @include flex(8px);
+    align-items: center;
+    .name {
+      @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+      color: inherit;
+    }
+    .time {
+      @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+      color: inherit;
+    }
+  }
+  .work-time {
+    @include fontDefinition($font-ds-16, $font-w-600, $line-h-140);
+    color: #111;
+  }
+}
+
+.plan-table {
+  margin-top: 18px;
+}
+.time-wrap {
+  min-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  .time-hour-wrap {
+    @include flex(4px);
+    align-items: center;
+    width: 100%;
+  }
+  .time-hour {
+    flex: 1;
+    @include flex(0px);
+    align-items: center;
+    height: 14px;
+    .half {
+      display: block;
+      background-color: inherit;
+      width: 100%;
+      min-width: 14px;
+      height: 100%;
+      &.rest {
+        background-color: #fff;
+      }
+      &:first-child {
+        border-radius: 2px 0 0 2px;
+        border-right: none;
+      }
+      &:last-child {
+        border-radius: 0 2px 2px 0;
+        border-left: none;
+      }
+    }
+  }
+}
+.time-num {
+  @include flex(4px);
+  align-items: center;
+  width: 100%;
+  margin-top: 4px;
+  .hour {
+    min-width: 28px;
+    flex: 1;
+    @include fontDefinition($font-ds-14, $font-w-400, $line-h-140);
+    color: #505050;
+    text-align: center;
+  }
+}
+
+// 점포별 근무 계획 수립
+.plan-time-form {
+  margin: 12px -20px 0;
+  border-top: 1px solid #f4f5f6;
+  padding: 24px 20px 0;
+}
+.plan-time-form-item {
+  margin-bottom: 14px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+  .plan-time-form-item-tit {
+    @include fontDefinition($font-ds-15, $font-w-600, $line-h-140);
+    color: #111;
+    margin-bottom: 8px;
+  }
+}
+
+.change_staff {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background: url('/assets/images/contents/change_staff.svg') no-repeat center
+    center;
+  background-size: cover;
+}
+.delete_staff {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background: url('/assets/images/contents/delete_staff.svg') no-repeat center
+    center;
+  background-size: cover;
+}
+.date-read {
+  @include flex(8px);
+  align-items: center;
+  justify-content: center;
+  padding: 18px 0;
+  background-color: #fff;
+  .date-read-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    background: url('/assets/images/contents/date_read.svg') no-repeat center
+      center;
+    background-size: cover;
+  }
+  span {
+    @include flex(4px);
+    align-items: center;
+    @include fontDefinition($font-ds-18, $font-w-400, $line-h-140);
+    color: #111;
+  }
+}
+
+/************************ 사업자 정보 확인 및 수정 ************************/
+
+.master-info-header {
+  @include flex(8px);
+  align-items: center;
+  margin-bottom: 16px;
+  .bp-code {
+    @include flex(0px);
+    align-items: center;
+    flex: none;
+    span {
+      display: block;
+      @include fontDefinition($font-ds-16, $font-w-500, $line-h-140);
+      color: #111;
+    }
+    .bp-code-tit {
+      position: relative;
+      padding-right: 4px;
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -1px;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 10px;
+        background-color: #999a9a;
+      }
+    }
+    .bp-code-txt {
+      padding-left: 4px;
+    }
+  }
+  .master-info-badge {
+    @include flex(5px);
+    align-items: center;
+  }
+}
+
+.avatar-wrap {
+  @include flex(0px);
+  align-items: center;
+  justify-content: space-between;
+  .avatar-img {
+    display: block;
+    width: 62px;
+    height: 62px;
+    border: 1px solid #e5e5e5;
+    border-radius: 50%;
+    background-color: #fff;
+    transition: all 0.15s ease-in-out;
+    &.act {
+      background-color: #ced2d6;
+      border-color: #ced2d6;
+    }
+  }
+}

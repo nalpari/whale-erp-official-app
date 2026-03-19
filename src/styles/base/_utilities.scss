@@ -1,0 +1,294 @@
+@use "../abstracts" as *;
+
+/* align */
+.al-c {
+  text-align: center !important;
+}
+.al-r {
+  text-align: right !important;
+}
+.al-l {
+  text-align: left !important;
+}
+
+/* text-transform */
+.text-uppercase {
+  text-transform: uppercase;
+}
+.text-lowercase {
+  text-transform: lowercase;
+}
+.text-capitalize {
+  text-transform: capitalize;
+}
+
+/* margin */
+.m0 {
+  margin: 0 !important;
+}
+.mt5 {
+  margin-top: 5px !important;
+}
+.mt10 {
+  margin-top: 10px !important;
+}
+.mt15 {
+  margin-top: 15px !important;
+}
+.mt20 {
+  margin-top: 20px !important;
+}
+.mt25 {
+  margin-top: 25px !important;
+}
+.mt30 {
+  margin-top: 30px !important;
+}
+.mb5 {
+  margin-bottom: 5px !important;
+}
+.mb8 {
+  margin-bottom: 8px !important;
+}
+.mb10 {
+  margin-bottom: 10px !important;
+}
+.mb15 {
+  margin-bottom: 15px !important;
+}
+.mb20 {
+  margin-bottom: 20px !important;
+}
+.mb25 {
+  margin-bottom: 25px !important;
+}
+.mb30 {
+  margin-bottom: 30px !important;
+}
+.mr5 {
+  margin-right: 5px !important;
+}
+.mr10 {
+  margin-right: 10px !important;
+}
+.mr15 {
+  margin-right: 15px !important;
+}
+.mr20 {
+  margin-right: 20px !important;
+}
+.mr25 {
+  margin-right: 25px !important;
+}
+.mr30 {
+  margin-right: 30px !important;
+}
+.ml5 {
+  margin-left: 5px !important;
+}
+.ml10 {
+  margin-left: 10px !important;
+}
+.ml15 {
+  margin-left: 15px !important;
+}
+.ml20 {
+  margin-left: 20px !important;
+}
+.ml25 {
+  margin-left: 25px !important;
+}
+.ml30 {
+  margin-left: 30px !important;
+}
+
+// shadows
+.shadow01 {
+  box-shadow: 0px 2px 1px 0px rgba(0, 0, 0, 0), 0px 1px 1px 0px rgba(0, 0, 0, 0),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.01), 0px 0px 1px 0px rgba(0, 0, 0, 0.01);
+}
+.shadow02 {
+  box-shadow: 0px 4px 1px 0px rgba(0, 0, 0, 0), 0px 3px 1px 0px rgba(0, 0, 0, 0),
+    0px 2px 1px 0px rgba(0, 0, 0, 0.01), 0px 1px 1px 0px rgba(0, 0, 0, 0.01);
+}
+.shadow03 {
+  box-shadow: 0px 21px 6px 0px rgba(0, 0, 0, 0),
+    0px 13px 5px 0px rgba(0, 0, 0, 0), 0px 8px 5px 0px rgba(0, 0, 0, 0.01),
+    0px 3px 3px 0px rgba(0, 0, 0, 0.01), 0px 1px 2px 0px rgba(0, 0, 0, 0.01);
+}
+.shadow04 {
+  box-shadow: 0px 42px 12px 0px rgba(0, 0, 0, 0),
+    0px 27px 11px 0px rgba(0, 0, 0, 0), 0px 15px 9px 0px rgba(0, 0, 0, 0.02),
+    0px 7px 7px 0px rgba(0, 0, 0, 0.03), 0px 2px 4px 0px rgba(0, 0, 0, 0.03);
+}
+.shadow05 {
+  box-shadow: 0px 69px 19px 0px rgba(0, 0, 0, 0),
+    0px 44px 18px 0px rgba(0, 0, 0, 0.01), 0px 25px 15px 0px rgba(0, 0, 0, 0.03),
+    0px 11px 11px 0px rgba(0, 0, 0, 0.04), 0px 3px 6px 0px rgba(0, 0, 0, 0.05);
+}
+.shadow06 {
+  box-shadow: 0px 104px 29px 0px rgba(0, 0, 0, 0),
+    0px 67px 27px 0px rgba(0, 0, 0, 0.01), 0px 38px 23px 0px rgba(0, 0, 0, 0.05),
+    0px 17px 17px 0px rgba(0, 0, 0, 0.09), 0px 4px 9px 0px rgba(0, 0, 0, 0.1);
+}
+
+// block
+.block {
+  width: 100%;
+}
+
+// flex
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+// gap
+.g16 {
+  gap: 16px;
+}
+.g12 {
+  gap: 12px;
+}
+.g10 {
+  gap: 10px;
+}
+.g8 {
+  gap: 8px;
+}
+.g6 {
+  gap: 6px;
+}
+.g4 {
+  gap: 4px;
+}
+
+// radius
+.radius-4 {
+  border-radius: 4px;
+}
+.radius-8 {
+  border-radius: 8px;
+}
+.radius-12 {
+  border-radius: 12px;
+}
+.radius-24 {
+  border-radius: 24px;
+}
+
+// important
+.imp {
+  color: #f00 !important;
+}
+.ellipsis {
+  @include ellipsis(1);
+}
+
+// badge
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0px 8px;
+  height: 24px;
+  border-radius: 8px;
+  @include fontDefinition($font-ds-14, $font-w-600, 24px);
+  &.red {
+    background-color: #ffefef;
+    color: #e57173;
+    .red_icon {
+      display: block;
+      width: 14px;
+      height: 14px;
+      background: url("/assets/images/contents/badge_red_icon.svg") no-repeat
+        center center;
+      background-size: cover;
+    }
+    &.brd-w{
+      border: 1px solid #e57173;
+      background-color: #fff;
+    }
+  }
+  &.d-red {
+    background-color: #fef0f0;
+    color: #d52929;
+  }
+  &.blue {
+    background-color: #eff7ff;
+    color: #4393f0;
+    &.brd-w{
+      border: 1px solid #4393f0;
+      background-color: #fff;
+    }
+  }
+  &.green {
+    background-color: #e1f3ed;
+    color: #47a686;
+  }
+  &.d-green {
+    background-color: #ebf6f2;
+    color: #36886a;
+    &.line {
+      border: 1px solid #36886a;
+      &.w {
+        background-color: #ffff;
+      }
+    }
+  }
+  &.l-org{
+    background-color: #fde3e0;
+    color: #F29436;
+    &.brd-w{
+      border: 1px solid #F29436;
+      background-color: #fff;
+    }
+  }
+  &.org {
+    background-color: #fde3e0;
+    color: #f37362;
+    &.line {
+      background-color: #fff;
+      border: 1px solid #f37362;
+    }
+    .email_icon {
+      display: block;
+      width: 14px;
+      height: 14px;
+      background: url("/assets/images/contents/org_email.svg") no-repeat center
+        center;
+      background-size: cover;
+    }
+  }
+  &.d-org {
+    background-color: rgba(243, 166, 128, 0.3);
+    color: #c0663a;
+  }
+  &.grey {
+    background-color: #e5e5e5;
+    color: #505050;
+  }
+  &.brown {
+    background-color: #f3f0eb;
+    color: #886436;
+  }
+  &.big {
+    height: 32px;
+    line-height: 32px;
+    font-size: $font-ds-15;
+  }
+}
+
+// animations
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

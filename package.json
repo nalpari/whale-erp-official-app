@@ -11,7 +11,19 @@
   "dependencies": {
     "next": "16.2.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-modal-sheet": "^5.2.1",
+    "react-tooltip": "^5.30.0",
+    "sass": "^1.97.2",
+    "swiper": "^12.0.3",
+    "zustand": "^5.0.9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "sharp",
+      "unrs-resolver"
+    ]
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

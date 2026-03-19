@@ -1,0 +1,124 @@
+@use "../abstracts" as *;
+// login
+.login-wrap {
+  padding: 62px 24px 34px;
+}
+.login-logo-wrap {
+  margin-bottom: 24px;
+  .login-logo {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .logo-app-name {
+    text-align: center;
+    span {
+      display: block;
+      font-feature-settings: "liga" off, "clig" off;
+      @include fontDefinition($font-ds-28, $font-w-600, $line-h-120);
+      color: #444;
+    }
+  }
+}
+.login-form-wrap {
+  padding: 28px 16px 32px;
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  .form-tit {
+    text-align: center;
+    @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+    color: #444;
+    margin-bottom: 18px;
+  }
+}
+.login-form {
+  @include flex(8px);
+  flex-direction: column;
+}
+.login-form-check-wrap {
+  @include flex(0px);
+  align-items: center;
+  margin-top: 18px;
+  .find-id-btn {
+    position: relative;
+    @include fontDefinition($font-ds-14, $font-w-400, $line-h-140);
+    color: #505050;
+    &:first-child {
+      padding-right: 6px;
+      &::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: 0;
+        width: 1px;
+        height: 11px;
+        background-color: #CACACA;
+      }
+    }
+    &:last-child {
+      padding-left: 6px;
+    }
+  }
+}
+
+.another-login-wrap {
+  margin-top: 34px;
+  .another-login-tit {
+    @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+    color: #111;
+    margin-bottom: 14px;
+  }
+  .another-login-list {
+    @include flex(10px);
+    flex-direction: column;
+  }
+}
+.login-guide {
+  position: relative;
+  margin-top: 34px;
+  @include fontDefinition($font-ds-14, $font-w-400, $line-h-140);
+  color: #777;
+  padding-left: 12px;
+  span {
+    display: block;
+    b {
+      color: #007aff;
+      font-weight: $font-w-600;
+    }
+  }
+  &:before {
+    content: "※";
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+// find id
+.find-contents-wrap {
+  padding: 24px 24px 34px;
+}
+.find-header {
+  margin-bottom: 18px;
+  .find-header-tit {
+    @include fontDefinition($font-ds-18, $font-w-600, $line-h-140);
+    color: #111;
+    margin-bottom: 5px;
+  }
+  .find-header-desc {
+    @include fontDefinition($font-ds-15, $font-w-400, $line-h-140);
+    color: #767676;
+  }
+}
+.find-form{
+  margin-bottom: 16px;
+}
+.id-info{
+  @include fontDefinition($font-ds-16, $font-w-400, $line-h-140);
+  color: #222;
+  margin-bottom: 18px;
+  span{
+    color: #F97316;
+    font-weight: $font-w-500;
+  }
+}
