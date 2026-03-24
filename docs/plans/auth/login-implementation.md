@@ -80,7 +80,7 @@ whale-erp-front의 인증 구현을 참조하여 official-app에 로그인 기�
 
 ## 파일 구조 (신규 생성)
 
-```
+```text
 src/
 ├── lib/
 │   ├── api.ts                    # Axios 인스턴스 + 인터셉터
@@ -98,7 +98,7 @@ src/
 
 ## 파일 수정 (기존)
 
-```
+```text
 src/
 ├── app/
 │   ├── layout.tsx                # QueryProvider 추가
