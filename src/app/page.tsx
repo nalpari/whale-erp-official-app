@@ -1,5 +1,10 @@
-import MainContents from "@/components/main/MainContents";
+import MainContents from "@/components/main/MainContents"
+import AuthGuard from "@/components/auth/AuthGuard"
 
 export default function Home() {
-  return <MainContents />;
+  return (
+    <AuthGuard>
+      <MainContents />
+    </AuthGuard>
+  )
 }

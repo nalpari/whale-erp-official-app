@@ -4,12 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useMenuStore } from "@/store/useMenuStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 
 export default function RnbMenu() {
   const router = useRouter();
   const isMenuOpen = useMenuStore((state) => state.isMenuOpen);
   const closeMenu = useMenuStore((state) => state.closeMenu);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const userName = useAuthStore((state) => state.name);
+  const userLoginId = useAuthStore((state) => state.loginId);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -45,7 +49,7 @@ export default function RnbMenu() {
           </div>
           <div className="rnb-info">
             <p>
-              <span>김지영(himmoo)</span>님
+              <span>{userName || "사용자"}{userLoginId ? `(${userLoginId})` : ""}</span>님
             </p>
             <p>환영 합니다.</p>
           </div>
@@ -137,7 +141,7 @@ export default function RnbMenu() {
             </dd>
           </dl>
           <div className="rnb-menu-list">
-            <button className="logout-btn">로그아웃</button>
+            <button className="logout-btn" onClick={() => { clearAuth(); closeMenu(); router.push("/login") }}>로그아웃</button>
           </div>
       </div>
     </div>
