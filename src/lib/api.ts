@@ -96,7 +96,20 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const refreshToken = useAuthStore.getState().refreshToken
+    let refreshToken = useAuthStore.getState().refreshToken
+
+    if (!refreshToken && typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('auth-storage')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          refreshToken = parsed.state?.refreshToken ?? null
+        }
+      } catch {
+        // localStorage 접근 실패
+      }
+    }
+
     if (!refreshToken) {
       forceLogout()
       return Promise.reject(error)
