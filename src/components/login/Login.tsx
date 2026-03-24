@@ -13,17 +13,24 @@ function getSafeReturnUrl(url: string | null): string {
   return url
 }
 
+function safeGetItem(key: string): string | null {
+  if (typeof window === "undefined") return null
+  try { return localStorage.getItem(key) } catch { return null }
+}
+
+function safeSetItem(key: string, value: string) {
+  try { localStorage.setItem(key, value) } catch { /* noop */ }
+}
+
+function safeRemoveItem(key: string) {
+  try { localStorage.removeItem(key) } catch { /* noop */ }
+}
+
 export default function Login() {
-  const [loginId, setLoginId] = useState(() => {
-    if (typeof window === "undefined") return ""
-    return localStorage.getItem("savedLoginId") ?? ""
-  })
+  const [loginId, setLoginId] = useState(() => safeGetItem("savedLoginId") ?? "")
   const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
-  const [saveId, setSaveId] = useState(() => {
-    if (typeof window === "undefined") return false
-    return !!localStorage.getItem("savedLoginId")
-  })
+  const [saveId, setSaveId] = useState(() => !!safeGetItem("savedLoginId"))
   const [error, setError] = useState("")
   const [showAuthoritySelect, setShowAuthoritySelect] = useState(false)
   const [companies, setCompanies] = useState<NonNullable<LoginResponse["companies"]>>([])
@@ -58,9 +65,9 @@ export default function Login() {
     }
 
     if (saveId) {
-      localStorage.setItem("savedLoginId", loginId)
+      safeSetItem("savedLoginId", loginId)
     } else {
-      localStorage.removeItem("savedLoginId")
+      safeRemoveItem("savedLoginId")
     }
 
     router.push(getSafeReturnUrl(returnUrl))
