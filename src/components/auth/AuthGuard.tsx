@@ -29,7 +29,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!tokenExists && redirectedRef.current == null) {
       redirectedRef.current = true
-      router.replace(`/login?returnUrl=${encodeURIComponent(pathname)}`)
+      const search = typeof window !== "undefined" ? window.location.search : ""
+      const fullPath = pathname + search
+      router.replace(`/login?returnUrl=${encodeURIComponent(fullPath)}`)
     }
   }, [tokenExists, router, pathname])
 
