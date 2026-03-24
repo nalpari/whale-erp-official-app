@@ -3,17 +3,14 @@ import { useAuthStore } from '@/store/useAuthStore'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
-type AxiosApiError = {
-  response?: {
-    data?: {
-      message?: string
-    }
-  }
-}
-
 export function getErrorMessage(error: unknown, fallback = '알 수 없는 오류가 발생했습니다.'): string {
-  const apiError = error as AxiosApiError
-  return apiError.response?.data?.message ?? fallback
+  if (axios.isAxiosError(error)) {
+    if (error.response?.data?.message) return error.response.data.message
+    if (error.code === 'ECONNABORTED') return '서버 응답 시간이 초과되었습니다.'
+    if (!error.response) return '네트워크 연결을 확인해주세요.'
+  }
+  if (error instanceof Error) return error.message
+  return fallback
 }
 
 const api = axios.create({
@@ -40,8 +37,9 @@ api.interceptors.request.use((config) => {
         accessToken = parsed.state?.accessToken
         affiliationId = affiliationId || parsed.state?.affiliationId
       }
-    } catch {
-      // localStorage 접근 실패 무시
+    } catch (e) {
+      console.warn('[api] localStorage 인증 정보 읽기 실패:', e)
+      try { localStorage.removeItem('auth-storage') } catch { /* noop */ }
     }
   }
 
@@ -77,7 +75,7 @@ function forceLogout() {
   useAuthStore.getState().clearAuth()
   if (typeof window !== 'undefined') {
     if (!window.location.pathname.startsWith('/login')) {
-      window.location.href = '/login'
+      window.location.href = '/login?reason=session_expired'
     }
   }
 }
@@ -127,7 +125,11 @@ api.interceptors.response.use(
         { headers: { 'Content-Type': 'application/json' } }
       )
 
-      const newAccessToken = response.data.data.accessToken
+      const newAccessToken = response.data?.data?.accessToken
+      if (!newAccessToken) {
+        throw new Error('토큰 갱신 응답에 accessToken이 없습니다.')
+      }
+
       useAuthStore.getState().setAccessToken(newAccessToken)
 
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`

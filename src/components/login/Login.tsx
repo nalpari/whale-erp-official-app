@@ -8,8 +8,16 @@ import { useLoginMutation, useAuthoritySelectMutation } from "@/hooks/queries/us
 import { getErrorMessage } from "@/lib/api"
 import type { LoginResponse } from "@/types/auth"
 
+function getSafeReturnUrl(url: string | null): string {
+  if (!url || !url.startsWith("/") || url.startsWith("//")) return "/"
+  return url
+}
+
 export default function Login() {
-  const [loginId, setLoginId] = useState("")
+  const [loginId, setLoginId] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return localStorage.getItem("savedLoginId") ?? ""
+  })
   const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
   const [saveId, setSaveId] = useState(() => {
@@ -25,35 +33,26 @@ export default function Login() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnUrl = searchParams.get("returnUrl")
-
-  const { setTokens, setAuthority, setAffiliationId, setOwnerCode, setUserInfo, setPasswordChangeRequired } = useAuthStore()
+  const reason = searchParams.get("reason")
 
   const loginMutation = useLoginMutation()
   const authoritySelectMutation = useAuthoritySelectMutation()
 
-  // 초기 savedLoginId 로드
-  const [initialLoginId] = useState(() => {
-    if (typeof window === "undefined") return ""
-    return localStorage.getItem("savedLoginId") ?? ""
-  })
-  if (!loginId && initialLoginId && loginId !== initialLoginId) {
-    setLoginId(initialLoginId)
-  }
-
   const completeLogin = useCallback((data: LoginResponse, authorityId: number, programs: LoginResponse["authority"], ownerCode?: string) => {
-    setTokens(data.accessToken, data.refreshToken)
-    setAffiliationId(String(authorityId))
+    const store = useAuthStore.getState()
+    store.setTokens(data.accessToken, data.refreshToken)
+    store.setAffiliationId(String(authorityId))
     if (programs?.programs) {
-      setAuthority(programs.programs)
+      store.setAuthority(programs.programs)
     }
     if (ownerCode) {
-      setOwnerCode(ownerCode)
+      store.setOwnerCode(ownerCode)
     }
     if (data.loginId && data.name && data.mobilePhone !== undefined) {
-      setUserInfo(data.loginId, data.name, data.mobilePhone ?? "", data.avatar ?? null)
+      store.setUserInfo(data.loginId, data.name, data.mobilePhone ?? "", data.avatar ?? null)
     }
     if (data.passwordChangeRequired) {
-      setPasswordChangeRequired(true)
+      store.setPasswordChangeRequired(true)
       router.push("/changepw")
       return
     }
@@ -64,8 +63,8 @@ export default function Login() {
       localStorage.removeItem("savedLoginId")
     }
 
-    router.push(returnUrl || "/")
-  }, [setTokens, setAffiliationId, setAuthority, setOwnerCode, setUserInfo, setPasswordChangeRequired, saveId, loginId, returnUrl, router])
+    router.push(getSafeReturnUrl(returnUrl))
+  }, [saveId, loginId, returnUrl, router])
 
   const handleLogin = async () => {
     if (!loginId.trim() || !password.trim()) {
@@ -77,13 +76,11 @@ export default function Login() {
     try {
       const data = await loginMutation.mutateAsync({ loginId: loginId.trim(), password })
 
-      // 단일 권한 — 바로 로그인 완료
       if (data.authority) {
         completeLogin(data, data.authority.authorityId, data.authority, data.authority.ownerCode)
         return
       }
 
-      // 복수 권한 — 선택 UI 표시
       if (data.companies && data.companies.length > 0) {
         setCompanies(data.companies)
         setPendingTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
@@ -115,11 +112,10 @@ export default function Login() {
         result.authority ? { authorityId, programs: result.authority.programs, ownerCode: result.authority.ownerCode } : undefined,
         ownerCode,
       )
+      setShowAuthoritySelect(false)
     } catch (err) {
       setError(getErrorMessage(err, "권한 선택에 실패했습니다."))
     }
-
-    setShowAuthoritySelect(false)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -146,6 +142,11 @@ export default function Login() {
       </div>
       <div className="login-form-wrap">
         <div className="form-tit">All in One 점포관리 플랫폼</div>
+        {reason === "session_expired" && (
+          <div className="login-error" style={{ color: "#dc3545", fontSize: "13px", padding: "4px 0 8px" }}>
+            세션이 만료되었습니다. 다시 로그인해주세요.
+          </div>
+        )}
         <div className="login-form">
           <div className="id-form">
             <input
@@ -238,7 +239,6 @@ export default function Login() {
         </span>
       </div>
 
-      {/* 권한 선택 오버레이 */}
       {showAuthoritySelect && (
         <div className="modal-popup alert" style={{ display: "flex" }}>
           <div className="modal-dialog">
