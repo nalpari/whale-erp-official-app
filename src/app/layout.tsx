@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles/style.scss";
+import QueryProvider from "@/providers/query-provider";
 import PopupControler from "@/components/ui/PopupControler";
 import BottomSheetControler from "@/components/ui/BottomSheetControler";
 import Footer from "@/components/ui/Footer";
@@ -19,15 +20,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="wrap">
-          <Header />
-          <RnbMenu />
-          {children}
-          <Footer />
-        </div>
+        <QueryProvider>
+          <div className="wrap">
+            <Header />
+            <RnbMenu />
+            {children}
+            <Footer />
+          </div>
 
-        <PopupControler />
-        <BottomSheetControler />
+          <PopupControler />
+          <BottomSheetControler />
+        </QueryProvider>
       </body>
     </html>
   );
