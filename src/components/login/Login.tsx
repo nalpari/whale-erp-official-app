@@ -48,7 +48,7 @@ export default function Login() {
     if (ownerCode) {
       store.setOwnerCode(ownerCode)
     }
-    if (data.loginId && data.name && data.mobilePhone !== undefined) {
+    if (data.loginId && data.name) {
       store.setUserInfo(data.loginId, data.name, data.mobilePhone ?? "", data.avatar ?? null)
     }
     if (data.passwordChangeRequired) {
