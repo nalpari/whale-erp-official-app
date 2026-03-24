@@ -1,7 +1,12 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const API_BASE_URL = (() => {
+  const url = process.env.NEXT_PUBLIC_API_URL
+  if (url) return url
+  if (process.env.NODE_ENV === 'development') return 'http://localhost:8080'
+  throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.')
+})()
 
 export function getErrorMessage(error: unknown, fallback = '알 수 없는 오류가 발생했습니다.'): string {
   if (axios.isAxiosError(error)) {
