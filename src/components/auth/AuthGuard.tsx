@@ -1,6 +1,7 @@
 "use client"
 
-import { redirect, usePathname } from "next/navigation"
+import { useEffect, useRef } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { useAuthStore } from "@/store/useAuthStore"
 
 function hasStoredToken(): boolean {
@@ -18,12 +19,22 @@ function hasStoredToken(): boolean {
 }
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const accessToken = useAuthStore((s) => s.accessToken)
+  const router = useRouter()
   const pathname = usePathname()
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const redirectedRef = useRef<boolean | null>(null)
 
   const tokenExists = !!accessToken || hasStoredToken()
+
+  useEffect(() => {
+    if (!tokenExists && redirectedRef.current == null) {
+      redirectedRef.current = true
+      router.replace(`/login?returnUrl=${encodeURIComponent(pathname)}`)
+    }
+  }, [tokenExists, router, pathname])
+
   if (!tokenExists) {
-    redirect(`/login?returnUrl=${encodeURIComponent(pathname)}`)
+    return null
   }
 
   return <>{children}</>
