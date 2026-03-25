@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePayrollSearchStore } from '@/store/usePayrollSearchStore'
-import { useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { Sheet } from 'react-modal-sheet'
 
 type WorkStatus = '' | 'EMPWK_001' | 'EMPWK_002' | 'EMPWK_003'
@@ -21,10 +20,8 @@ export default function FullTimerSearchSheet() {
     (state) => state.setFullTimerSearchSheet,
   )
   const { setSearchParams, search, reset } = usePayrollSearchStore()
-  const { data: storeOptions = [] } = useStoreOptions()
 
   // 로컬 폼 상태 (시트 닫기 전까지 임시)
-  const [storeId, setStoreId] = useState<number | undefined>()
   const [workStatus, setWorkStatus] = useState<WorkStatus>('')
   const [employeeName, setEmployeeName] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -36,7 +33,6 @@ export default function FullTimerSearchSheet() {
 
   const handleSearch = () => {
     setSearchParams({
-      storeId: storeId || undefined,
       workStatus: workStatus || undefined,
       employeeName: employeeName || undefined,
       startDate: startDate || undefined,
@@ -47,7 +43,6 @@ export default function FullTimerSearchSheet() {
   }
 
   const handleReset = () => {
-    setStoreId(undefined)
     setWorkStatus('')
     setEmployeeName('')
     setStartDate('')
@@ -71,25 +66,6 @@ export default function FullTimerSearchSheet() {
             </div>
             <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
-                <div className="sheet-data-filed">
-                  <div className="filed-tit">점포</div>
-                  <div className="block">
-                    <select
-                      className="select-form"
-                      value={storeId ?? ''}
-                      onChange={(e) =>
-                        setStoreId(e.target.value ? Number(e.target.value) : undefined)
-                      }
-                    >
-                      <option value="">전체</option>
-                      {storeOptions.map((store) => (
-                        <option key={store.id} value={store.id}>
-                          {store.storeName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
                 <div className="sheet-data-filed">
                   <div className="filed-tit">근무여부</div>
                   <div className="flex g8">

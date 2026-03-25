@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePayrollSearchStore } from '@/store/usePayrollSearchStore'
+import { useStoreStore } from '@/store/useStoreStore'
 import { usePayrollList, useSendPayrollEmail } from '@/hooks/queries/use-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
 import type { PayrollStatementListItem } from '@/types/payroll'
@@ -33,7 +34,14 @@ export default function FullTimerPayList() {
     (state) => state.setFullTimerSearchSheet,
   )
   const { searchParams, hasSearched } = usePayrollSearchStore()
-  const { data, isLoading } = usePayrollList(searchParams, hasSearched)
+  const selectedStore = useStoreStore((state) => state.selectedStore)
+
+  // 글로벌 점포 선택을 검색 파라미터에 반영
+  const params = {
+    ...searchParams,
+    storeId: selectedStore?.id,
+  }
+  const { data, isLoading } = usePayrollList(params, hasSearched)
   const sendEmailMutation = useSendPayrollEmail()
 
   const payrollList = data?.content ?? []

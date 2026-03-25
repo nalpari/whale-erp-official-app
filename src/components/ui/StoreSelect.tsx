@@ -1,19 +1,20 @@
-"use client";
-import Image from "next/image";
-import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+'use client'
+import Image from 'next/image'
+import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import { useStoreStore } from '@/store/useStoreStore'
 
 export default function StoreSelect() {
-  const setStoreSelectSheet = useBottomSheetControler((state) => state.setStoreSelectSheet);
+  const setStoreSelectSheet = useBottomSheetControler(
+    (state) => state.setStoreSelectSheet,
+  )
+  const selectedStore = useStoreStore((state) => state.selectedStore)
 
   const handleClick = () => {
-    setStoreSelectSheet(true);
-  };
+    setStoreSelectSheet(true)
+  }
 
   return (
-    <button
-      className="store-select"
-      onClick={handleClick}
-    >
+    <button className="store-select" onClick={handleClick}>
       <div className="select-container">
         <div className="select-icon">
           <Image
@@ -23,9 +24,9 @@ export default function StoreSelect() {
           />
         </div>
         <div className="select-text">
-          운영 - (직영점) 힘이나는커피생활 을지로3가점
+          {selectedStore ? selectedStore.storeName : '점포를 선택해주세요'}
         </div>
       </div>
     </button>
-  );
+  )
 }
