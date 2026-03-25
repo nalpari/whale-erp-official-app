@@ -10,11 +10,20 @@ import type {
 
 const BASE_URL = '/api/employee/payroll/regular'
 
+// undefined/null 값 제거 (API에서 null을 long으로 변환 시 에러 방지)
+const cleanParams = (params: Record<string, unknown>) => {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+  )
+}
+
 // 목록 조회
 export const getPayrollStatements = async (
   params: PayrollSearchParams,
 ): Promise<PaginatedResponse<PayrollStatementListItem>> => {
-  const response = await api.get<{ data: PaginatedResponse<PayrollStatementListItem> }>(BASE_URL, { params })
+  const response = await api.get<{ data: PaginatedResponse<PayrollStatementListItem> }>(BASE_URL, {
+    params: cleanParams(params),
+  })
   return response.data.data
 }
 
