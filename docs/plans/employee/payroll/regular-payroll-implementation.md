@@ -18,6 +18,17 @@
 | 추가 | 로그인 시 headOfficeId 저장 (프론트) | ✅ 완료 | `a1bc3bf` |
 | 추가 | 본사 ID auth→storeStore fallback | ✅ 완료 | `1a529cd` |
 | 추가 | 점포 선택 유지 + 초기화 시 시트 유지 | ✅ 완료 | `4a9b5fc` |
+| 리뷰 | 코드 리뷰 1차 이슈 8건 수정 | ✅ 완료 | `a5bac39` |
+| 리뷰 | 렌더 중 router.replace → useEffect 이동 | ✅ 완료 | `dbc341d` |
+| 리뷰 | FormData Content-Type 수동 설정 제거 | ✅ 완료 | `f9b37c7` |
+| 리뷰 | 로그인 headOfficeId를 authorityId로 매칭 | ✅ 완료 | `2be9e97` |
+| 리뷰 | StoreSelectSheet onOpenStart 동기화 | ✅ 완료 | `8c97982` |
+| 리뷰 | API 에러 상태 표시 (본사/점포) | ✅ 완료 | `6ebcf94` |
+| 리뷰 | 미사용 타입 제거, replace 정규식, 0원 항목 유지 | ✅ 완료 | `113133f`~`1613951` |
+| 리뷰 | headOfficeId 미선택을 0 → null/undefined | ✅ 완료 | `a56d17f` |
+| 리뷰 | FullTimerSearchSheet onOpenStart 동기화 | ✅ 완료 | `95adf2f` |
+| 리뷰 | WorkStatus 공통 타입 정의 | ✅ 완료 | `3577c2c` |
+| 리뷰 | cleanParams 주석 정확화 | ✅ 완료 | `290e662` |
 
 ---
 
@@ -97,10 +108,20 @@
 ### PaymentConditionSheet 분리
 - `BottomSheetControler`에서 제거, `FullTimerPayDetail` 내부에서 직접 렌더링 (props 전달)
 
+### 바텀시트 상태 동기화 패턴
+- 모든 바텀시트에 `onOpenStart` 콜백 적용 (PaymentConditionSheet, StoreSelectSheet, FullTimerSearchSheet)
+- 시트 열릴 때 글로벌 스토어 값으로 로컬 상태 리셋
+
 ### API 파라미터
 - `cleanParams()`: undefined/null/빈 문자열 필터링
 - 검색 파라미터 API DTO 필드명 일치: `memberName`, `paymentStartDate`, `paymentEndDate`, `franchiseStoreId`
-- `headOfficeId`는 필수 (API에서 Long non-null)
+- `headOfficeId`: API 필수(Long non-null)이지만 프론트에서는 optional — 미선택 시 params에서 제외
+- FormData 전송 시 Content-Type 수동 설정 금지 (Axios 자동 boundary 생성)
+
+### 타입 안전성
+- `WorkStatus` 유니온 타입을 `types/payroll.ts`에 공통 정의
+- Query 훅에서 `id!` non-null assertion 대신 `id ?? 0` 사용
+- 렌더 중 `router.replace()` 금지 → `useEffect`에서 리다이렉트
 
 ---
 
