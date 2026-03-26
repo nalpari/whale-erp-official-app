@@ -34,8 +34,8 @@ export default function StoreSelectSheet() {
   }
 
   // API
-  const { data: headOffices = [] } = useHeadOffices()
-  const { data: storeOptions = [], isLoading: isStoresLoading } =
+  const { data: headOffices = [], isError: isHeadOfficesError } = useHeadOffices()
+  const { data: storeOptions = [], isLoading: isStoresLoading, isError: isStoresError } =
     useStoreOptions(localOfficeId)
 
   // 본사 이름 찾기
@@ -85,6 +85,11 @@ export default function StoreSelectSheet() {
                 {/* 본사 선택 */}
                 <div className="sheet-data-filed">
                   <div className="filed-tit">본사</div>
+                  {isHeadOfficesError && (
+                    <div style={{ padding: '8px 0', color: '#e74c3c', fontSize: '13px' }}>
+                      본사 목록을 불러오지 못했습니다. 네트워크를 확인해주세요.
+                    </div>
+                  )}
                   <div className="block">
                     {hasAuthOffice ? (
                       <select
@@ -129,7 +134,12 @@ export default function StoreSelectSheet() {
                       불러오는 중...
                     </div>
                   )}
-                  {localOfficeId && !isStoresLoading && storeOptions.length === 0 && (
+                  {localOfficeId && isStoresError && (
+                    <div style={{ padding: '12px', color: '#e74c3c', fontSize: '13px' }}>
+                      점포 목록을 불러오지 못했습니다. 네트워크를 확인해주세요.
+                    </div>
+                  )}
+                  {localOfficeId && !isStoresLoading && !isStoresError && storeOptions.length === 0 && (
                     <div style={{ padding: '12px', color: '#999', fontSize: '14px' }}>
                       등록된 점포가 없습니다.
                     </div>
