@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePayrollSearchStore } from '@/store/usePayrollSearchStore'
 import { useStoreStore } from '@/store/useStoreStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import { usePayrollList, useSendPayrollEmail } from '@/hooks/queries/use-payroll-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getErrorMessage } from '@/lib/api'
@@ -35,18 +36,18 @@ export default function FullTimerPayList() {
     (state) => state.setFullTimerSearchSheet,
   )
   const { searchParams, hasSearched } = usePayrollSearchStore()
-  const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
+  const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedStore = useStoreStore((state) => state.selectedStore)
   const mounted = useMounted()
 
-  // 글로벌 본사/점포 선택을 검색 파라미터에 반영
-  const headOfficeId = mounted ? (selectedHeadOffice?.id ?? 0) : 0
+  // 로그인 사용자의 본사 ID + 글로벌 점포 선택을 검색 파라미터에 반영
+  const headOfficeId = mounted ? (authHeadOfficeId ?? 0) : 0
   const params = {
     ...searchParams,
     headOfficeId,
     storeId: mounted ? selectedStore?.id : undefined,
   }
-  const canSearch = mounted && hasSearched && !!selectedHeadOffice
+  const canSearch = mounted && hasSearched && !!authHeadOfficeId
   const { data, isLoading } = usePayrollList(params, canSearch)
   const sendEmailMutation = useSendPayrollEmail()
 
@@ -100,15 +101,15 @@ export default function FullTimerPayList() {
           </div>
         )}
 
-        {mounted && !selectedHeadOffice && (
+        {mounted && !authHeadOfficeId && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-              상단에서 본사를 먼저 선택해주세요.
+              다시 로그인해주세요.
             </div>
           </div>
         )}
 
-        {mounted && selectedHeadOffice && !hasSearched && (
+        {mounted && authHeadOfficeId && !hasSearched && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
               검색 조건을 설정해주세요.
