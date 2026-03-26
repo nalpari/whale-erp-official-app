@@ -7,14 +7,17 @@ export default function StoreSelect() {
   const setStoreSelectSheet = useBottomSheetControler(
     (state) => state.setStoreSelectSheet,
   )
+  const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
 
-  const handleClick = () => {
-    setStoreSelectSheet(true)
-  }
+  const displayText = selectedStore
+    ? selectedStore.storeName
+    : selectedHeadOffice
+      ? selectedHeadOffice.companyName
+      : '점포를 선택해주세요'
 
   return (
-    <button className="store-select" onClick={handleClick}>
+    <button className="store-select" onClick={() => setStoreSelectSheet(true)}>
       <div className="select-container">
         <div className="select-icon">
           <Image
@@ -23,9 +26,7 @@ export default function StoreSelect() {
             fill
           />
         </div>
-        <div className="select-text">
-          {selectedStore ? selectedStore.storeName : '점포를 선택해주세요'}
-        </div>
+        <div className="select-text">{displayText}</div>
       </div>
     </button>
   )

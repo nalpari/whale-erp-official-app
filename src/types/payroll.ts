@@ -81,16 +81,17 @@ export interface PayrollStatementDetail {
   updatedAt?: string
 }
 
-// 검색 파라미터
+// 검색 파라미터 (API: GetPayrollStatementRequest 기준)
 export interface PayrollSearchParams {
-  headOfficeId?: number
-  franchiseId?: number
-  storeId?: number
-  workStatus?: string
-  employeeName?: string
-  employeeClassification?: string
-  startDate?: string
-  endDate?: string
+  headOfficeId: number              // 필수 (Long, not null)
+  franchiseStoreId?: number         // 가맹점 코드
+  storeId?: number                  // 점포 코드
+  workStatus?: string               // EMPWK_001: 근무, EMPWK_002: 휴직, EMPWK_003: 퇴사
+  memberName?: string               // 회원명
+  employeeClassification?: string   // 직원 분류 코드
+  payrollYearMonth?: string         // YYYYMM
+  paymentStartDate?: string         // 지급 시작일
+  paymentEndDate?: string           // 지급 종료일
   page: number
   size: number
 }

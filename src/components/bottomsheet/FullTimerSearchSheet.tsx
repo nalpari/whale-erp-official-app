@@ -34,9 +34,9 @@ export default function FullTimerSearchSheet() {
   const handleSearch = () => {
     setSearchParams({
       workStatus: workStatus || undefined,
-      employeeName: employeeName || undefined,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
+      memberName: employeeName || undefined,
+      paymentStartDate: startDate || undefined,
+      paymentEndDate: endDate || undefined,
     })
     search()
     handleClose()

@@ -1,18 +1,27 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
-import type { StoreOption } from '@/types/store'
+import type { StoreOption, HeadOffice } from '@/types/store'
 
 interface StoreState {
+  selectedHeadOffice: HeadOffice | null
   selectedStore: StoreOption | null
+  setSelectedHeadOffice: (office: HeadOffice | null) => void
   setSelectedStore: (store: StoreOption | null) => void
+  reset: () => void
 }
 
 export const useStoreStore = create<StoreState>()(
   devtools(
     persist(
       (set) => ({
+        selectedHeadOffice: null,
         selectedStore: null,
-        setSelectedStore: (store) => set({ selectedStore: store }, false, 'setSelectedStore'),
+        setSelectedHeadOffice: (office) =>
+          set({ selectedHeadOffice: office, selectedStore: null }, false, 'setSelectedHeadOffice'),
+        setSelectedStore: (store) =>
+          set({ selectedStore: store }, false, 'setSelectedStore'),
+        reset: () =>
+          set({ selectedHeadOffice: null, selectedStore: null }, false, 'reset'),
       }),
       { name: 'store-selection' },
     ),

@@ -34,14 +34,17 @@ export default function FullTimerPayList() {
     (state) => state.setFullTimerSearchSheet,
   )
   const { searchParams, hasSearched } = usePayrollSearchStore()
+  const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
 
-  // 글로벌 점포 선택을 검색 파라미터에 반영
+  // 글로벌 본사/점포 선택을 검색 파라미터에 반영
   const params = {
     ...searchParams,
+    headOfficeId: selectedHeadOffice?.id ?? 0,
     storeId: selectedStore?.id,
   }
-  const { data, isLoading } = usePayrollList(params, hasSearched)
+  const canSearch = hasSearched && !!selectedHeadOffice
+  const { data, isLoading } = usePayrollList(params, canSearch)
   const sendEmailMutation = useSendPayrollEmail()
 
   const payrollList = data?.content ?? []
@@ -94,7 +97,15 @@ export default function FullTimerPayList() {
           </div>
         )}
 
-        {!hasSearched && (
+        {!selectedHeadOffice && (
+          <div className="staff-list-wrap">
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+              상단에서 본사를 먼저 선택해주세요.
+            </div>
+          </div>
+        )}
+
+        {selectedHeadOffice && !hasSearched && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
               검색 조건을 설정해주세요.
