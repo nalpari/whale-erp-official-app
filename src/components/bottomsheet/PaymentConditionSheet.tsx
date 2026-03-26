@@ -91,10 +91,8 @@ export default function PaymentConditionSheet({
   }
 
   const handleSave = () => {
-    const filteredPayment = localPaymentItems.filter((item) => item.amount > 0)
-    const filteredDeduction = localDeductionItems.filter((item) => item.amount > 0)
-    onPaymentItemsChange(filteredPayment)
-    onDeductionItemsChange(filteredDeduction)
+    onPaymentItemsChange(localPaymentItems)
+    onDeductionItemsChange(localDeductionItems)
     handleClose()
   }
 
