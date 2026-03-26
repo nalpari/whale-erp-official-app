@@ -168,17 +168,6 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
               <div className="sub-item-bx">
                 <div className="data-filed">
                   <div className="filed-tit">
-                    소속 <span className="imp">*</span>
-                  </div>
-                  <div className="flex g8">
-                    <button className="radio-btn block act">본사</button>
-                    <button className="radio-btn block">가맹점</button>
-                  </div>
-                </div>
-              </div>
-              <div className="sub-item-bx">
-                <div className="data-filed">
-                  <div className="filed-tit">
                     본사/가맹점/점포 <span className="imp">*</span>
                   </div>
                   <div className="block mb8">
