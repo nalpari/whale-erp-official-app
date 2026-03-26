@@ -36,8 +36,8 @@ export const usePayrollList = (params: PayrollSearchParams, enabled = true) => {
 // 상세 조회
 export const usePayrollDetail = (id?: number) => {
   return useQuery({
-    queryKey: payrollKeys.detail(id!),
-    queryFn: () => getPayrollStatement(id!),
+    queryKey: payrollKeys.detail(id ?? 0),
+    queryFn: () => getPayrollStatement(id ?? 0),
     enabled: !!id,
   })
 }
@@ -45,8 +45,8 @@ export const usePayrollDetail = (id?: number) => {
 // 이전 급여 조회
 export const useLatestPayroll = (employeeInfoId?: number) => {
   return useQuery({
-    queryKey: payrollKeys.latest(employeeInfoId!),
-    queryFn: () => getLatestPayroll(employeeInfoId!),
+    queryKey: payrollKeys.latest(employeeInfoId ?? 0),
+    queryFn: () => getLatestPayroll(employeeInfoId ?? 0),
     enabled: !!employeeInfoId,
   })
 }

@@ -158,7 +158,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
               <i className="email-icon"></i>이메일 전송
             </button>
             <button className="pay-head-btn" onClick={handleDelete}>
-              <i className="download-icon"></i>삭제
+              삭제
             </button>
           </div>
         )}

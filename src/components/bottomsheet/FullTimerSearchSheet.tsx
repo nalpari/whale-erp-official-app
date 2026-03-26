@@ -19,13 +19,15 @@ export default function FullTimerSearchSheet() {
   const setFullTimerSearchSheet = useBottomSheetControler(
     (state) => state.setFullTimerSearchSheet,
   )
-  const { setSearchParams, search, reset } = usePayrollSearchStore()
+  const { searchParams, setSearchParams, search, reset } = usePayrollSearchStore()
 
-  // 로컬 폼 상태 (시트 닫기 전까지 임시)
-  const [workStatus, setWorkStatus] = useState<WorkStatus>('')
-  const [employeeName, setEmployeeName] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  // 로컬 폼 상태 — store의 현재 검색 조건으로 초기화 (조건부 마운트)
+  const [workStatus, setWorkStatus] = useState<WorkStatus>(
+    (searchParams.workStatus as WorkStatus) || '',
+  )
+  const [employeeName, setEmployeeName] = useState(searchParams.memberName ?? '')
+  const [startDate, setStartDate] = useState(searchParams.paymentStartDate ?? '')
+  const [endDate, setEndDate] = useState(searchParams.paymentEndDate ?? '')
 
   const handleClose = () => {
     setFullTimerSearchSheet(false)

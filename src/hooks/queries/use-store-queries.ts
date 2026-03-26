@@ -19,7 +19,7 @@ export const useHeadOffices = () => {
 export const useStoreOptions = (officeId?: number) => {
   return useQuery({
     queryKey: storeKeys.options(officeId),
-    queryFn: () => getStoreOptions(officeId),
+    queryFn: () => getStoreOptions(officeId!),
     enabled: !!officeId,
   })
 }

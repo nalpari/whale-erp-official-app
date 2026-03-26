@@ -52,27 +52,22 @@ export default function PaymentConditionSheet({
     (state) => state.setPaymentConditionSheet,
   )
 
-  // 로컬 편집 상태 — 시트가 열릴 때마다 외부 데이터로 초기화
+  // 로컬 편집 상태
   const [localPaymentItems, setLocalPaymentItems] = useState<PaymentItem[]>(
     externalPaymentItems.length > 0 ? externalPaymentItems : DEFAULT_PAYMENT_ITEMS,
   )
   const [localDeductionItems, setLocalDeductionItems] = useState<DeductionItem[]>(
     externalDeductionItems.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
   )
-  const [prevOpen, setPrevOpen] = useState(false)
 
-  // 시트 열림 감지 시 외부 데이터로 리셋
-  if (paymentConditionSheet && !prevOpen) {
-    setPrevOpen(true)
+  // 시트 열릴 때 외부 데이터로 리셋 (이벤트 핸들러 — React Compiler 안전)
+  const handleOpenStart = () => {
     setLocalPaymentItems(
       externalPaymentItems.length > 0 ? externalPaymentItems : DEFAULT_PAYMENT_ITEMS,
     )
     setLocalDeductionItems(
       externalDeductionItems.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
     )
-  }
-  if (!paymentConditionSheet && prevOpen) {
-    setPrevOpen(false)
   }
 
   const totalPayment = localPaymentItems.reduce((sum, item) => sum + (item.amount || 0), 0)
@@ -112,6 +107,7 @@ export default function PaymentConditionSheet({
     <Sheet
       isOpen={paymentConditionSheet}
       onClose={handleClose}
+      onOpenStart={handleOpenStart}
       detent="content"
       disableScrollLocking={true}
     >

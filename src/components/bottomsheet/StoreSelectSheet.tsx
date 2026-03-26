@@ -17,7 +17,6 @@ export default function StoreSelectSheet() {
     selectedHeadOffice,
     selectedStore,
     setSelection,
-    reset: resetStore,
   } = useStoreStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const hasAuthOffice = !!authHeadOfficeId
