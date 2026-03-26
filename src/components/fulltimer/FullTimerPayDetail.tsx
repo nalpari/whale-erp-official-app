@@ -9,6 +9,8 @@ import {
   useSendPayrollEmail,
 } from '@/hooks/queries/use-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
+import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
+import { useAuthStore } from '@/store/useAuthStore'
 import PaymentConditionSheet from '@/components/bottomsheet/PaymentConditionSheet'
 import type {
   PaymentItem,
@@ -37,6 +39,31 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   const updateMutation = useUpdatePayroll()
   const deleteMutation = useDeletePayroll()
   const sendEmailMutation = useSendPayrollEmail()
+
+  // 조직 선택 API
+  const authHeadOfficeId = useAuthStore((s) => s.headOfficeId)
+  const { data: headOfficeTree = [] } = useHeadOfficeTree()
+  const [selectedOfficeId, setSelectedOfficeId] = useState<number | undefined>(authHeadOfficeId ?? undefined)
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState<number | undefined>()
+  const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>()
+
+  // 선택된 본사의 가맹점 목록
+  const selectedOffice = headOfficeTree.find((o) => o.id === selectedOfficeId)
+  const franchises = selectedOffice?.franchises ?? []
+
+  // 점포 목록 (가맹점 선택 시 가맹점 기반, 아니면 본사 기반)
+  const { data: storeOptions = [] } = useStoreOptions(selectedOfficeId, selectedFranchiseId)
+
+  const handleOfficeChange = (officeId: number | undefined) => {
+    setSelectedOfficeId(officeId)
+    setSelectedFranchiseId(undefined)
+    setSelectedStoreId(undefined)
+  }
+
+  const handleFranchiseChange = (franchiseId: number | undefined) => {
+    setSelectedFranchiseId(franchiseId)
+    setSelectedStoreId(undefined)
+  }
 
   // 폼 상태 — initialData로 초기화 (key 패턴으로 리마운트되므로 안전)
   const [employmentContractId, setEmploymentContractId] = useState(initialData?.employmentContractId)
@@ -171,18 +198,48 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                     본사/가맹점/점포 <span className="imp">*</span>
                   </div>
                   <div className="block mb8">
-                    <select className="select-form">
+                    <select
+                      className="select-form"
+                      value={selectedOfficeId ?? ''}
+                      onChange={(e) => handleOfficeChange(Number(e.target.value) || undefined)}
+                      disabled={!!authHeadOfficeId}
+                    >
                       <option value="">본사 선택</option>
+                      {headOfficeTree.map((office) => (
+                        <option key={office.id} value={office.id}>
+                          {office.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="block mb8">
-                    <select className="select-form" disabled>
+                    <select
+                      className="select-form"
+                      value={selectedFranchiseId ?? ''}
+                      onChange={(e) => handleFranchiseChange(Number(e.target.value) || undefined)}
+                      disabled={!selectedOfficeId || franchises.length === 0}
+                    >
                       <option value="">가맹점 선택</option>
+                      {franchises.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="block">
-                    <select className="select-form">
-                      <option value="">점포선택</option>
+                    <select
+                      className="select-form"
+                      value={selectedStoreId ?? ''}
+                      onChange={(e) => setSelectedStoreId(Number(e.target.value) || undefined)}
+                      disabled={!selectedOfficeId}
+                    >
+                      <option value="">점포 선택</option>
+                      {storeOptions.map((store) => (
+                        <option key={store.id} value={store.id}>
+                          {store.storeName}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

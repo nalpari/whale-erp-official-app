@@ -12,10 +12,25 @@ export interface StoreListItem {
   createdAt: string
 }
 
-// 본사 정보 (BpResponse에서 필요한 필드만)
+// 본사 정보
 export interface HeadOffice {
   id: number
   companyName: string
   brandName?: string
   organizationCode: string
+}
+
+// 가맹점 정보
+export interface FranchiseSimple {
+  id: number
+  name?: string
+  organizationCode: string
+}
+
+// 본사-가맹점 트리
+export interface HeadOfficeTree {
+  id: number
+  name?: string
+  organizationCode: string
+  franchises: FranchiseSimple[]
 }
