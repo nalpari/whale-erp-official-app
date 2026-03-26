@@ -15,8 +15,7 @@ export default function StoreSelectSheet() {
   )
   const {
     selectedStore,
-    setSelectedStore,
-    setSelectedHeadOffice,
+    setSelection,
     reset: resetStore,
   } = useStoreStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
@@ -62,8 +61,7 @@ export default function StoreSelectSheet() {
   const handleSelect = () => {
     const office = headOffices.find((o) => o.id === localOfficeId) ?? null
     const store = storeOptions.find((s) => s.id === localStoreId) ?? null
-    setSelectedHeadOffice(office)
-    setSelectedStore(store)
+    setSelection(office, store)
     handleClose()
   }
 

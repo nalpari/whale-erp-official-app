@@ -7,6 +7,7 @@ interface StoreState {
   selectedStore: StoreOption | null
   setSelectedHeadOffice: (office: HeadOffice | null) => void
   setSelectedStore: (store: StoreOption | null) => void
+  setSelection: (office: HeadOffice | null, store: StoreOption | null) => void
   reset: () => void
 }
 
@@ -20,6 +21,8 @@ export const useStoreStore = create<StoreState>()(
           set({ selectedHeadOffice: office, selectedStore: null }, false, 'setSelectedHeadOffice'),
         setSelectedStore: (store) =>
           set({ selectedStore: store }, false, 'setSelectedStore'),
+        setSelection: (office, store) =>
+          set({ selectedHeadOffice: office, selectedStore: store }, false, 'setSelection'),
         reset: () =>
           set({ selectedHeadOffice: null, selectedStore: null }, false, 'reset'),
       }),
