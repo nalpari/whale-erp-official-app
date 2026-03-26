@@ -240,8 +240,10 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                           : ''
                       }
                       onChange={(e) => {
-                        const val = e.target.value.replace('-', '')
-                        setPayrollYearMonth(val)
+                        const val = e.target.value.replace(/-/g, '')
+                        if (val.length === 6 || val === '') {
+                          setPayrollYearMonth(val)
+                        }
                       }}
                     />
                   </div>
