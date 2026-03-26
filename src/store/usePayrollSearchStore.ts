@@ -12,7 +12,6 @@ interface PayrollSearchState {
 }
 
 const DEFAULT_PARAMS: PayrollSearchParams = {
-  headOfficeId: 0,
   page: 0,
   size: 20,
 }

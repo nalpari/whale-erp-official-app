@@ -43,10 +43,10 @@ export default function FullTimerPayList() {
 
   // 본사 ID: auth > storeStore 순으로 fallback
   const effectiveHeadOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? null
-  const headOfficeId = mounted ? (effectiveHeadOfficeId ?? 0) : 0
+  const headOfficeId = mounted ? effectiveHeadOfficeId : null
   const params = {
     ...searchParams,
-    headOfficeId,
+    ...(headOfficeId != null && { headOfficeId }),
     storeId: mounted ? selectedStore?.id : undefined,
   }
   const canSearch = mounted && hasSearched && !!effectiveHeadOfficeId

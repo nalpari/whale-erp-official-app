@@ -83,7 +83,7 @@ export interface PayrollStatementDetail {
 
 // 검색 파라미터 (API: GetPayrollStatementRequest 기준)
 export interface PayrollSearchParams {
-  headOfficeId: number              // 필수 (Long, not null)
+  headOfficeId?: number             // API 필수지만 프론트에서는 미선택 상태(undefined) 허용
   franchiseStoreId?: number         // 가맹점 코드
   storeId?: number                  // 점포 코드
   workStatus?: string               // EMPWK_001: 근무, EMPWK_002: 휴직, EMPWK_003: 퇴사
