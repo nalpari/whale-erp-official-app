@@ -14,6 +14,7 @@ export default function StoreSelectSheet() {
     (state) => state.setStoreSelectSheet,
   )
   const {
+    selectedHeadOffice,
     selectedStore,
     setSelection,
     reset: resetStore,
@@ -21,24 +22,11 @@ export default function StoreSelectSheet() {
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const hasAuthOffice = !!authHeadOfficeId
 
-  // 본사 선택 상태: authHeadOfficeId가 있으면 고정, 없으면 사용자 선택
-  const [localOfficeId, setLocalOfficeId] = useState<number | undefined>(
-    authHeadOfficeId ?? undefined,
-  )
-  const [localStoreId, setLocalStoreId] = useState<number | undefined>(
-    selectedStore?.id,
-  )
+  // 본사 ID: auth > storeStore 순으로 fallback
+  const initialOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined
 
-  // 시트 열릴 때 현재 선택 값 동기화
-  const [prevOpen, setPrevOpen] = useState(false)
-  if (storeSelectSheet && !prevOpen) {
-    setPrevOpen(true)
-    setLocalOfficeId(authHeadOfficeId ?? undefined)
-    setLocalStoreId(selectedStore?.id)
-  }
-  if (!storeSelectSheet && prevOpen) {
-    setPrevOpen(false)
-  }
+  const [localOfficeId, setLocalOfficeId] = useState<number | undefined>(initialOfficeId)
+  const [localStoreId, setLocalStoreId] = useState<number | undefined>(selectedStore?.id)
 
   // API
   const { data: headOffices = [] } = useHeadOffices()

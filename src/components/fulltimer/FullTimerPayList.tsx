@@ -37,17 +37,19 @@ export default function FullTimerPayList() {
   )
   const { searchParams, hasSearched } = usePayrollSearchStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
+  const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
   const mounted = useMounted()
 
-  // 로그인 사용자의 본사 ID + 글로벌 점포 선택을 검색 파라미터에 반영
-  const headOfficeId = mounted ? (authHeadOfficeId ?? 0) : 0
+  // 본사 ID: auth > storeStore 순으로 fallback
+  const effectiveHeadOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? null
+  const headOfficeId = mounted ? (effectiveHeadOfficeId ?? 0) : 0
   const params = {
     ...searchParams,
     headOfficeId,
     storeId: mounted ? selectedStore?.id : undefined,
   }
-  const canSearch = mounted && hasSearched && !!authHeadOfficeId
+  const canSearch = mounted && hasSearched && !!effectiveHeadOfficeId
   const { data, isLoading } = usePayrollList(params, canSearch)
   const sendEmailMutation = useSendPayrollEmail()
 
@@ -96,7 +98,7 @@ export default function FullTimerPayList() {
         <FullTimerPayListContent
           mounted={mounted}
           hasSearched={hasSearched}
-          authHeadOfficeId={authHeadOfficeId}
+          headOfficeId={effectiveHeadOfficeId}
           isLoading={isLoading}
           payrollList={payrollList}
           onSendEmail={handleSendEmail}
@@ -120,7 +122,7 @@ function EmptyMessage({ text }: { text: string }) {
 function FullTimerPayListContent({
   mounted,
   hasSearched,
-  authHeadOfficeId,
+  headOfficeId,
   isLoading,
   payrollList,
   onSendEmail,
@@ -128,14 +130,14 @@ function FullTimerPayListContent({
 }: {
   mounted: boolean
   hasSearched: boolean
-  authHeadOfficeId: number | null
+  headOfficeId: number | null
   isLoading: boolean
   payrollList: PayrollStatementListItem[]
   onSendEmail: (e: React.MouseEvent, item: PayrollStatementListItem) => void
   onItemClick: (id: number) => void
 }) {
   if (!mounted || !hasSearched) return <EmptyMessage text="검색 조건을 설정해주세요." />
-  if (!authHeadOfficeId) return <EmptyMessage text="다시 로그인해주세요." />
+  if (!headOfficeId) return <EmptyMessage text="상단에서 점포를 먼저 선택해주세요." />
   if (isLoading) return <EmptyMessage text="불러오는 중..." />
   if (payrollList.length === 0) return <EmptyMessage text="검색 결과가 없습니다." />
 
