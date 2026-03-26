@@ -58,8 +58,6 @@ export default function StoreSelectSheet() {
       setLocalOfficeId(undefined)
     }
     setLocalStoreId(undefined)
-    resetStore()
-    handleClose()
   }
 
   return (
