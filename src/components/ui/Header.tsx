@@ -14,6 +14,11 @@ export default function Header() {
     router.back();
   };
 
+  const getPageTitle = () => {
+    if (pathname.startsWith("/fulltimer")) return "정직원 급여명세서 정보";
+    return "서브 페이지 헤더";
+  };
+
   if (pathname.includes("/list") || pathname === "/login") {
     return null;
   }
@@ -24,7 +29,7 @@ export default function Header() {
         <div className="header-container">
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
-            <h1>서브 페이지 헤더</h1>
+            <h1>{getPageTitle()}</h1>
             <button className="btn-delete"></button>
           </div>
         </div>
