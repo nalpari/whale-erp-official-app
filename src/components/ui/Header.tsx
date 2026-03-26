@@ -16,6 +16,7 @@ export default function Header() {
 
   const getPageTitle = () => {
     if (pathname.startsWith("/fulltimer")) return "정직원 급여명세서 정보";
+    if (pathname.startsWith("/contract")) return "근로계약 관리";
     return "서브 페이지 헤더";
   };
 
