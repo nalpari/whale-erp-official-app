@@ -93,133 +93,136 @@ export default function FullTimerPayList() {
           </button>
         </div>
 
-        {!mounted && (
-          <div className="staff-list-wrap">
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-              검색 조건을 설정해주세요.
-            </div>
-          </div>
-        )}
-
-        {mounted && !authHeadOfficeId && (
-          <div className="staff-list-wrap">
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-              다시 로그인해주세요.
-            </div>
-          </div>
-        )}
-
-        {mounted && authHeadOfficeId && !hasSearched && (
-          <div className="staff-list-wrap">
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-              검색 조건을 설정해주세요.
-            </div>
-          </div>
-        )}
-
-        {canSearch && isLoading && (
-          <div className="staff-list-wrap">
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-              불러오는 중...
-            </div>
-          </div>
-        )}
-
-        {canSearch && !isLoading && payrollList.length === 0 && (
-          <div className="staff-list-wrap">
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-              검색 결과가 없습니다.
-            </div>
-          </div>
-        )}
-
-        {canSearch && payrollList.length > 0 && (
-          <div className="staff-list-wrap">
-            {payrollList.map((item, index) => (
-              <div className="staff-list-item" key={item.id}>
-                <div className="staff-item-header">
-                  <div className="head-staff-info">
-                    <div className="staff-icon">
-                      <Image
-                        src={AVATAR_IMAGES[index % AVATAR_IMAGES.length]}
-                        alt="staff-icon"
-                        width={46}
-                        height={46}
-                      />
-                    </div>
-                    <div className="staff-info-data">
-                      <div className="staff-name">
-                        <span>{item.employeeName}</span>
-                        {item.isEmailSend ? (
-                          <b className="badge org line">
-                            <i className="email_icon"></i>전송완료
-                          </b>
-                        ) : (
-                          <button
-                            className="badge org"
-                            onClick={(e) => handleSendEmail(e, item)}
-                          >
-                            <i className="email_icon"></i>이메일 전송
-                          </button>
-                        )}
-                      </div>
-                      <div className="staff-job">
-                        {[item.employeeClassification, item.workStatus]
-                          .filter(Boolean)
-                          .join('/')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  className="sub-item-bx"
-                  onClick={() => router.push(`/fulltimer/${item.id}`)}
-                >
-                  <div className="pay-title">
-                    {formatYearMonth(item.payrollYearMonth)}
-                  </div>
-                  <table className="info-table">
-                    <colgroup>
-                      <col style={{ width: '90px' }} />
-                      <col />
-                    </colgroup>
-                    <tbody>
-                      <tr>
-                        <th>급여일</th>
-                        <td>{formatDate(item.paymentDate)}</td>
-                      </tr>
-                      <tr>
-                        <th>실지급액</th>
-                        <td>{formatAmount(item.actualPaymentAmount)}원</td>
-                      </tr>
-                      <tr>
-                        <th>본사</th>
-                        <td>{item.headOfficeName}</td>
-                      </tr>
-                      {item.franchiseName && (
-                        <tr>
-                          <th>가맹점</th>
-                          <td>
-                            <div className="ellipsis">{item.franchiseName}</div>
-                          </td>
-                        </tr>
-                      )}
-                      {item.storeName && (
-                        <tr>
-                          <th>점포</th>
-                          <td>
-                            <div className="ellipsis">{item.storeName}</div>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <FullTimerPayListContent
+          mounted={mounted}
+          hasSearched={hasSearched}
+          authHeadOfficeId={authHeadOfficeId}
+          isLoading={isLoading}
+          payrollList={payrollList}
+          onSendEmail={handleSendEmail}
+          onItemClick={(id) => router.push(`/fulltimer/${id}`)}
+        />
       </div>
+    </div>
+  )
+}
+
+function EmptyMessage({ text }: { text: string }) {
+  return (
+    <div className="staff-list-wrap">
+      <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+        {text}
+      </div>
+    </div>
+  )
+}
+
+function FullTimerPayListContent({
+  mounted,
+  hasSearched,
+  authHeadOfficeId,
+  isLoading,
+  payrollList,
+  onSendEmail,
+  onItemClick,
+}: {
+  mounted: boolean
+  hasSearched: boolean
+  authHeadOfficeId: number | null
+  isLoading: boolean
+  payrollList: PayrollStatementListItem[]
+  onSendEmail: (e: React.MouseEvent, item: PayrollStatementListItem) => void
+  onItemClick: (id: number) => void
+}) {
+  if (!mounted || !hasSearched) return <EmptyMessage text="검색 조건을 설정해주세요." />
+  if (!authHeadOfficeId) return <EmptyMessage text="다시 로그인해주세요." />
+  if (isLoading) return <EmptyMessage text="불러오는 중..." />
+  if (payrollList.length === 0) return <EmptyMessage text="검색 결과가 없습니다." />
+
+  return (
+    <div className="staff-list-wrap">
+      {payrollList.map((item, index) => (
+        <div className="staff-list-item" key={item.id}>
+          <div className="staff-item-header">
+            <div className="head-staff-info">
+              <div className="staff-icon">
+                <Image
+                  src={AVATAR_IMAGES[index % AVATAR_IMAGES.length]}
+                  alt="staff-icon"
+                  width={46}
+                  height={46}
+                />
+              </div>
+              <div className="staff-info-data">
+                <div className="staff-name">
+                  <span>{item.employeeName}</span>
+                  {item.isEmailSend ? (
+                    <b className="badge org line">
+                      <i className="email_icon"></i>전송완료
+                    </b>
+                  ) : (
+                    <button
+                      className="badge org"
+                      onClick={(e) => onSendEmail(e, item)}
+                    >
+                      <i className="email_icon"></i>이메일 전송
+                    </button>
+                  )}
+                </div>
+                <div className="staff-job">
+                  {[item.employeeClassification, item.workStatus]
+                    .filter(Boolean)
+                    .join('/')}
+                </div>
+              </div>
+            </div>
+          </div>
+          <button
+            className="sub-item-bx"
+            onClick={() => onItemClick(item.id)}
+          >
+            <div className="pay-title">
+              {formatYearMonth(item.payrollYearMonth)}
+            </div>
+            <table className="info-table">
+              <colgroup>
+                <col style={{ width: '90px' }} />
+                <col />
+              </colgroup>
+              <tbody>
+                <tr>
+                  <th>급여일</th>
+                  <td>{formatDate(item.paymentDate)}</td>
+                </tr>
+                <tr>
+                  <th>실지급액</th>
+                  <td>{formatAmount(item.actualPaymentAmount)}원</td>
+                </tr>
+                <tr>
+                  <th>본사</th>
+                  <td>{item.headOfficeName}</td>
+                </tr>
+                {item.franchiseName && (
+                  <tr>
+                    <th>가맹점</th>
+                    <td>
+                      <div className="ellipsis">{item.franchiseName}</div>
+                    </td>
+                  </tr>
+                )}
+                {item.storeName && (
+                  <tr>
+                    <th>점포</th>
+                    <td>
+                      <div className="ellipsis">{item.storeName}</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </button>
+        </div>
+      ))}
     </div>
   )
 }
