@@ -45,7 +45,7 @@ export default function Login() {
   const loginMutation = useLoginMutation()
   const authoritySelectMutation = useAuthoritySelectMutation()
 
-  const completeLogin = useCallback((data: LoginResponse, authorityId: number, programs: LoginResponse["authority"], ownerCode?: string) => {
+  const completeLogin = useCallback((data: LoginResponse, authorityId: number, programs: LoginResponse["authority"], ownerCode?: string, headOfficeId?: number) => {
     const store = useAuthStore.getState()
     store.setTokens(data.accessToken, data.refreshToken)
     store.setAffiliationId(String(authorityId))
@@ -55,6 +55,7 @@ export default function Login() {
     if (ownerCode) {
       store.setOwnerCode(ownerCode)
     }
+    store.setHeadOfficeId(headOfficeId ?? null)
     if (data.loginId && data.name) {
       store.setUserInfo(data.loginId, data.name, data.mobilePhone ?? "", data.avatar ?? null)
     }
@@ -84,7 +85,9 @@ export default function Login() {
       const data = await loginMutation.mutateAsync({ loginId: loginId.trim(), password })
 
       if (data.authority) {
-        completeLogin(data, data.authority.authorityId, data.authority, data.authority.ownerCode)
+        const matchedCompany = data.companies?.find((c) => c.authorityId === data.authority!.authorityId)
+        const headOfficeId = matchedCompany?.headOfficeId ?? data.companies?.[0]?.headOfficeId
+        completeLogin(data, data.authority.authorityId, data.authority, data.authority.ownerCode, headOfficeId)
         return
       }
 
@@ -111,13 +114,16 @@ export default function Login() {
         accessToken: pendingTokens.accessToken,
       })
 
-      const ownerCode = result.authority?.ownerCode ?? companies.find((c) => c.authorityId === authorityId)?.ownerCode
+      const selectedCompany = companies.find((c) => c.authorityId === authorityId)
+      const ownerCode = result.authority?.ownerCode ?? selectedCompany?.ownerCode
+      const headOfficeId = selectedCompany?.headOfficeId
 
       completeLogin(
         { ...pendingLoginData, accessToken: pendingTokens.accessToken, refreshToken: pendingTokens.refreshToken },
         authorityId,
         result.authority ? { authorityId, programs: result.authority.programs, ownerCode: result.authority.ownerCode } : undefined,
         ownerCode,
+        headOfficeId,
       )
       setShowAuthoritySelect(false)
     } catch (err) {

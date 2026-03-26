@@ -18,6 +18,7 @@ export interface LoginResponse {
     companyName: string | null
     brandName: string | null
     ownerCode?: string
+    headOfficeId?: number
   }>
   loginId?: string
   name?: string

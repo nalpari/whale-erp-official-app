@@ -1,19 +1,27 @@
-"use client";
-import Image from "next/image";
-import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+'use client'
+import Image from 'next/image'
+import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import { useStoreStore } from '@/store/useStoreStore'
+import { useMounted } from '@/hooks/use-mounted'
 
 export default function StoreSelect() {
-  const setStoreSelectSheet = useBottomSheetControler((state) => state.setStoreSelectSheet);
+  const setStoreSelectSheet = useBottomSheetControler(
+    (state) => state.setStoreSelectSheet,
+  )
+  const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
+  const selectedStore = useStoreStore((state) => state.selectedStore)
+  const mounted = useMounted()
 
-  const handleClick = () => {
-    setStoreSelectSheet(true);
-  };
+  const displayText = !mounted
+    ? '점포를 선택해주세요'
+    : selectedStore
+      ? selectedStore.storeName
+      : selectedHeadOffice
+        ? selectedHeadOffice.companyName
+        : '점포를 선택해주세요'
 
   return (
-    <button
-      className="store-select"
-      onClick={handleClick}
-    >
+    <button className="store-select" onClick={() => setStoreSelectSheet(true)}>
       <div className="select-container">
         <div className="select-icon">
           <Image
@@ -22,10 +30,8 @@ export default function StoreSelect() {
             fill
           />
         </div>
-        <div className="select-text">
-          운영 - (직영점) 힘이나는커피생활 을지로3가점
-        </div>
+        <div className="select-text">{displayText}</div>
       </div>
     </button>
-  );
+  )
 }

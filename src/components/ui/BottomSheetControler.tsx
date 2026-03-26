@@ -13,7 +13,7 @@ import PartStaffPaySheet from '../bottomsheet/PartStaffPaySheet'
 import BonusPaySheet from '../bottomsheet/BonusPaySheet'
 import ContractSearchSheet from '../bottomsheet/ContractSearchSheet'
 import FullTimerSearchSheet from '../bottomsheet/FullTimerSearchSheet'
-import PaymentConditionSheet from '../bottomsheet/PaymentConditionSheet'
+
 import PartTimerSearchSheet from '../bottomsheet/PartTimerSearchSheet'
 import OverTimeSearchSheet from '../bottomsheet/OverTimeSearchSheet'
 import CommuteSearchSheet from '../bottomsheet/CommuteSearchSheet'
@@ -167,7 +167,7 @@ export default function BottomSheetControler() {
       {bonusPaySheet && <BonusPaySheet />}
       {contractSearchSheet && <ContractSearchSheet />}
       {fullTimerSearchSheet && <FullTimerSearchSheet />}
-      {paymentConditionSheet && <PaymentConditionSheet />}
+      {/* PaymentConditionSheet는 FullTimerPayDetail 내부에서 직접 렌더링 */}
       {partTimerSearchSheet && <PartTimerSearchSheet />}
       {overTimeSearchSheet && <OverTimeSearchSheet />}
       {commuteSearchSheet && <CommuteSearchSheet />}
