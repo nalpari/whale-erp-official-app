@@ -141,6 +141,3 @@ export const DEDUCTION_ITEM_CODES = {
   INCOME_TAX: '소득세',
   LOCAL_INCOME_TAX: '지방소득세',
 } as const
-
-export type PaymentItemCode = keyof typeof PAYMENT_ITEM_CODES
-export type DeductionItemCode = keyof typeof DEDUCTION_ITEM_CODES
