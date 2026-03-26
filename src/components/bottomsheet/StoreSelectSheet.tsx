@@ -2,7 +2,8 @@
 import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStoreStore } from '@/store/useStoreStore'
-import { useHeadOffices, useStoreOptions } from '@/hooks/queries/use-store-queries'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { Sheet } from 'react-modal-sheet'
 
 export default function StoreSelectSheet() {
@@ -12,18 +13,9 @@ export default function StoreSelectSheet() {
   const setStoreSelectSheet = useBottomSheetControler(
     (state) => state.setStoreSelectSheet,
   )
-  const {
-    selectedHeadOffice,
-    selectedStore,
-    setSelectedHeadOffice,
-    setSelectedStore,
-    reset: resetStore,
-  } = useStoreStore()
+  const { selectedStore, setSelectedStore, setSelectedHeadOffice } = useStoreStore()
+  const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
 
-  // 로컬 상태 (확정 전)
-  const [localOfficeId, setLocalOfficeId] = useState<number | undefined>(
-    selectedHeadOffice?.id,
-  )
   const [localStoreId, setLocalStoreId] = useState<number | undefined>(
     selectedStore?.id,
   )
@@ -32,40 +24,29 @@ export default function StoreSelectSheet() {
   const [prevOpen, setPrevOpen] = useState(false)
   if (storeSelectSheet && !prevOpen) {
     setPrevOpen(true)
-    setLocalOfficeId(selectedHeadOffice?.id)
     setLocalStoreId(selectedStore?.id)
   }
   if (!storeSelectSheet && prevOpen) {
     setPrevOpen(false)
   }
 
-  // API
-  const { data: headOffices = [] } = useHeadOffices()
-  const { data: storeOptions = [], isLoading: isStoresLoading } =
-    useStoreOptions(localOfficeId)
+  // 로그인 사용자의 본사 ID로 점포 목록 조회
+  const { data: storeOptions = [], isLoading } = useStoreOptions(authHeadOfficeId ?? undefined)
 
   const handleClose = () => {
     setStoreSelectSheet(false)
   }
 
-  const handleOfficeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value ? Number(e.target.value) : undefined
-    setLocalOfficeId(id)
-    setLocalStoreId(undefined) // 본사 변경 시 점포 초기화
-  }
-
   const handleSelect = () => {
-    const office = headOffices.find((o) => o.id === localOfficeId) ?? null
     const store = storeOptions.find((s) => s.id === localStoreId) ?? null
-    setSelectedHeadOffice(office)
     setSelectedStore(store)
+    setSelectedHeadOffice(null)
     handleClose()
   }
 
   const handleReset = () => {
-    setLocalOfficeId(undefined)
     setLocalStoreId(undefined)
-    resetStore()
+    setSelectedStore(null)
     handleClose()
   }
 
@@ -85,69 +66,24 @@ export default function StoreSelectSheet() {
             </div>
             <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
-                {/* Step 1: 본사 선택 */}
-                <div className="sheet-data-filed">
-                  <div className="filed-tit">본사</div>
-                  <div className="block">
-                    <select
-                      className="select-form"
-                      value={localOfficeId ?? ''}
-                      onChange={handleOfficeChange}
-                    >
-                      <option value="">본사를 선택해주세요</option>
-                      {headOffices.map((office) => (
-                        <option key={office.id} value={office.id}>
-                          {office.companyName}
-                          {office.brandName ? ` (${office.brandName})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Step 2: 점포 선택 */}
                 <div className="sheet-data-filed">
                   <div className="filed-tit">점포</div>
-                  {!localOfficeId && (
-                    <div className="block">
-                      <div
-                        style={{
-                          padding: '12px',
-                          color: '#999',
-                          fontSize: '14px',
-                        }}
-                      >
-                        본사를 먼저 선택해주세요.
-                      </div>
+                  {!authHeadOfficeId && (
+                    <div style={{ padding: '12px', color: '#999', fontSize: '14px' }}>
+                      다시 로그인해주세요.
                     </div>
                   )}
-                  {localOfficeId && isStoresLoading && (
-                    <div className="block">
-                      <div
-                        style={{
-                          padding: '12px',
-                          color: '#999',
-                          fontSize: '14px',
-                        }}
-                      >
-                        불러오는 중...
-                      </div>
+                  {authHeadOfficeId && isLoading && (
+                    <div style={{ padding: '12px', color: '#999', fontSize: '14px' }}>
+                      불러오는 중...
                     </div>
                   )}
-                  {localOfficeId && !isStoresLoading && storeOptions.length === 0 && (
-                    <div className="block">
-                      <div
-                        style={{
-                          padding: '12px',
-                          color: '#999',
-                          fontSize: '14px',
-                        }}
-                      >
-                        등록된 점포가 없습니다.
-                      </div>
+                  {authHeadOfficeId && !isLoading && storeOptions.length === 0 && (
+                    <div style={{ padding: '12px', color: '#999', fontSize: '14px' }}>
+                      등록된 점포가 없습니다.
                     </div>
                   )}
-                  {localOfficeId && !isStoresLoading && storeOptions.length > 0 && (
+                  {authHeadOfficeId && !isLoading && storeOptions.length > 0 && (
                     <div className="store-list">
                       {storeOptions.map((store) => (
                         <div
@@ -171,7 +107,7 @@ export default function StoreSelectSheet() {
               <button
                 className="btn-form blue"
                 onClick={handleSelect}
-                disabled={!localOfficeId}
+                disabled={!authHeadOfficeId}
               >
                 선택
               </button>
