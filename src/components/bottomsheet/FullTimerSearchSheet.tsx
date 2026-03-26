@@ -29,6 +29,14 @@ export default function FullTimerSearchSheet() {
   const [startDate, setStartDate] = useState(searchParams.paymentStartDate ?? '')
   const [endDate, setEndDate] = useState(searchParams.paymentEndDate ?? '')
 
+  // 시트 열릴 때 글로벌 스토어와 동기화
+  const handleOpenStart = () => {
+    setWorkStatus((searchParams.workStatus as WorkStatus) || '')
+    setEmployeeName(searchParams.memberName ?? '')
+    setStartDate(searchParams.paymentStartDate ?? '')
+    setEndDate(searchParams.paymentEndDate ?? '')
+  }
+
   const handleClose = () => {
     setFullTimerSearchSheet(false)
   }
@@ -56,6 +64,7 @@ export default function FullTimerSearchSheet() {
     <Sheet
       isOpen={fullTimerSearchSheet}
       onClose={handleClose}
+      onOpenStart={handleOpenStart}
       detent="content"
       disableScrollLocking={true}
     >
