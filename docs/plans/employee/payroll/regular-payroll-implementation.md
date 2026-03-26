@@ -9,7 +9,15 @@
 | Phase 3 | 컴포넌트 API 연동 | ✅ 완료 | `b127165` |
 | Phase 4 | 신규 등록 라우트 + 빌드 체크 | ✅ 완료 | `b127165` |
 | 추가 | 검색 API undefined 파라미터 수정 | ✅ 완료 | `93d5fc6` |
-| 추가 | 점포 선택 기능 추가 | ✅ 완료 | `18093a1` |
+| 추가 | 점포 선택 → 글로벌 헤더로 이동 | ✅ 완료 | `c1e56aa` |
+| 추가 | 2단계 점포 선택 (본사→점포) | ✅ 완료 | `1191691` |
+| 추가 | 검색 파라미터 API DTO 필드명 일치 | ✅ 완료 | `1191691` |
+| 추가 | AuthGuard hydration 불일치 해결 | ✅ 완료 | `1689ef8` |
+| 추가 | FullTimerPayList hydration 해결 | ✅ 완료 | `5f1edb4` |
+| 추가 | 로그인 응답에 headOfficeId 추가 (API) | ✅ 완료 | `865bb8f8` (api) |
+| 추가 | 로그인 시 headOfficeId 저장 (프론트) | ✅ 완료 | `a1bc3bf` |
+| 추가 | 본사 ID auth→storeStore fallback | ✅ 완료 | `1a529cd` |
+| 추가 | 점포 선택 유지 + 초기화 시 시트 유지 | ✅ 완료 | `4a9b5fc` |
 
 ---
 
@@ -18,19 +26,34 @@
 | 구분 | 파일 경로 | 역할 |
 |------|---------|------|
 | 생성 | `src/types/payroll.ts` | 급여명세서 타입, 상수 (지급/공제 항목 코드) |
-| 생성 | `src/types/store.ts` | 점포 타입 (StoreOption, StoreListItem) |
+| 생성 | `src/types/store.ts` | 점포/본사 타입 (StoreOption, HeadOffice) |
 | 생성 | `src/lib/api/payroll.ts` | 급여명세서 API (CRUD, 이메일, cleanParams) |
-| 생성 | `src/lib/api/store.ts` | 점포 API (GET /api/v1/stores/options) |
-| 생성 | `src/hooks/queries/use-payroll-queries.ts` | React Query 훅 7개 |
-| 생성 | `src/hooks/queries/use-store-queries.ts` | 점포 옵션 조회 훅 |
+| 생성 | `src/lib/api/store.ts` | 본사 목록 + 점포 드롭다운 API |
+| 생성 | `src/hooks/queries/use-payroll-queries.ts` | 급여 React Query 훅 7개 |
+| 생성 | `src/hooks/queries/use-store-queries.ts` | 본사 목록 + 점포 옵션 훅 |
+| 생성 | `src/hooks/use-mounted.ts` | hydration 안전 훅 (useSyncExternalStore) |
 | 생성 | `src/store/usePayrollSearchStore.ts` | 검색 상태 Zustand 스토어 |
+| 생성 | `src/store/useStoreStore.ts` | 점포/본사 선택 글로벌 스토어 (persist) |
 | 생성 | `src/app/(sub)/fulltimer/new/page.tsx` | 신규 등록 라우트 |
-| 수정 | `src/app/(sub)/fulltimer/[id]/page.tsx` | 상세 페이지 (key 패턴으로 리팩토링) |
-| 수정 | `src/components/fulltimer/FullTimerPayList.tsx` | 목록 API 연동 |
+| 수정 | `src/app/(sub)/fulltimer/[id]/page.tsx` | 상세 페이지 (key 패턴) |
+| 수정 | `src/components/fulltimer/FullTimerPayList.tsx` | 목록 API 연동 + hydration 대응 |
 | 수정 | `src/components/fulltimer/FullTimerPayDetail.tsx` | 상세/등록/수정 API 연동 |
-| 수정 | `src/components/bottomsheet/FullTimerSearchSheet.tsx` | 검색 + 점포 선택 연동 |
+| 수정 | `src/components/bottomsheet/FullTimerSearchSheet.tsx` | 검색 바텀시트 연동 |
 | 수정 | `src/components/bottomsheet/PaymentConditionSheet.tsx` | 지급/공제 항목 동적 연동 |
+| 수정 | `src/components/bottomsheet/StoreSelectSheet.tsx` | 2단계 본사→점포 선택 |
+| 수정 | `src/components/ui/StoreSelect.tsx` | 선택된 점포명 표시 + hydration 대응 |
 | 수정 | `src/components/ui/BottomSheetControler.tsx` | PaymentConditionSheet 분리 |
+| 수정 | `src/components/auth/AuthGuard.tsx` | hydration 불일치 해결 |
+| 수정 | `src/store/useAuthStore.ts` | headOfficeId 상태 추가 |
+| 수정 | `src/types/auth.ts` | LoginResponse에 headOfficeId 타입 추가 |
+| 수정 | `src/components/login/Login.tsx` | 로그인 시 headOfficeId 저장 |
+
+### whale-erp-api 수정
+
+| 구분 | 파일 경로 | 역할 |
+|------|---------|------|
+| 수정 | `domain/auth/dto/LoginResponse.kt` | CompanyInfo에 headOfficeId 추가 |
+| 수정 | `domain/auth/service/AuthService.kt` | toCompanyInfo에서 본사 ID 결정 로직 |
 
 ---
 
@@ -38,14 +61,15 @@
 
 | 메소드 | 엔드포인트 | 설명 | 연동 상태 |
 |-------|----------|------|----------|
-| GET | `/api/employee/payroll/regular` | 목록 조회 | ✅ 연동 |
+| GET | `/api/employee/payroll/regular` | 목록 조회 (headOfficeId 필수) | ✅ 연동 |
 | GET | `/api/employee/payroll/regular/{id}` | 상세 조회 | ✅ 연동 |
 | POST | `/api/employee/payroll/regular` | 신규 등록 (FormData) | ✅ 연동 |
 | PUT | `/api/employee/payroll/regular/{id}` | 수정 | ✅ 연동 |
 | DELETE | `/api/employee/payroll/regular/{id}` | 삭제 | ✅ 연동 |
 | POST | `/api/employee/payroll/regular/{id}/email` | 이메일 전송 | ✅ 연동 |
 | GET | `/api/employee/payroll/regular/latest/{employeeInfoId}` | 이전 급여 조회 | ✅ 훅 준비 (UI 미연결) |
-| GET | `/api/v1/stores/options` | 점포 드롭다운 조회 | ✅ 연동 |
+| GET | `/api/master/bp/head-offices` | 운영중인 본사 목록 | ✅ 연동 |
+| GET | `/api/v1/stores/options` | 점포 드롭다운 조회 (officeId 기반) | ✅ 연동 |
 
 ---
 
@@ -54,16 +78,29 @@
 ### React 19 + React Compiler 대응
 - `useEffect` 내 `setState` 금지 → **key 패턴** 사용
   - `[id]/page.tsx`에서 `usePayrollDetail()` 조회 후 `<FullTimerPayDetail key={detail?.id} initialData={detail} />`로 전달
-  - 컴포넌트 리마운트 시 `useState(initialData?.xxx)` 로 자연스럽게 초기화
 - `useRef.current` 렌더 중 접근 금지 → `useState`로 이전 상태 추적
 
-### PaymentConditionSheet 분리
-- 기존: `BottomSheetControler`에서 글로벌 렌더링 (props 전달 불가)
-- 변경: `FullTimerPayDetail` 내부에서 직접 렌더링 (paymentItems/deductionItems props 전달)
+### Hydration 불일치 해결 (핵심)
+- **원인**: Zustand `persist`가 localStorage에서 값 복원 → 서버(null) vs 클라이언트(복원값) 불일치
+- **해결**: `useMounted()` 공통 훅 (`useSyncExternalStore` 기반)
+  - 서버에서는 `false`, 클라이언트 마운트 후 `true`
+  - persist 스토어 값은 `mounted` 후에만 렌더링에 사용
+- **AuthGuard 수정**: 서버에서 `return null` → `return children`으로 변경
+  - 서버/클라이언트 HTML 구조 일치 보장
 
-### API 파라미터 정리
-- `cleanParams()` 유틸: undefined/null/빈 문자열 필터링
-- API 서버가 null을 long으로 변환 실패하는 문제 방지
+### 본사/점포 선택 구조
+- **본사 ID 우선순위**: `authStore.headOfficeId` → `storeStore.selectedHeadOffice.id`
+- **StoreSelectSheet**: authHeadOfficeId 있으면 본사 select disabled(readonly)
+- **점포 선택**: 본사 ID 기반으로 `GET /api/v1/stores/options?officeId=` 호출
+- **상태 저장**: `useStoreStore` (persist) — `setSelection(office, store)`으로 한번에 설정
+
+### PaymentConditionSheet 분리
+- `BottomSheetControler`에서 제거, `FullTimerPayDetail` 내부에서 직접 렌더링 (props 전달)
+
+### API 파라미터
+- `cleanParams()`: undefined/null/빈 문자열 필터링
+- 검색 파라미터 API DTO 필드명 일치: `memberName`, `paymentStartDate`, `paymentEndDate`, `franchiseStoreId`
+- `headOfficeId`는 필수 (API에서 Long non-null)
 
 ---
 
@@ -71,8 +108,8 @@
 
 | 항목 | 설명 | 우선순위 |
 |------|------|---------|
-| 소속 선택 (본사/가맹점) | 상세 페이지의 본사/가맹점 라디오 + 조직 조회 API 연동 | 높음 |
-| 직원 선택 | 상세 페이지의 직원 드롭다운 + 직원 목록 API 연동 | 높음 |
+| 소속 선택 (상세 페이지) | 상세 페이지의 본사/가맹점 라디오 + 조직 조회 API 연동 | 높음 |
+| 직원 선택 (상세 페이지) | 상세 페이지의 직원 드롭다운 + 직원 목록 API 연동 | 높음 |
 | 이전 계약정보 불러오기 | `useLatestPayroll` 훅은 준비됨, UI 버튼 연결 필요 | 중간 |
 | 페이지네이션/무한스크롤 | 목록 페이지에 스크롤 기반 페이징 추가 | 중간 |
 | 직원 분류 필터 | 검색 시트에 공통코드 기반 직원 분류 select 추가 | 낮음 |
