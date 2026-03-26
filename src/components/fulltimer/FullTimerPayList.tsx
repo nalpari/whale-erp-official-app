@@ -25,8 +25,8 @@ const formatDate = (date: string) => {
   return date.replace(/-/g, '.')
 }
 
-const formatAmount = (amount: number) => {
-  return amount.toLocaleString('ko-KR')
+const formatAmount = (amount?: number | null) => {
+  return (amount ?? 0).toLocaleString('ko-KR')
 }
 
 export default function FullTimerPayList() {
