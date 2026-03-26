@@ -1,7 +1,13 @@
 'use client'
+import { useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStoreStore } from '@/store/useStoreStore'
+
+// hydration 불일치 방지: 서버/클라이언트 마운트 상태 감지
+const emptySubscribe = () => () => {}
+const useMounted = () =>
+  useSyncExternalStore(emptySubscribe, () => true, () => false)
 
 export default function StoreSelect() {
   const setStoreSelectSheet = useBottomSheetControler(
@@ -9,12 +15,15 @@ export default function StoreSelect() {
   )
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
+  const mounted = useMounted()
 
-  const displayText = selectedStore
-    ? selectedStore.storeName
-    : selectedHeadOffice
-      ? selectedHeadOffice.companyName
-      : '점포를 선택해주세요'
+  const displayText = !mounted
+    ? '점포를 선택해주세요'
+    : selectedStore
+      ? selectedStore.storeName
+      : selectedHeadOffice
+        ? selectedHeadOffice.companyName
+        : '점포를 선택해주세요'
 
   return (
     <button className="store-select" onClick={() => setStoreSelectSheet(true)}>
