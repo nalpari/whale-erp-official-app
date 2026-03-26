@@ -27,6 +27,12 @@ export default function StoreSelectSheet() {
   const [localOfficeId, setLocalOfficeId] = useState<number | undefined>(initialOfficeId)
   const [localStoreId, setLocalStoreId] = useState<number | undefined>(selectedStore?.id)
 
+  // 시트 열릴 때 글로벌 스토어와 동기화
+  const handleOpenStart = () => {
+    setLocalOfficeId(authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined)
+    setLocalStoreId(selectedStore?.id)
+  }
+
   // API
   const { data: headOffices = [] } = useHeadOffices()
   const { data: storeOptions = [], isLoading: isStoresLoading } =
@@ -63,6 +69,7 @@ export default function StoreSelectSheet() {
     <Sheet
       isOpen={storeSelectSheet}
       onClose={handleClose}
+      onOpenStart={handleOpenStart}
       detent="content"
       disableScrollLocking={true}
     >
