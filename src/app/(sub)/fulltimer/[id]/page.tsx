@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePayrollDetail } from '@/hooks/queries/use-payroll-queries'
 import FullTimerPayDetail from '@/components/fulltimer/FullTimerPayDetail'
@@ -10,10 +11,13 @@ export default function FullTimerDetailPage() {
   const id = isNaN(rawId) || rawId <= 0 ? undefined : rawId
   const { data: detail, isLoading } = usePayrollDetail(id)
 
-  if (!id) {
-    router.replace('/fulltimer')
-    return null
-  }
+  useEffect(() => {
+    if (!id) {
+      router.replace('/fulltimer')
+    }
+  }, [id, router])
+
+  if (!id) return null
 
   if (isLoading) {
     return (
