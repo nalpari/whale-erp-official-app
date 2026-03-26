@@ -81,7 +81,7 @@ export default function FullTimerPayList() {
       <div className="sub-content-body">
         <div className="search-bx staff">
           <div className="search-count">
-            검색결과 <span>{hasSearched ? `${totalElements}건` : '0건'}</span>
+            검색결과 <span>{canSearch ? `${totalElements}건` : '0건'}</span>
           </div>
           <button
             className="search-btn act"
@@ -92,10 +92,10 @@ export default function FullTimerPayList() {
           </button>
         </div>
 
-        {isLoading && canSearch && (
+        {!mounted && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-              불러오는 중...
+              검색 조건을 설정해주세요.
             </div>
           </div>
         )}
@@ -108,10 +108,18 @@ export default function FullTimerPayList() {
           </div>
         )}
 
-        {(!mounted || (selectedHeadOffice && !hasSearched)) && (
+        {mounted && selectedHeadOffice && !hasSearched && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
               검색 조건을 설정해주세요.
+            </div>
+          </div>
+        )}
+
+        {canSearch && isLoading && (
+          <div className="staff-list-wrap">
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+              불러오는 중...
             </div>
           </div>
         )}
