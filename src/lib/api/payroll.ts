@@ -59,9 +59,7 @@ export const createPayrollStatement = async (data: PayrollStatementCreateRequest
 
   if (file) formData.append('attachmentFile', file)
 
-  const response = await api.post<{ data: PayrollStatementDetail }>(BASE_URL, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
+  const response = await api.post<{ data: PayrollStatementDetail }>(BASE_URL, formData)
   return response.data.data
 }
 
