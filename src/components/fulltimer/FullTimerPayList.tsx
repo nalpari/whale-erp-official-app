@@ -5,6 +5,7 @@ import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePayrollSearchStore } from '@/store/usePayrollSearchStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { usePayrollList, useSendPayrollEmail } from '@/hooks/queries/use-payroll-queries'
+import { useMounted } from '@/hooks/use-mounted'
 import { getErrorMessage } from '@/lib/api'
 import type { PayrollStatementListItem } from '@/types/payroll'
 
@@ -36,14 +37,16 @@ export default function FullTimerPayList() {
   const { searchParams, hasSearched } = usePayrollSearchStore()
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
+  const mounted = useMounted()
 
   // 글로벌 본사/점포 선택을 검색 파라미터에 반영
+  const headOfficeId = mounted ? (selectedHeadOffice?.id ?? 0) : 0
   const params = {
     ...searchParams,
-    headOfficeId: selectedHeadOffice?.id ?? 0,
-    storeId: selectedStore?.id,
+    headOfficeId,
+    storeId: mounted ? selectedStore?.id : undefined,
   }
-  const canSearch = hasSearched && !!selectedHeadOffice
+  const canSearch = mounted && hasSearched && !!selectedHeadOffice
   const { data, isLoading } = usePayrollList(params, canSearch)
   const sendEmailMutation = useSendPayrollEmail()
 
@@ -89,7 +92,7 @@ export default function FullTimerPayList() {
           </button>
         </div>
 
-        {isLoading && hasSearched && (
+        {isLoading && canSearch && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
               불러오는 중...
@@ -97,7 +100,7 @@ export default function FullTimerPayList() {
           </div>
         )}
 
-        {!selectedHeadOffice && (
+        {mounted && !selectedHeadOffice && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
               상단에서 본사를 먼저 선택해주세요.
@@ -105,7 +108,7 @@ export default function FullTimerPayList() {
           </div>
         )}
 
-        {selectedHeadOffice && !hasSearched && (
+        {(!mounted || (selectedHeadOffice && !hasSearched)) && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
               검색 조건을 설정해주세요.
@@ -113,7 +116,7 @@ export default function FullTimerPayList() {
           </div>
         )}
 
-        {hasSearched && !isLoading && payrollList.length === 0 && (
+        {canSearch && !isLoading && payrollList.length === 0 && (
           <div className="staff-list-wrap">
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
               검색 결과가 없습니다.
@@ -121,7 +124,7 @@ export default function FullTimerPayList() {
           </div>
         )}
 
-        {hasSearched && payrollList.length > 0 && (
+        {canSearch && payrollList.length > 0 && (
           <div className="staff-list-wrap">
             {payrollList.map((item, index) => (
               <div className="staff-list-item" key={item.id}>

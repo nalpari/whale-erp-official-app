@@ -1,13 +1,8 @@
 'use client'
-import { useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStoreStore } from '@/store/useStoreStore'
-
-// hydration 불일치 방지: 서버/클라이언트 마운트 상태 감지
-const emptySubscribe = () => () => {}
-const useMounted = () =>
-  useSyncExternalStore(emptySubscribe, () => true, () => false)
+import { useMounted } from '@/hooks/use-mounted'
 
 export default function StoreSelect() {
   const setStoreSelectSheet = useBottomSheetControler(
