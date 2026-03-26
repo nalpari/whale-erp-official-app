@@ -48,8 +48,8 @@ export default function StoreSelectSheet() {
     setStoreSelectSheet(false)
   }
 
-  const handleOfficeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value ? Number(e.target.value) : undefined
+  const handleOfficeSelect = (id: number) => {
+    if (localOfficeId === id) return
     setLocalOfficeId(id)
     setLocalStoreId(undefined) // 본사 변경 시 점포 초기화
   }
@@ -88,20 +88,29 @@ export default function StoreSelectSheet() {
                 {/* Step 1: 본사 선택 */}
                 <div className="sheet-data-filed">
                   <div className="filed-tit">본사</div>
-                  <div className="block">
-                    <select
-                      className="select-form"
-                      value={localOfficeId ?? ''}
-                      onChange={handleOfficeChange}
-                    >
-                      <option value="">본사를 선택해주세요</option>
-                      {headOffices.map((office) => (
-                        <option key={office.id} value={office.id}>
+                  <div className="store-list">
+                    {headOffices.map((office) => (
+                      <div
+                        className={`store-item${localOfficeId === office.id ? ' act' : ''}`}
+                        key={office.id}
+                      >
+                        <button onClick={() => handleOfficeSelect(office.id)}>
                           {office.companyName}
                           {office.brandName ? ` (${office.brandName})` : ''}
-                        </option>
-                      ))}
-                    </select>
+                        </button>
+                      </div>
+                    ))}
+                    {headOffices.length === 0 && (
+                      <div
+                        style={{
+                          padding: '12px',
+                          color: '#999',
+                          fontSize: '14px',
+                        }}
+                      >
+                        본사가 없습니다.
+                      </div>
+                    )}
                   </div>
                 </div>
 
