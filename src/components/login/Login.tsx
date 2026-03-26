@@ -85,7 +85,8 @@ export default function Login() {
       const data = await loginMutation.mutateAsync({ loginId: loginId.trim(), password })
 
       if (data.authority) {
-        const headOfficeId = data.companies?.[0]?.headOfficeId
+        const matchedCompany = data.companies?.find((c) => c.authorityId === data.authority!.authorityId)
+        const headOfficeId = matchedCompany?.headOfficeId ?? data.companies?.[0]?.headOfficeId
         completeLogin(data, data.authority.authorityId, data.authority, data.authority.ownerCode, headOfficeId)
         return
       }
