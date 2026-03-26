@@ -7,6 +7,9 @@ export interface PaginatedResponse<T> {
   size: number
 }
 
+// 근무 상태 코드
+export type WorkStatus = 'EMPWK_001' | 'EMPWK_002' | 'EMPWK_003'
+
 // 급여명세서 목록 항목
 export interface PayrollStatementListItem {
   id: number
@@ -14,7 +17,7 @@ export interface PayrollStatementListItem {
   employeeName: string
   employeeNumber: string
   employeeClassification: string
-  workStatus: string
+  workStatus: WorkStatus
   payrollYearMonth: string
   paymentDate: string
   totalPaymentAmount: number
@@ -86,7 +89,7 @@ export interface PayrollSearchParams {
   headOfficeId?: number             // API 필수지만 프론트에서는 미선택 상태(undefined) 허용
   franchiseStoreId?: number         // 가맹점 코드
   storeId?: number                  // 점포 코드
-  workStatus?: string               // EMPWK_001: 근무, EMPWK_002: 휴직, EMPWK_003: 퇴사
+  workStatus?: WorkStatus
   memberName?: string               // 회원명
   employeeClassification?: string   // 직원 분류 코드
   payrollYearMonth?: string         // YYYYMM

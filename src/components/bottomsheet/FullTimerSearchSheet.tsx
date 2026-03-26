@@ -3,8 +3,9 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePayrollSearchStore } from '@/store/usePayrollSearchStore'
 import { Sheet } from 'react-modal-sheet'
+import type { WorkStatus } from '@/types/payroll'
 
-type WorkStatus = '' | 'EMPWK_001' | 'EMPWK_002' | 'EMPWK_003'
+type LocalWorkStatus = WorkStatus | ''
 
 const WORK_STATUS_OPTIONS: { value: WorkStatus; label: string }[] = [
   { value: 'EMPWK_001', label: '근무' },
@@ -22,8 +23,8 @@ export default function FullTimerSearchSheet() {
   const { searchParams, setSearchParams, search, reset } = usePayrollSearchStore()
 
   // 로컬 폼 상태 — store의 현재 검색 조건으로 초기화 (조건부 마운트)
-  const [workStatus, setWorkStatus] = useState<WorkStatus>(
-    (searchParams.workStatus as WorkStatus) || '',
+  const [workStatus, setWorkStatus] = useState<LocalWorkStatus>(
+    searchParams.workStatus ?? '',
   )
   const [employeeName, setEmployeeName] = useState(searchParams.memberName ?? '')
   const [startDate, setStartDate] = useState(searchParams.paymentStartDate ?? '')
@@ -31,7 +32,7 @@ export default function FullTimerSearchSheet() {
 
   // 시트 열릴 때 글로벌 스토어와 동기화
   const handleOpenStart = () => {
-    setWorkStatus((searchParams.workStatus as WorkStatus) || '')
+    setWorkStatus(searchParams.workStatus ?? '')
     setEmployeeName(searchParams.memberName ?? '')
     setStartDate(searchParams.paymentStartDate ?? '')
     setEndDate(searchParams.paymentEndDate ?? '')
