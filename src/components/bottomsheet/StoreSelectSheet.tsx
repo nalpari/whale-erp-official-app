@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useStoreOptions } from '@/hooks/queries/use-store-queries'
+import { useHeadOffices, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { Sheet } from 'react-modal-sheet'
 
 export default function StoreSelectSheet() {
@@ -13,9 +13,19 @@ export default function StoreSelectSheet() {
   const setStoreSelectSheet = useBottomSheetControler(
     (state) => state.setStoreSelectSheet,
   )
-  const { selectedStore, setSelectedStore, setSelectedHeadOffice } = useStoreStore()
+  const {
+    selectedStore,
+    setSelectedStore,
+    setSelectedHeadOffice,
+    reset: resetStore,
+  } = useStoreStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
+  const hasAuthOffice = !!authHeadOfficeId
 
+  // 본사 선택 상태: authHeadOfficeId가 있으면 고정, 없으면 사용자 선택
+  const [localOfficeId, setLocalOfficeId] = useState<number | undefined>(
+    authHeadOfficeId ?? undefined,
+  )
   const [localStoreId, setLocalStoreId] = useState<number | undefined>(
     selectedStore?.id,
   )
@@ -24,29 +34,45 @@ export default function StoreSelectSheet() {
   const [prevOpen, setPrevOpen] = useState(false)
   if (storeSelectSheet && !prevOpen) {
     setPrevOpen(true)
+    setLocalOfficeId(authHeadOfficeId ?? undefined)
     setLocalStoreId(selectedStore?.id)
   }
   if (!storeSelectSheet && prevOpen) {
     setPrevOpen(false)
   }
 
-  // 로그인 사용자의 본사 ID로 점포 목록 조회
-  const { data: storeOptions = [], isLoading } = useStoreOptions(authHeadOfficeId ?? undefined)
+  // API
+  const { data: headOffices = [] } = useHeadOffices()
+  const { data: storeOptions = [], isLoading: isStoresLoading } =
+    useStoreOptions(localOfficeId)
+
+  // 본사 이름 찾기
+  const selectedOfficeName = headOffices.find((o) => o.id === localOfficeId)
 
   const handleClose = () => {
     setStoreSelectSheet(false)
   }
 
+  const handleOfficeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value ? Number(e.target.value) : undefined
+    setLocalOfficeId(id)
+    setLocalStoreId(undefined)
+  }
+
   const handleSelect = () => {
+    const office = headOffices.find((o) => o.id === localOfficeId) ?? null
     const store = storeOptions.find((s) => s.id === localStoreId) ?? null
+    setSelectedHeadOffice(office)
     setSelectedStore(store)
-    setSelectedHeadOffice(null)
     handleClose()
   }
 
   const handleReset = () => {
+    if (!hasAuthOffice) {
+      setLocalOfficeId(undefined)
+    }
     setLocalStoreId(undefined)
-    setSelectedStore(null)
+    resetStore()
     handleClose()
   }
 
@@ -66,24 +92,59 @@ export default function StoreSelectSheet() {
             </div>
             <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
+                {/* 본사 선택 */}
+                <div className="sheet-data-filed">
+                  <div className="filed-tit">본사</div>
+                  <div className="block">
+                    {hasAuthOffice ? (
+                      <select
+                        className="select-form"
+                        value={localOfficeId ?? ''}
+                        disabled
+                      >
+                        <option value={authHeadOfficeId}>
+                          {selectedOfficeName
+                            ? `${selectedOfficeName.companyName}${selectedOfficeName.brandName ? ` (${selectedOfficeName.brandName})` : ''}`
+                            : `본사 (ID: ${authHeadOfficeId})`}
+                        </option>
+                      </select>
+                    ) : (
+                      <select
+                        className="select-form"
+                        value={localOfficeId ?? ''}
+                        onChange={handleOfficeChange}
+                      >
+                        <option value="">본사를 선택해주세요</option>
+                        {headOffices.map((office) => (
+                          <option key={office.id} value={office.id}>
+                            {office.companyName}
+                            {office.brandName ? ` (${office.brandName})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                {/* 점포 선택 */}
                 <div className="sheet-data-filed">
                   <div className="filed-tit">점포</div>
-                  {!authHeadOfficeId && (
+                  {!localOfficeId && (
                     <div style={{ padding: '12px', color: '#999', fontSize: '14px' }}>
-                      다시 로그인해주세요.
+                      본사를 먼저 선택해주세요.
                     </div>
                   )}
-                  {authHeadOfficeId && isLoading && (
+                  {localOfficeId && isStoresLoading && (
                     <div style={{ padding: '12px', color: '#999', fontSize: '14px' }}>
                       불러오는 중...
                     </div>
                   )}
-                  {authHeadOfficeId && !isLoading && storeOptions.length === 0 && (
+                  {localOfficeId && !isStoresLoading && storeOptions.length === 0 && (
                     <div style={{ padding: '12px', color: '#999', fontSize: '14px' }}>
                       등록된 점포가 없습니다.
                     </div>
                   )}
-                  {authHeadOfficeId && !isLoading && storeOptions.length > 0 && (
+                  {localOfficeId && !isStoresLoading && storeOptions.length > 0 && (
                     <div className="store-list">
                       {storeOptions.map((store) => (
                         <div
@@ -107,7 +168,7 @@ export default function StoreSelectSheet() {
               <button
                 className="btn-form blue"
                 onClick={handleSelect}
-                disabled={!authHeadOfficeId}
+                disabled={!localOfficeId}
               >
                 선택
               </button>
