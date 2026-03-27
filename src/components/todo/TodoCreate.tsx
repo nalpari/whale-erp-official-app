@@ -93,8 +93,8 @@ export default function TodoCreate() {
 
   return (
     <div className="container sub">
-      <div className="todo-contents">
-        <div className="todo-create-form">
+      <div className="sub-content-body">
+        <div className="sub-item-bx todo-create-form">
           {/* 직원 선택 */}
           <div className="data-filed">
             <div className="filed-tit">
