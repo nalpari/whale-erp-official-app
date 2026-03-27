@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { WhaleCalendar } from "whale-calendar";
 import "whale-calendar/styles.css";
-import type { CalendarDayData } from "./types";
+import type { CalendarDayData } from "@/types/todo";
 
 interface TodoCalendarProps {
   selectedDate: Date;

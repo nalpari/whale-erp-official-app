@@ -54,6 +54,7 @@ export default function TodoCreate() {
   }, [employeeInfoId, content, startDate, hasPeriod, endDate]);
 
   const handleSubmit = useCallback(async () => {
+    if (createMutation.isPending) return;
     if (!validate()) return;
     setSubmitError("");
 

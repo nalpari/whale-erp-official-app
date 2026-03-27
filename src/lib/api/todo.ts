@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { TodoCreateRequest, EmployeeOption } from '@/components/todo/types'
+import type { TodoCreateRequest, EmployeeOption } from '@/types/todo'
 
 const BASE_URL = '/api/v1/employee-todos'
 

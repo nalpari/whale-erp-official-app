@@ -7,8 +7,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useDeleteTodos } from "@/hooks/queries/use-todo-queries";
-import TodoCalendar from "./TodoCalendar";
-import type { CalendarDayData, OrgGroup, EmployeeGroup, TodoItem } from "./types";
+import TodoCalendar from "@/components/todo/TodoCalendar";
+import type { CalendarDayData, OrgGroup, EmployeeGroup, TodoItem } from "@/types/todo";
 import "./css/todo.scss";
 
 const DAY_NAMES = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
@@ -18,8 +18,14 @@ const API_BASE = "/api/v1/employee-todos";
 
 function parseInitialDate(dateParam: string | null): Date {
   if (dateParam) {
+    // YYYY-MM-DD 형식은 로컬 타임존으로 파싱 (UTC 파싱 시 날짜 밀림 방지)
+    const matched = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateParam);
+    if (matched) {
+      const [, year, month, day] = matched;
+      return new Date(Number(year), Number(month) - 1, Number(day));
+    }
     const parsed = new Date(dateParam);
-    if (!isNaN(parsed.getTime())) return parsed;
+    if (!Number.isNaN(parsed.getTime())) return parsed;
   }
   return new Date();
 }
@@ -50,6 +56,7 @@ export default function TodoContents() {
   const deleteTodosMutation = useDeleteTodos();
 
   const loadedMonthRef = useRef<string>("");
+  const requestKeyRef = useRef<string>("");
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const today = useMemo(() => new Date(), []);
@@ -89,19 +96,36 @@ export default function TodoContents() {
     [selectedDate, headOfficeId, storeId]
   );
 
-  // 데이터 리페치 함수
-  const refetchCurrentMonth = useCallback(() => {
+  // 데이터 리페치 함수 (이벤트 핸들러용)
+  const refetchCurrentMonth = useCallback(async (expectedKey: string) => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth() + 1;
-    fetchMonthlyData(year, month).then(setTodoData);
+    requestKeyRef.current = expectedKey;
+    setTodoData([]);
+    const nextData = await fetchMonthlyData(year, month);
+    if (requestKeyRef.current !== expectedKey) return;
+    setTodoData(nextData);
+    loadedMonthRef.current = expectedKey;
   }, [selectedDate, fetchMonthlyData]);
 
+  // 월/점포 변경 시 데이터 로드 (effect → 외부 시스템 동기화)
   useEffect(() => {
     if (cacheKey === loadedMonthRef.current) return;
+    let cancelled = false;
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth() + 1;
+    requestKeyRef.current = cacheKey;
 
-    loadedMonthRef.current = cacheKey;
-    refetchCurrentMonth();
-  }, [cacheKey, refetchCurrentMonth]);
+    fetchMonthlyData(year, month).then((nextData) => {
+      if (cancelled || requestKeyRef.current !== cacheKey) return;
+      setTodoData(nextData);
+      loadedMonthRef.current = cacheKey;
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey, selectedDate, fetchMonthlyData]);
 
   // 날짜 변경
   const changeDate = useCallback(
@@ -138,14 +162,14 @@ export default function TodoContents() {
         onConfirm: async () => {
           try {
             await deleteTodosMutation.mutateAsync([todoId]);
-            refetchCurrentMonth();
+            void refetchCurrentMonth(cacheKey);
           } catch {
             openAlert({ message: "삭제에 실패했습니다." });
           }
         },
       });
     },
-    [openAlert, deleteTodosMutation, refetchCurrentMonth]
+    [openAlert, deleteTodosMutation, refetchCurrentMonth, cacheKey]
   );
 
   // 스와이프 핸들러
