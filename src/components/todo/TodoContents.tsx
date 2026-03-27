@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
+import { usePopupControler } from "@/store/usePopupControler";
 import { useDeleteTodos } from "@/hooks/queries/use-todo-queries";
 import TodoCalendar from "./TodoCalendar";
 import type { CalendarDayData, OrgGroup, EmployeeGroup, TodoItem } from "./types";
@@ -45,6 +46,7 @@ export default function TodoContents() {
   const headOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? null;
   const storeId = selectedStore?.id ?? null;
 
+  const openAlert = usePopupControler((state) => state.openAlert);
   const deleteTodosMutation = useDeleteTodos();
 
   const loadedMonthRef = useRef<string>("");
@@ -128,17 +130,22 @@ export default function TodoContents() {
 
   // 할 일 삭제
   const handleDeleteTodo = useCallback(
-    async (todoId: number) => {
-      if (!window.confirm("해당 할 일을 삭제하시겠습니까?")) return;
-
-      try {
-        await deleteTodosMutation.mutateAsync([todoId]);
-        refetchCurrentMonth();
-      } catch {
-        alert("삭제에 실패했습니다.");
-      }
+    (todoId: number) => {
+      openAlert({
+        message: "해당 할 일을 삭제하시겠습니까?",
+        confirmText: "삭제",
+        cancelText: "취소",
+        onConfirm: async () => {
+          try {
+            await deleteTodosMutation.mutateAsync([todoId]);
+            refetchCurrentMonth();
+          } catch {
+            openAlert({ message: "삭제에 실패했습니다." });
+          }
+        },
+      });
     },
-    [deleteTodosMutation, refetchCurrentMonth]
+    [openAlert, deleteTodosMutation, refetchCurrentMonth]
   );
 
   // 스와이프 핸들러
@@ -162,14 +169,6 @@ export default function TodoContents() {
       touchStartRef.current = null;
     },
     [moveDay]
-  );
-
-  // 캘린더 탐색용 월 데이터 로드
-  const handleMonthDataNeeded = useCallback(
-    async (year: number, month: number): Promise<CalendarDayData[]> => {
-      return fetchMonthlyData(year, month);
-    },
-    [fetchMonthlyData]
   );
 
   return (
@@ -198,7 +197,7 @@ export default function TodoContents() {
               selectedDate={selectedDate}
               todoData={todoData}
               onDayClick={changeDate}
-              onMonthDataNeeded={handleMonthDataNeeded}
+              onMonthDataNeeded={fetchMonthlyData}
             />
 
             {/* 일자 바 */}

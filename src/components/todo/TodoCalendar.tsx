@@ -7,7 +7,6 @@ import type { CalendarDayData } from "./types";
 
 interface TodoCalendarProps {
   selectedDate: Date;
-  /** 현재 선택된 날짜의 월 데이터 (TODO 목록용) */
   todoData: CalendarDayData[];
   onDayClick: (date: Date) => void;
   onMonthDataNeeded: (year: number, month: number) => Promise<CalendarDayData[]>;
@@ -20,30 +19,30 @@ export default function TodoCalendar({
   onMonthDataNeeded,
 }: TodoCalendarProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  // browseTarget: 사용자가 < > 버튼으로 탐색 중인 월. null이면 selectedDate의 월을 따름.
   const [browseTarget, setBrowseTarget] = useState<{ year: number; month: number } | null>(null);
   const [browseData, setBrowseData] = useState<CalendarDayData[] | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // 선택된 날짜의 년/월
   const selectedYear = selectedDate.getFullYear();
   const selectedMonth = selectedDate.getMonth() + 1;
 
-  // 현재 보고 있는 년/월: 탐색 중이면 browseTarget, 아니면 selectedDate 기준
-  const viewYear = browseTarget?.year ?? selectedYear;
-  const viewMonth = browseTarget?.month ?? selectedMonth;
+  // selectedDate가 변경되면 browseTarget 해제 (하단 스와이프로 월이 바뀌면 달력도 따라감)
+  // browseTarget이 현재 선택된 월과 같으면 자동 해제하여 불필요한 상태 유지 방지
+  const effectiveBrowseTarget =
+    browseTarget &&
+    (browseTarget.year !== selectedYear || browseTarget.month !== selectedMonth)
+      ? browseTarget
+      : null;
 
-  // 현재 보고 있는 월이 선택된 월과 같은지
+  const viewYear = effectiveBrowseTarget?.year ?? selectedYear;
+  const viewMonth = effectiveBrowseTarget?.month ?? selectedMonth;
+
   const isSameMonth = viewYear === selectedYear && viewMonth === selectedMonth;
-
-  // 캘린더에 표시할 데이터 결정
   const displayData = isSameMonth ? todoData : browseData;
-
-  // CalendarDayData[] → whale-calendar CalendarData 변환
   const calendarData = buildCalendarData(displayData, viewYear, viewMonth);
 
-  // 타이틀 DOM 교체: "M월 스케줄" → "yyyy년 MM월"
+  // 타이틀 DOM 교체
   useEffect(() => {
     if (!calendarRef.current) return;
     const titleEl = calendarRef.current.querySelector(
@@ -65,7 +64,17 @@ export default function TodoCalendar({
     }
   }, [isCalendarOpen]);
 
-  // 월 변경 핸들러 (< > 버튼) → 해당 월 1일 선택
+  // 캘린더 탐색 (스와이프용) - 하단 목록 유지
+  const browseMonth = useCallback(
+    async (year: number, month: number) => {
+      setBrowseTarget({ year, month });
+      const data = await onMonthDataNeeded(year, month);
+      setBrowseData(data);
+    },
+    [onMonthDataNeeded]
+  );
+
+  // < > 버튼 → 해당 월 1일 선택 (하단 목록도 이동)
   const handleMonthChange = useCallback(
     (year: number, month: number) => {
       const firstDay = new Date(year, month - 1, 1);
@@ -80,14 +89,13 @@ export default function TodoCalendar({
   const handleDayClick = useCallback(
     (date: Date) => {
       onDayClick(date);
-      // 선택된 날짜가 바뀌면 탐색 상태 해제 (selectedDate 기준으로 복귀)
       setBrowseTarget(null);
       setBrowseData(null);
     },
     [onDayClick]
   );
 
-  // 스케줄 뱃지 클릭 (stopPropagation 대응)
+  // 스케줄 뱃지 클릭
   const handleScheduleClick = useCallback(
     (date: Date) => {
       handleDayClick(date);
@@ -95,7 +103,7 @@ export default function TodoCalendar({
     [handleDayClick]
   );
 
-  // 캘린더 영역 스와이프 → 월 이동 (열려있을 때만, 상위 전파 차단)
+  // 캘린더 영역 스와이프 → 월 탐색 (열려있을 때만, 하단 목록 유지)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!isCalendarOpen) return;
     e.stopPropagation();
@@ -117,10 +125,10 @@ export default function TodoCalendar({
         let nextYear = viewYear;
         if (nextMonth < 1) { nextMonth = 12; nextYear--; }
         if (nextMonth > 12) { nextMonth = 1; nextYear++; }
-        handleMonthChange(nextYear, nextMonth);
+        browseMonth(nextYear, nextMonth);
       }
     },
-    [isCalendarOpen, viewYear, viewMonth, handleMonthChange]
+    [isCalendarOpen, viewYear, viewMonth, browseMonth]
   );
 
   return (

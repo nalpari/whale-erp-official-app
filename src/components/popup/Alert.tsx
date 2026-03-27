@@ -2,10 +2,22 @@
 import { usePopupControler } from "@/store/usePopupControler";
 
 export default function Alert() {
-  const setAlertPopup = usePopupControler((state) => state.setAlertPopup);
+  const alertOptions = usePopupControler((state) => state.alertOptions);
+  const closeAlert = usePopupControler((state) => state.closeAlert);
 
-  const handleClose = () => {
-    setAlertPopup(false);
+  const message = alertOptions?.message ?? "";
+  const confirmText = alertOptions?.confirmText ?? "확인";
+  const cancelText = alertOptions?.cancelText;
+  const isConfirm = !!cancelText;
+
+  const handleConfirm = () => {
+    alertOptions?.onConfirm?.();
+    closeAlert();
+  };
+
+  const handleCancel = () => {
+    alertOptions?.onCancel?.();
+    closeAlert();
   };
 
   return (
@@ -15,21 +27,22 @@ export default function Alert() {
           <div className="modal-body">
             <div className="alert-frame">
               <div className="alert-info">
-                <span>바로가기는 최대 4개까지 선택 가능합니다.</span>
+                <span>{message}</span>
               </div>
               <div className="alert-btn flex g8">
-                {/* alert 팝업시 취소 버튼 숨김 confirm 팝업시 취소 버튼 노출 */}
-                {/* <button
-                  className="btn-form outline min block"
-                  onClick={handleClose}
-                >
-                  취소
-                </button> */}
+                {isConfirm && (
+                  <button
+                    className="btn-form outline min block"
+                    onClick={handleCancel}
+                  >
+                    {cancelText}
+                  </button>
+                )}
                 <button
                   className="btn-form black min block"
-                  onClick={handleClose}
+                  onClick={handleConfirm}
                 >
-                  선택
+                  {confirmText}
                 </button>
               </div>
             </div>
