@@ -20,6 +20,9 @@ type PopupControlerState = {
   openAlert: (options: AlertOptions) => void;
   photoPopup: boolean;
   setPhotoPopup: (isOpen: boolean) => void;
+  photoPopupImages: string[];
+  photoPopupIndex: number;
+  openPhotoPopup: (images: string[], index: number) => void;
   addressSearchPopup: boolean;
   setAddressSearchPopup: (isOpen: boolean) => void;
 };
@@ -52,6 +55,14 @@ export const usePopupControler = create<PopupControlerState>()(
       photoPopup: false,
       setPhotoPopup: (isOpen: boolean) =>
         set({ photoPopup: isOpen }, false, "popup/setPhoto"),
+      photoPopupImages: [],
+      photoPopupIndex: 0,
+      openPhotoPopup: (images: string[], index: number) =>
+        set(
+          { photoPopup: true, photoPopupImages: images, photoPopupIndex: index },
+          false,
+          "popup/openPhotoPopup"
+        ),
       addressSearchPopup: false,
       setAddressSearchPopup: (isOpen: boolean) =>
         set({ addressSearchPopup: isOpen }, false, "popup/setAddressSearch"),
