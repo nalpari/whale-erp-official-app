@@ -40,7 +40,7 @@ function getFileNameAndExt(fileName: string): { name: string; ext: string } {
 }
 
 function renderOperatingHour(hour: OperatingHour) {
-  if (!hour.isOperating) return <span>휴무</span>;
+  if (!hour.isOperating) return null;
   return (
     <div>
       {hour.weekDayTypes && hour.weekDayTypes.length > 0 && (
@@ -120,21 +120,16 @@ export default function StoreInfoDetail({ id }: { id: number }) {
   const storeImages = files.filter((f) => f.uploadFileCategory === "STORE_IMAGE");
   const imageUrls = storeImages.map((f) => f.filePath ?? "");
 
-  // 정기휴일 계산: 전체 요일 중 영업시간에 포함되지 않는 요일
-  const ALL_WEEKDAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const;
-  const operatingDays = new Set<string>();
-  for (const hour of operating) {
-    if (hour.isOperating) {
-      if (hour.dayType === "WEEKDAY" && hour.weekDayTypes) {
-        for (const d of hour.weekDayTypes) operatingDays.add(d);
-      } else if (hour.dayType === "SATURDAY" ) {
-        operatingDays.add("SATURDAY");
-      } else if (hour.dayType === "SUNDAY") {
-        operatingDays.add("SUNDAY");
-      }
-    }
-  }
-  const closedDays = ALL_WEEKDAYS.filter((d) => !operatingDays.has(d));
+  // 정기휴일 계산: 평일 중 미포함 요일 + 토/일 미운영
+  const ALL_WEEKDAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"] as const;
+  const weekdayHour = operating.find((h) => h.dayType === "WEEKDAY");
+  const saturdayHour = operating.find((h) => h.dayType === "SATURDAY");
+  const sundayHour = operating.find((h) => h.dayType === "SUNDAY");
+
+  const operatingWeekdays = new Set(weekdayHour?.isOperating ? (weekdayHour.weekDayTypes ?? []) : []);
+  const closedDays: string[] = ALL_WEEKDAYS.filter((d) => !operatingWeekdays.has(d));
+  if (!saturdayHour?.isOperating) closedDays.push("SATURDAY");
+  if (!sundayHour?.isOperating) closedDays.push("SUNDAY");
 
   return (
     <div className="container sub">
@@ -295,12 +290,16 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                   <col />
                 </colgroup>
                 <tbody>
-                  {operating.map((hour) => (
-                    <tr key={hour.dayType}>
-                      <th>{DAY_TYPE_LABEL[hour.dayType] ?? hour.dayType}</th>
-                      <td>{renderOperatingHour(hour)}</td>
-                    </tr>
-                  ))}
+                  {operating.map((hour) => {
+                    const content = renderOperatingHour(hour);
+                    if (!content) return null;
+                    return (
+                      <tr key={hour.dayType}>
+                        <th>{DAY_TYPE_LABEL[hour.dayType] ?? hour.dayType}</th>
+                        <td>{content}</td>
+                      </tr>
+                    );
+                  })}
                   <tr>
                     <th>정기휴일</th>
                     <td>
