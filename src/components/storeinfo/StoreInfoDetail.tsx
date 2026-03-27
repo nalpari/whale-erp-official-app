@@ -12,12 +12,6 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   STOPR_002: { label: "미운영", className: "badge red" },
 };
 
-const DAY_TYPE_LABEL: Record<string, string> = {
-  WEEKDAY: "평일",
-  SATURDAY: "토요일",
-  SUNDAY: "일요일",
-};
-
 const WEEKDAY_LABEL: Record<string, string> = {
   MONDAY: "월",
   TUESDAY: "화",
@@ -27,6 +21,9 @@ const WEEKDAY_LABEL: Record<string, string> = {
   SATURDAY: "토",
   SUNDAY: "일",
 };
+
+const WEEKDAY_ORDER = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"] as const;
+const ALL_DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const;
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "";
@@ -39,21 +36,41 @@ function getFileNameAndExt(fileName: string): { name: string; ext: string } {
   return { name: fileName.slice(0, lastDot), ext: fileName.slice(lastDot) };
 }
 
-function renderOperatingHour(hour: OperatingHour) {
-  if (!hour.isOperating) return null;
-  return (
-    <div>
-      {hour.weekDayTypes && hour.weekDayTypes.length > 0 && (
-        <div>{hour.weekDayTypes.map((d) => WEEKDAY_LABEL[d] ?? d).join(", ")}</div>
-      )}
-      {hour.openTime && hour.closeTime && (
-        <div>{hour.openTime} ~ {hour.closeTime}</div>
-      )}
-      {hour.breakStartTime && hour.breakEndTime && (
-        <div>{hour.breakStartTime} ~ {hour.breakEndTime} 브레이크타임</div>
-      )}
-    </div>
-  );
+/** 개별 요일 엔트리들을 평일/토요일/일요일 + 정기휴일로 그룹핑 */
+function groupOperatingHours(operating: OperatingHour[]) {
+  const byDay = new Map<string, OperatingHour>();
+  for (const h of operating) {
+    byDay.set(h.dayType, h);
+  }
+
+  // 평일 운영 요일 수집
+  const weekdayOperating: string[] = [];
+  let weekdayTime: { open: string; close: string } | null = null;
+  let weekdayBreak: { start: string; end: string } | null = null;
+
+  for (const day of WEEKDAY_ORDER) {
+    const h = byDay.get(day);
+    if (h?.isOperating) {
+      weekdayOperating.push(day);
+      if (!weekdayTime && h.openTime && h.closeTime) {
+        weekdayTime = { open: h.openTime, close: h.closeTime };
+      }
+      if (!weekdayBreak && h.breakStartTime && h.breakEndTime) {
+        weekdayBreak = { start: h.breakStartTime, end: h.breakEndTime };
+      }
+    }
+  }
+
+  const saturday = byDay.get("SATURDAY");
+  const sunday = byDay.get("SUNDAY");
+
+  // 정기휴일: 운영하지 않는 요일
+  const closedDays = ALL_DAYS.filter((d) => {
+    const h = byDay.get(d);
+    return !h?.isOperating;
+  });
+
+  return { weekdayOperating, weekdayTime, weekdayBreak, saturday, sunday, closedDays };
 }
 
 export default function StoreInfoDetail({ id }: { id: number }) {
@@ -118,18 +135,13 @@ export default function StoreInfoDetail({ id }: { id: number }) {
   };
 
   const storeImages = files.filter((f) => f.uploadFileCategory === "STORE_IMAGE");
-  const imageUrls = storeImages.map((f) => f.filePath ?? "");
+  const s3Host = process.env.NEXT_PUBLIC_S3_HOSTNAME || "";
+  const imageUrls = storeImages.map(
+    (f) => f.filePath || (f.storedFileName ? `https://${s3Host}/${f.storedFileName}` : "")
+  );
 
-  // 정기휴일 계산: 평일 중 미포함 요일 + 토/일 미운영
-  const ALL_WEEKDAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"] as const;
-  const weekdayHour = operating.find((h) => h.dayType === "WEEKDAY");
-  const saturdayHour = operating.find((h) => h.dayType === "SATURDAY");
-  const sundayHour = operating.find((h) => h.dayType === "SUNDAY");
-
-  const operatingWeekdays = new Set(weekdayHour?.isOperating ? (weekdayHour.weekDayTypes ?? []) : []);
-  const closedDays: string[] = ALL_WEEKDAYS.filter((d) => !operatingWeekdays.has(d));
-  if (!saturdayHour?.isOperating) closedDays.push("SATURDAY");
-  if (!sundayHour?.isOperating) closedDays.push("SUNDAY");
+  const { weekdayOperating, weekdayTime, weekdayBreak, saturday, sunday, closedDays } =
+    groupOperatingHours(operating);
 
   return (
     <div className="container sub">
@@ -290,16 +302,46 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                   <col />
                 </colgroup>
                 <tbody>
-                  {operating.map((hour) => {
-                    const content = renderOperatingHour(hour);
-                    if (!content) return null;
-                    return (
-                      <tr key={hour.dayType}>
-                        <th>{DAY_TYPE_LABEL[hour.dayType] ?? hour.dayType}</th>
-                        <td>{content}</td>
-                      </tr>
-                    );
-                  })}
+                  {weekdayOperating.length > 0 && (
+                    <tr>
+                      <th>평일</th>
+                      <td>
+                        <div>{weekdayOperating.map((d) => WEEKDAY_LABEL[d] ?? d).join(", ")}</div>
+                        {weekdayTime && (
+                          <div>{weekdayTime.open} ~ {weekdayTime.close}</div>
+                        )}
+                        {weekdayBreak && (
+                          <div>{weekdayBreak.start} ~ {weekdayBreak.end} 브레이크타임</div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  {saturday?.isOperating && (
+                    <tr>
+                      <th>토요일</th>
+                      <td>
+                        {saturday.openTime && saturday.closeTime && (
+                          <div>{saturday.openTime} ~ {saturday.closeTime}</div>
+                        )}
+                        {saturday.breakStartTime && saturday.breakEndTime && (
+                          <div>{saturday.breakStartTime} ~ {saturday.breakEndTime} 브레이크타임</div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  {sunday?.isOperating && (
+                    <tr>
+                      <th>일요일</th>
+                      <td>
+                        {sunday.openTime && sunday.closeTime && (
+                          <div>{sunday.openTime} ~ {sunday.closeTime}</div>
+                        )}
+                        {sunday.breakStartTime && sunday.breakEndTime && (
+                          <div>{sunday.breakStartTime} ~ {sunday.breakEndTime} 브레이크타임</div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <th>정기휴일</th>
                     <td>

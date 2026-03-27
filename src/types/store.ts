@@ -67,7 +67,7 @@ export interface StoreInfo {
 
 // 운영시간
 export interface OperatingHour {
-  dayType: 'WEEKDAY' | 'SATURDAY' | 'SUNDAY'
+  dayType: string
   isOperating: boolean
   openTime?: string | null
   closeTime?: string | null
@@ -80,9 +80,11 @@ export interface OperatingHour {
 export interface StoreFile {
   id: number
   originalFileName: string
+  storedFileName?: string | null
   uploadFileCategory: string
   filePath?: string | null
   fileSize?: number | null
+  contentType?: string | null
   mimeType?: string | null
 }
 
@@ -111,7 +113,7 @@ export interface StoreHeaderRequest {
 }
 
 export interface OperatingHourRequest {
-  dayType: 'WEEKDAY' | 'SATURDAY' | 'SUNDAY'
+  dayType: string
   isOperating: boolean
   openTime?: string | null
   closeTime?: string | null
