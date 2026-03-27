@@ -1,4 +1,15 @@
+"use client";
+import { useStoreFormStore } from "@/store/useStoreFormStore";
+import { useHeadOffices } from "@/hooks/queries/use-store-queries";
+
 export default function StoreForm01() {
+  const {
+    storeOwner, officeId, franchiseId, storeName, operationStatus, statusUpdatedDate,
+    setField,
+  } = useStoreFormStore();
+
+  const { data: headOffices = [] } = useHeadOffices();
+
   return (
     <div className="sub-cont-wrap">
       <div className="sub-cont-item-wrap">
@@ -8,8 +19,21 @@ export default function StoreForm01() {
               점포소유 <span className="imp">*</span>
             </div>
             <div className="flex g8">
-              <button className="radio-btn block act">본사</button>
-              <button className="radio-btn block">가맹점</button>
+              <button
+                className={`radio-btn block ${storeOwner === "HEAD_OFFICE" ? "act" : ""}`}
+                onClick={() => {
+                  setField("storeOwner", "HEAD_OFFICE");
+                  setField("franchiseId", null);
+                }}
+              >
+                본사
+              </button>
+              <button
+                className={`radio-btn block ${storeOwner === "FRANCHISE" ? "act" : ""}`}
+                onClick={() => setField("storeOwner", "FRANCHISE")}
+              >
+                가맹점
+              </button>
             </div>
           </div>
         </div>
@@ -20,13 +44,30 @@ export default function StoreForm01() {
             </div>
             <div>
               <div className="block mb8">
-                <select name="" id="" className="select-form">
-                  <option value="1">본사 선택</option>
+                <select
+                  className="select-form"
+                  value={officeId ?? ""}
+                  onChange={(e) => {
+                    setField("officeId", e.target.value ? Number(e.target.value) : null);
+                    setField("franchiseId", null);
+                  }}
+                >
+                  <option value="">본사 선택</option>
+                  {headOffices.map((office) => (
+                    <option key={office.id} value={office.id}>
+                      {office.companyName}{office.brandName ? ` (${office.brandName})` : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="block">
-                <select name="" id="" className="select-form" disabled>
-                  <option value="1">가맹점 선택</option>
+                <select
+                  className="select-form"
+                  value={franchiseId ?? ""}
+                  onChange={(e) => setField("franchiseId", e.target.value ? Number(e.target.value) : null)}
+                  disabled={storeOwner !== "FRANCHISE"}
+                >
+                  <option value="">가맹점 선택</option>
                 </select>
               </div>
             </div>
@@ -38,9 +79,17 @@ export default function StoreForm01() {
               점포명<span className="imp">*</span>
             </div>
             <div className="block">
-              <input type="text" className="input-frame" />
+              <input
+                type="text"
+                className="input-frame"
+                value={storeName}
+                onChange={(e) => setField("storeName", e.target.value)}
+                placeholder="점포명을 입력하세요"
+              />
             </div>
-            <div className="warning mt10">점포명 입력</div>
+            {!storeName && (
+              <div className="warning mt10">* 필수 입력 항목입니다.</div>
+            )}
           </div>
         </div>
         <div className="sub-item-bx">
@@ -49,10 +98,30 @@ export default function StoreForm01() {
               운영여부 <span className="imp">*</span>
             </div>
             <div className="flex g8">
-              <button className="radio-btn block act">운영</button>
-              <button className="radio-btn block">미운영</button>
+              <button
+                className={`radio-btn block ${operationStatus === "STOPR_001" ? "act" : ""}`}
+                onClick={() => {
+                  setField("operationStatus", "STOPR_001");
+                  setField("statusUpdatedDate", new Date().toISOString().slice(0, 10));
+                }}
+              >
+                운영
+              </button>
+              <button
+                className={`radio-btn block ${operationStatus === "STOPR_002" ? "act" : ""}`}
+                onClick={() => {
+                  setField("operationStatus", "STOPR_002");
+                  setField("statusUpdatedDate", new Date().toISOString().slice(0, 10));
+                }}
+              >
+                미운영
+              </button>
             </div>
-            <div className="s-txt mt10">운영여부 변경일 : 2025.12.28</div>
+            {statusUpdatedDate && (
+              <div className="s-txt mt10">
+                운영여부 변경일 : {statusUpdatedDate.replace(/-/g, ".")}
+              </div>
+            )}
           </div>
         </div>
       </div>
