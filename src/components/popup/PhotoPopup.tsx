@@ -9,7 +9,6 @@ import "swiper/css/pagination";
 
 // import required modules
 import { Pagination } from "swiper/modules";
-import Image from "next/image";
 
 export default function PhotoPopup() {
   const [active, setActive] = useState(false);
@@ -56,10 +55,10 @@ export default function PhotoPopup() {
                   {images.map((url, i) => (
                     <SwiperSlide key={i}>
                       <div className="photo-img">
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                           src={url}
                           alt={`store-image-${i + 1}`}
-                          fill
                         />
                       </div>
                     </SwiperSlide>
