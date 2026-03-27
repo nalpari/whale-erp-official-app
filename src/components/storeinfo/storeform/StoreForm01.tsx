@@ -1,6 +1,7 @@
 "use client";
+import { useMemo } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
-import { useHeadOffices } from "@/hooks/queries/use-store-queries";
+import { useBpTree } from "@/hooks/queries/use-bp-queries";
 
 export default function StoreForm01() {
   const {
@@ -8,7 +9,14 @@ export default function StoreForm01() {
     setField,
   } = useStoreFormStore();
 
-  const { data: headOffices = [] } = useHeadOffices();
+  const { data: bpTree = [] } = useBpTree();
+
+  // 선택된 본사의 가맹점 목록
+  const franchises = useMemo(() => {
+    if (!officeId) return [];
+    const office = bpTree.find((o) => o.id === officeId);
+    return office?.franchises ?? [];
+  }, [bpTree, officeId]);
 
   return (
     <div className="sub-cont-wrap">
@@ -53,9 +61,9 @@ export default function StoreForm01() {
                   }}
                 >
                   <option value="">본사 선택</option>
-                  {headOffices.map((office) => (
+                  {bpTree.map((office) => (
                     <option key={office.id} value={office.id}>
-                      {office.companyName}{office.brandName ? ` (${office.brandName})` : ""}
+                      {office.name}
                     </option>
                   ))}
                 </select>
@@ -65,9 +73,14 @@ export default function StoreForm01() {
                   className="select-form"
                   value={franchiseId ?? ""}
                   onChange={(e) => setField("franchiseId", e.target.value ? Number(e.target.value) : null)}
-                  disabled={storeOwner !== "FRANCHISE"}
+                  disabled={storeOwner !== "FRANCHISE" || !officeId}
                 >
                   <option value="">가맹점 선택</option>
+                  {franchises.map((franchise) => (
+                    <option key={franchise.id} value={franchise.id}>
+                      {franchise.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
