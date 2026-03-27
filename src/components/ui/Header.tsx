@@ -2,10 +2,12 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import StoreSelect from "./StoreSelect";
+import { useHeaderStore } from "@/store/useHeaderStore";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const { title, onDelete, showDeleteButton } = useHeaderStore();
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
@@ -24,8 +26,12 @@ export default function Header() {
         <div className="header-container">
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
-            <h1>서브 페이지 헤더</h1>
-            <button className="btn-delete"></button>
+            <h1>{title || "서브 페이지 헤더"}</h1>
+            {showDeleteButton ? (
+              <button className="btn-delete" onClick={() => onDelete?.()}></button>
+            ) : (
+              <div style={{ width: 24 }} />
+            )}
           </div>
         </div>
       </header>
