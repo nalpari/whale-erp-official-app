@@ -52,7 +52,7 @@ export default function TodoContents() {
   const loadedMonthRef = useRef<string>("");
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const isToday = isSameDay(selectedDate, today);
 
   // 선택된 날짜의 organizations
@@ -221,13 +221,15 @@ export default function TodoContents() {
             {organizations.length > 0 ? (
               storeId
                 ? // 점포 선택됨 → 직원명을 메인 타이틀로, 할 일 바로 나열
-                  organizations.flatMap((org) => org.employees).map((emp) => (
-                    <TodoEmployeeFlatSection
-                      key={emp.employeeInfoId}
-                      employee={emp}
-                      onDelete={handleDeleteTodo}
-                    />
-                  ))
+                  organizations.flatMap((org, orgIdx) =>
+                    org.employees.map((emp) => (
+                      <TodoEmployeeFlatSection
+                        key={`${orgIdx}-${emp.employeeInfoId}`}
+                        employee={emp}
+                        onDelete={handleDeleteTodo}
+                      />
+                    ))
+                  )
                 : // 점포 미선택 → 조직 → 직원 그룹핑
                   organizations.map((org) => (
                     <TodoOrgSection
