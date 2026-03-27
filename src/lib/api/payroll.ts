@@ -8,7 +8,7 @@ import type {
   PayrollStatementUpdateRequest,
 } from '@/types/payroll'
 
-const BASE_URL = '/api/v1/employee/payroll/regular'
+const BASE_URL = '/api/employee/payroll/regular'
 
 // undefined/null/빈 문자열 제거 (API에서 null을 long으로 변환 시 에러 방지)
 const cleanParams = (params: object) => {
