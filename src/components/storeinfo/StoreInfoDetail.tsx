@@ -1,8 +1,9 @@
 "use client";
 
 import { usePopupControler } from "@/store/usePopupControler";
+import { useHeaderStore } from "@/store/useHeaderStore";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useStoreDetail, useDeleteStore } from "@/hooks/queries/use-store-queries";
 import type { OperatingHour } from "@/types/store";
 
@@ -15,6 +16,16 @@ const DAY_TYPE_LABEL: Record<string, string> = {
   WEEKDAY: "평일",
   SATURDAY: "토요일",
   SUNDAY: "일요일",
+};
+
+const WEEKDAY_LABEL: Record<string, string> = {
+  MONDAY: "월",
+  TUESDAY: "화",
+  WEDNESDAY: "수",
+  THURSDAY: "목",
+  FRIDAY: "금",
+  SATURDAY: "토",
+  SUNDAY: "일",
 };
 
 function formatDate(dateStr?: string | null): string {
@@ -33,7 +44,7 @@ function renderOperatingHour(hour: OperatingHour) {
   return (
     <div>
       {hour.weekDayTypes && hour.weekDayTypes.length > 0 && (
-        <div>{hour.weekDayTypes.join(", ")}</div>
+        <div>{hour.weekDayTypes.map((d) => WEEKDAY_LABEL[d] ?? d).join(", ")}</div>
       )}
       {hour.openTime && hour.closeTime && (
         <div>{hour.openTime} ~ {hour.closeTime}</div>
@@ -47,15 +58,48 @@ function renderOperatingHour(hour: OperatingHour) {
 
 export default function StoreInfoDetail({ id }: { id: number }) {
   const router = useRouter();
-  const setPhotoPopup = usePopupControler((state) => state.setPhotoPopup);
+  const openPhotoPopup = usePopupControler((state) => state.openPhotoPopup);
   const openAlert = usePopupControler((state) => state.openAlert);
+  const setTitle = useHeaderStore((state) => state.setTitle);
+  const setOnDelete = useHeaderStore((state) => state.setOnDelete);
+  const setShowDeleteButton = useHeaderStore((state) => state.setShowDeleteButton);
   const deleteMutation = useDeleteStore();
 
   const { data, isLoading } = useStoreDetail(id);
 
+  const handleDelete = useCallback(() => {
+    openAlert({
+      message: "해당 점포를 삭제하시겠습니까?",
+      confirmText: "삭제",
+      cancelText: "취소",
+      onConfirm: async () => {
+        try {
+          await deleteMutation.mutateAsync(id);
+          router.push("/storeinfo");
+        } catch {
+          openAlert({ message: "삭제에 실패했습니다." });
+        }
+      },
+    });
+  }, [id, openAlert, deleteMutation, router]);
+
   useEffect(() => {
     window.scrollTo({ top: 0 });
-  }, []);
+    setTitle("점포정보 상세조회");
+    setShowDeleteButton(true);
+
+    return () => {
+      setTitle("");
+      setShowDeleteButton(false);
+      setOnDelete(null);
+    };
+  }, [setTitle, setShowDeleteButton, setOnDelete]);
+
+  useEffect(() => {
+    if (data) {
+      setOnDelete(() => handleDelete);
+    }
+  }, [data, handleDelete, setOnDelete]);
 
   if (isLoading || !data) {
     return (
@@ -74,22 +118,23 @@ export default function StoreInfoDetail({ id }: { id: number }) {
   };
 
   const storeImages = files.filter((f) => f.uploadFileCategory === "STORE_IMAGE");
+  const imageUrls = storeImages.map((f) => f.filePath ?? "");
 
-  const handleDelete = () => {
-    openAlert({
-      message: "해당 점포를 삭제하시겠습니까?",
-      confirmText: "삭제",
-      cancelText: "취소",
-      onConfirm: async () => {
-        try {
-          await deleteMutation.mutateAsync(id);
-          router.push("/storeinfo");
-        } catch {
-          openAlert({ message: "삭제에 실패했습니다." });
-        }
-      },
-    });
-  };
+  // 정기휴일 계산: 전체 요일 중 영업시간에 포함되지 않는 요일
+  const ALL_WEEKDAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const;
+  const operatingDays = new Set<string>();
+  for (const hour of operating) {
+    if (hour.isOperating) {
+      if (hour.dayType === "WEEKDAY" && hour.weekDayTypes) {
+        for (const d of hour.weekDayTypes) operatingDays.add(d);
+      } else if (hour.dayType === "SATURDAY" ) {
+        operatingDays.add("SATURDAY");
+      } else if (hour.dayType === "SUNDAY") {
+        operatingDays.add("SUNDAY");
+      }
+    }
+  }
+  const closedDays = ALL_WEEKDAYS.filter((d) => !operatingDays.has(d));
 
   return (
     <div className="container sub">
@@ -97,11 +142,6 @@ export default function StoreInfoDetail({ id }: { id: number }) {
         <div className="sub-tit">
           <span className="sub-tit-code">{storeInfo.storeCode}</span>
           <span>{storeInfo.storeName}</span>
-        </div>
-        <div className="sub-btn-wrap">
-          <button className="btn-s black" onClick={handleDelete}>
-            삭제
-          </button>
         </div>
       </div>
       <div className="sub-content-body">
@@ -128,12 +168,10 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                     <th>본사</th>
                     <td>{storeInfo.officeName}</td>
                   </tr>
-                  {storeInfo.franchiseName && (
-                    <tr>
-                      <th>가맹점</th>
-                      <td>{storeInfo.franchiseName}</td>
-                    </tr>
-                  )}
+                  <tr>
+                    <th>가맹점</th>
+                    <td>{storeInfo.franchiseName || "-"}</td>
+                  </tr>
                   <tr>
                     <th>운영여부</th>
                     <td>
@@ -141,7 +179,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                         <span className={status.className}>{status.label}</span>
                         {storeInfo.statusUpdatedDate && (
                           <span className="sub-txt">
-                            변경일 : {formatDate(storeInfo.statusUpdatedDate)}
+                            운영여부 변경일 : {formatDate(storeInfo.statusUpdatedDate)}
                           </span>
                         )}
                       </div>
@@ -211,7 +249,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
             <div className="sub-item-bx">
               {storeImages.length > 0 ? (
                 <div className="store-img-list m0">
-                  {storeImages.map((file) => {
+                  {storeImages.map((file, idx) => {
                     const { name, ext } = getFileNameAndExt(file.originalFileName);
                     return (
                       <div className="store-img-item" key={file.id}>
@@ -222,7 +260,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                         <div className="store-img-btn-wrap">
                           <button
                             className="img-show"
-                            onClick={() => setPhotoPopup(true)}
+                            onClick={() => openPhotoPopup(imageUrls, idx)}
                           ></button>
                         </div>
                       </div>
@@ -263,6 +301,16 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                       <td>{renderOperatingHour(hour)}</td>
                     </tr>
                   ))}
+                  <tr>
+                    <th>정기휴일</th>
+                    <td>
+                      {closedDays.length > 0 ? (
+                        <div>{closedDays.map((d) => WEEKDAY_LABEL[d] ?? d).join(", ")}</div>
+                      ) : (
+                        <span>-</span>
+                      )}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

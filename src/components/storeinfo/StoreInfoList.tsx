@@ -5,6 +5,7 @@ import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { useStoreList } from "@/hooks/queries/use-store-queries";
+import { useStoreSearchStore } from "@/store/useStoreSearchStore";
 import type { StoreSearchParams } from "@/types/store";
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
@@ -30,11 +31,16 @@ export default function StoreInfoList() {
   const headOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined;
   const storeId = selectedStore?.id ?? undefined;
 
+  const { status, from, to } = useStoreSearchStore();
+
   const [page, setPage] = useState(0);
 
   const params: StoreSearchParams = {
     office: headOfficeId,
     store: storeId,
+    status: status ?? undefined,
+    from: from || undefined,
+    to: to || undefined,
     page,
     size: 50,
   };
@@ -108,12 +114,10 @@ export default function StoreInfoList() {
                           <td>{store.officeName}</td>
                         </tr>
                       )}
-                      {store.franchiseName && (
-                        <tr>
-                          <th>가맹점</th>
-                          <td>{store.franchiseName}</td>
-                        </tr>
-                      )}
+                      <tr>
+                        <th>가맹점</th>
+                        <td>{store.franchiseName || "-"}</td>
+                      </tr>
                       <tr>
                         <th>등록일</th>
                         <td>{formatDate(store.createdAt)}</td>
