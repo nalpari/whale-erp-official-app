@@ -19,13 +19,25 @@ export default function Header() {
   }
 
   if (isSubPage || pathname === "/changepw") {
+    const isTodoNew = pathname === "/todo/new";
+
     return (
       <header className="header sub">
         <div className="header-container">
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
-            <h1>서브 페이지 헤더</h1>
-            <button className="btn-delete"></button>
+            <h1>{isTodoNew ? "TO-DO 등록" : "서브 페이지 헤더"}</h1>
+            {isTodoNew ? (
+              <button
+                className="btn-s black"
+                style={{ marginLeft: "auto" }}
+                onClick={() => window.dispatchEvent(new Event("todo-create-save"))}
+              >
+                저장
+              </button>
+            ) : (
+              <button className="btn-delete"></button>
+            )}
           </div>
         </div>
       </header>

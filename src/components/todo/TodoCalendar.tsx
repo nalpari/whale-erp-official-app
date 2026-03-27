@@ -24,6 +24,7 @@ export default function TodoCalendar({
   const [browseTarget, setBrowseTarget] = useState<{ year: number; month: number } | null>(null);
   const [browseData, setBrowseData] = useState<CalendarDayData[] | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // 선택된 날짜의 년/월
   const selectedYear = selectedDate.getFullYear();
@@ -60,25 +61,19 @@ export default function TodoCalendar({
       ".whale-calendar__grid"
     ) as HTMLElement | null;
     if (gridEl) {
-      gridEl.style.display = isCalendarOpen ? "" : "none";
+      gridEl.style.display = isCalendarOpen ? "grid" : "none";
     }
   }, [isCalendarOpen]);
 
-  // 월 변경 핸들러 (< > 버튼)
+  // 월 변경 핸들러 (< > 버튼) → 해당 월 1일 선택
   const handleMonthChange = useCallback(
-    async (year: number, month: number) => {
-      const isSame = year === selectedYear && month === selectedMonth;
-      if (isSame) {
-        // 선택된 월로 돌아왔으므로 탐색 상태 해제
-        setBrowseTarget(null);
-        setBrowseData(null);
-      } else {
-        setBrowseTarget({ year, month });
-        const data = await onMonthDataNeeded(year, month);
-        setBrowseData(data);
-      }
+    (year: number, month: number) => {
+      const firstDay = new Date(year, month - 1, 1);
+      onDayClick(firstDay);
+      setBrowseTarget(null);
+      setBrowseData(null);
     },
-    [selectedYear, selectedMonth, onMonthDataNeeded]
+    [onDayClick]
   );
 
   // 날짜 클릭
@@ -100,8 +95,41 @@ export default function TodoCalendar({
     [handleDayClick]
   );
 
+  // 캘린더 영역 스와이프 → 월 이동 (열려있을 때만, 상위 전파 차단)
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!isCalendarOpen) return;
+    e.stopPropagation();
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, [isCalendarOpen]);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStartRef.current || !isCalendarOpen) return;
+      e.stopPropagation();
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - touchStartRef.current.x;
+      const dy = touch.clientY - touchStartRef.current.y;
+      touchStartRef.current = null;
+
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= 50) {
+        let nextMonth = viewMonth + (dx > 0 ? -1 : 1);
+        let nextYear = viewYear;
+        if (nextMonth < 1) { nextMonth = 12; nextYear--; }
+        if (nextMonth > 12) { nextMonth = 1; nextYear++; }
+        handleMonthChange(nextYear, nextMonth);
+      }
+    },
+    [isCalendarOpen, viewYear, viewMonth, handleMonthChange]
+  );
+
   return (
-    <div className="todo-diary-wrap" ref={calendarRef}>
+    <div
+      className="todo-diary-wrap"
+      ref={calendarRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <WhaleCalendar
         year={viewYear}
         month={viewMonth}
@@ -118,7 +146,12 @@ export default function TodoCalendar({
         onClick={() => setIsCalendarOpen((prev) => !prev)}
         aria-label={isCalendarOpen ? "캘린더 접기" : "캘린더 펼치기"}
       >
-        <span className={`arrow ${isCalendarOpen ? "up" : "down"}`} />
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="3" width="16" height="14" rx="2" stroke="#777" strokeWidth="1.5" />
+          <path d="M2 7H18" stroke="#777" strokeWidth="1.5" />
+          <path d="M6 1V4" stroke="#777" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M14 1V4" stroke="#777" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
       </button>
     </div>
   );
@@ -140,11 +173,8 @@ function buildCalendarData(
   for (const dayData of data) {
     const day = dayData.day;
     const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const hasIncomplete = dayData.incompleteCount > 0;
-    const color = hasIncomplete ? "#ff4d4f" : "#52c41a";
-
     result[dateKey] = {
-      schedules: [{ id: `todo-${day}`, label: "●", color }],
+      schedules: [{ id: `todo-${day}`, label: "", color: "transparent" }],
     };
   }
 
