@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+import { useMinimumWage } from "@/hooks/queries/use-contract-queries";
 import { Sheet } from "react-modal-sheet";
 
 interface ContractOptionSheetProps {
@@ -30,6 +31,13 @@ export default function ContractOptionSheet({
   const [year, setYear] = useState(initialYear);
   const [timelyAmount, setTimelyAmount] = useState(initialTimelyAmount);
   const [weeklyHours, setWeeklyHours] = useState(initialWeeklyHours);
+
+  const { data: minimumWageData, isLoading: isMinWageLoading } = useMinimumWage(year);
+  const minimumWageLabel = isMinWageLoading
+    ? '...'
+    : minimumWageData?.minimumWage
+      ? `${minimumWageData.minimumWage.toLocaleString('ko-KR')}원`
+      : '-';
 
   const handleClose = () => {
     setContractOptionSheet(false);
@@ -97,7 +105,7 @@ export default function ContractOptionSheet({
                   </div>
                   <div className="filed-guide">
                     <span>
-                      <i>{year}년</i> 최저시급은 <i>10,030원</i> 입니다.
+                      <i>{year}년</i> 최저시급은 <i>{minimumWageLabel}</i> 입니다.
                     </span>
                     <span>통상시급은 최저시급 이상으로 설정해야 합니다.</span>
                   </div>
