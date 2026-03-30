@@ -508,8 +508,6 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                           setEmploymentContractId(contractId)
                           const emp = employeeList.find((item) => item.employmentContractId === contractId)
                           setSelectedEmployeeInfoId(emp?.employeeInfoId)
-                          setAutoMonthApplied(false)
-                          setSalaryMappedFor(undefined)
                         }}
                         disabled={!selectedOfficeId}
                       >
