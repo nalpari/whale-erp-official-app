@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import "./css/store-search-btn.scss";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
@@ -32,7 +33,10 @@ export default function StoreInfoList() {
   const storeId = selectedStore?.id ?? undefined;
 
   const { status, from, to, hasSearched } = useStoreSearchStore();
-  const isFiltered = hasSearched && (status !== null || from !== "" || to !== "");
+  const currentYear = new Date().getFullYear();
+  const defaultFrom = `${currentYear}-01-01`;
+  const defaultTo = new Date().toISOString().slice(0, 10);
+  const isFiltered = hasSearched && (status !== null || from !== defaultFrom || to !== defaultTo);
 
   const [page, setPage] = useState(0);
 

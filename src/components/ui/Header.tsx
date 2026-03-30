@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import StoreSelect from "./StoreSelect";
 import { useHeaderStore } from "@/store/useHeaderStore";
+import "./css/header-right-label.scss";
 
 export default function Header() {
   const pathname = usePathname();

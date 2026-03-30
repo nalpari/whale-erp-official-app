@@ -25,6 +25,7 @@ import TemporaryWorkerAddSheet from '../bottomsheet/TemporaryWorkerAddSheet'
 import WorkerSearchSheet from '../bottomsheet/WorkerSearchSheet'
 import DeductionAddSheet from '../bottomsheet/DeductionAddSheet'
 import PhotoUploadSheet from '../bottomsheet/PhotoUploadSheet'
+import TimePickerSheet from '../bottomsheet/TimePickerSheet'
 
 export default function BottomSheetControler() {
   // 개별 구독으로 안정성 확보
@@ -95,6 +96,9 @@ export default function BottomSheetControler() {
   const photoUploadSheet = useBottomSheetControler(
     (state) => state.photoUploadSheet,
   )
+  const timePickerSheet = useBottomSheetControler(
+    (state) => state.timePickerSheet,
+  )
   useEffect(() => {
     const isAnyBottomSheetOpen =
       storeSelectSheet ||
@@ -119,7 +123,8 @@ export default function BottomSheetControler() {
       temporaryWorkerAddSheet ||
       workerSearchSheet ||
       deductionAddSheet ||
-      photoUploadSheet
+      photoUploadSheet ||
+      timePickerSheet
 
     if (isAnyBottomSheetOpen) {
       if (!document.body.classList.contains('open')) {
@@ -158,6 +163,7 @@ export default function BottomSheetControler() {
     workerSearchSheet,
     deductionAddSheet,
     photoUploadSheet,
+    timePickerSheet,
   ])
 
   return (
@@ -185,6 +191,7 @@ export default function BottomSheetControler() {
       {workerSearchSheet && <WorkerSearchSheet />}
       {deductionAddSheet && <DeductionAddSheet />}
       {photoUploadSheet && <PhotoUploadSheet />}
+      {timePickerSheet && <TimePickerSheet />}
     </>
   )
 }

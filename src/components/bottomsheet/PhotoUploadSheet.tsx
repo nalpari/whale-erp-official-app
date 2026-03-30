@@ -2,6 +2,7 @@
 import { useRef } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
+import "./css/photo-upload-sheet.scss";
 import { Sheet } from "react-modal-sheet";
 
 export default function PhotoUploadSheet() {

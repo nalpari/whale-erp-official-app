@@ -47,21 +47,6 @@
     margin-left: auto;
   }
 }
-.bottom-sheet-option-list {
-  padding: 16px 0;
-  .bottom-sheet-option-btn {
-    display: block;
-    width: 100%;
-    padding: 14px 0;
-    text-align: left;
-    @include fontDefinition($font-ds-16, $font-w-500, $line-h-140);
-    color: #333;
-    border-bottom: 1px solid #f4f5f6;
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-}
 .bottom-sheet-footer {
   @include flex(8px);
   align-items: center;

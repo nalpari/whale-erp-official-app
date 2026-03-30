@@ -30,6 +30,11 @@ function formatDate(dateStr?: string | null): string {
   return dateStr.slice(0, 10).replace(/-/g, ".");
 }
 
+function formatTime(timeStr?: string | null): string {
+  if (!timeStr) return "";
+  return timeStr.slice(0, 5);
+}
+
 function getFileNameAndExt(fileName: string): { name: string; ext: string } {
   const lastDot = fileName.lastIndexOf(".");
   if (lastDot === -1) return { name: fileName, ext: "" };
@@ -305,10 +310,10 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                       <td>
                         <div>{weekdayOperating.map((d) => WEEKDAY_LABEL[d] ?? d).join(", ")}</div>
                         {weekdayTime && (
-                          <div>{weekdayTime.open} ~ {weekdayTime.close}</div>
+                          <div>{formatTime(weekdayTime.open)} ~ {formatTime(weekdayTime.close)}</div>
                         )}
                         {weekdayBreak && (
-                          <div>{weekdayBreak.start} ~ {weekdayBreak.end} 브레이크타임</div>
+                          <div>{formatTime(weekdayBreak.start)} ~ {formatTime(weekdayBreak.end)} 브레이크타임</div>
                         )}
                       </td>
                     </tr>
@@ -318,10 +323,10 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                       <th>토요일</th>
                       <td>
                         {saturday.openTime && saturday.closeTime && (
-                          <div>{saturday.openTime} ~ {saturday.closeTime}</div>
+                          <div>{formatTime(saturday.openTime)} ~ {formatTime(saturday.closeTime)}</div>
                         )}
                         {saturday.breakStartTime && saturday.breakEndTime && (
-                          <div>{saturday.breakStartTime} ~ {saturday.breakEndTime} 브레이크타임</div>
+                          <div>{formatTime(saturday.breakStartTime)} ~ {formatTime(saturday.breakEndTime)} 브레이크타임</div>
                         )}
                       </td>
                     </tr>
@@ -331,10 +336,10 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                       <th>일요일</th>
                       <td>
                         {sunday.openTime && sunday.closeTime && (
-                          <div>{sunday.openTime} ~ {sunday.closeTime}</div>
+                          <div>{formatTime(sunday.openTime)} ~ {formatTime(sunday.closeTime)}</div>
                         )}
                         {sunday.breakStartTime && sunday.breakEndTime && (
-                          <div>{sunday.breakStartTime} ~ {sunday.breakEndTime} 브레이크타임</div>
+                          <div>{formatTime(sunday.breakStartTime)} ~ {formatTime(sunday.breakEndTime)} 브레이크타임</div>
                         )}
                       </td>
                     </tr>

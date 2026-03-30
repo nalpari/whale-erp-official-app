@@ -1,5 +1,6 @@
 "use client";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
+import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import type { OperatingHourRequest } from "@/types/store";
 
 const WEEKDAYS = [
@@ -10,6 +11,16 @@ const WEEKDAYS = [
   { key: "FRIDAY", label: "금" },
 ];
 
+function isEndBeforeStart(start?: string | null, end?: string | null): boolean {
+  if (!start || !end) return false;
+  return end <= start;
+}
+
+function TimeError({ show, message }: { show: boolean; message: string }) {
+  if (!show) return null;
+  return <div className="warning mt10">* {message}</div>;
+}
+
 function findHour(operating: OperatingHourRequest[], dayType: string): OperatingHourRequest {
   return operating.find((o) => o.dayType === dayType) ?? {
     dayType: dayType as OperatingHourRequest["dayType"],
@@ -19,6 +30,28 @@ function findHour(operating: OperatingHourRequest[], dayType: string): Operating
     breakStartTime: null,
     breakEndTime: null,
   };
+}
+
+function TimeInput({
+  label,
+  value,
+  onSelect,
+}: {
+  label: string;
+  value: string | null | undefined;
+  onSelect: (time: string) => void;
+}) {
+  const openTimePicker = useBottomSheetControler((state) => state.openTimePicker);
+
+  return (
+    <button
+      type="button"
+      className="input-frame time-select"
+      onClick={() => openTimePicker(label, value ?? "", onSelect)}
+    >
+      {value || label}
+    </button>
+  );
 }
 
 export default function StoreForm04() {
@@ -63,43 +96,41 @@ export default function StoreForm04() {
             <div className="store-img-list-tit">평일</div>
             <div>
               <div className="block mb8">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={weekday.openTime ?? ""}
-                  onChange={(e) => updateHour("WEEKDAY", "openTime", e.target.value || null)}
+                <TimeInput
+                  label="시작시간"
+                  value={weekday.openTime}
+                  onSelect={(t) => updateHour("WEEKDAY", "openTime", t)}
                 />
               </div>
               <div className="block">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={weekday.closeTime ?? ""}
-                  onChange={(e) => updateHour("WEEKDAY", "closeTime", e.target.value || null)}
+                <TimeInput
+                  label="종료시간"
+                  value={weekday.closeTime}
+                  onSelect={(t) => updateHour("WEEKDAY", "closeTime", t)}
                 />
               </div>
             </div>
+            <TimeError show={isEndBeforeStart(weekday.openTime, weekday.closeTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
             <div>
               <div className="block mb8">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={weekday.breakStartTime ?? ""}
-                  onChange={(e) => updateHour("WEEKDAY", "breakStartTime", e.target.value || null)}
+                <TimeInput
+                  label="시작시간"
+                  value={weekday.breakStartTime}
+                  onSelect={(t) => updateHour("WEEKDAY", "breakStartTime", t)}
                 />
               </div>
               <div className="block">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={weekday.breakEndTime ?? ""}
-                  onChange={(e) => updateHour("WEEKDAY", "breakEndTime", e.target.value || null)}
+                <TimeInput
+                  label="종료시간"
+                  value={weekday.breakEndTime}
+                  onSelect={(t) => updateHour("WEEKDAY", "breakEndTime", t)}
                 />
               </div>
             </div>
+            <TimeError show={isEndBeforeStart(weekday.breakStartTime, weekday.breakEndTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">요일선택</div>
@@ -123,43 +154,41 @@ export default function StoreForm04() {
             <div className="store-img-list-tit">토요일</div>
             <div>
               <div className="block mb8">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={saturday.openTime ?? ""}
-                  onChange={(e) => updateHour("SATURDAY", "openTime", e.target.value || null)}
+                <TimeInput
+                  label="시작시간"
+                  value={saturday.openTime}
+                  onSelect={(t) => updateHour("SATURDAY", "openTime", t)}
                 />
               </div>
               <div className="block">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={saturday.closeTime ?? ""}
-                  onChange={(e) => updateHour("SATURDAY", "closeTime", e.target.value || null)}
+                <TimeInput
+                  label="종료시간"
+                  value={saturday.closeTime}
+                  onSelect={(t) => updateHour("SATURDAY", "closeTime", t)}
                 />
               </div>
             </div>
+            <TimeError show={isEndBeforeStart(saturday.openTime, saturday.closeTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
             <div>
               <div className="block mb8">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={saturday.breakStartTime ?? ""}
-                  onChange={(e) => updateHour("SATURDAY", "breakStartTime", e.target.value || null)}
+                <TimeInput
+                  label="시작시간"
+                  value={saturday.breakStartTime}
+                  onSelect={(t) => updateHour("SATURDAY", "breakStartTime", t)}
                 />
               </div>
               <div className="block">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={saturday.breakEndTime ?? ""}
-                  onChange={(e) => updateHour("SATURDAY", "breakEndTime", e.target.value || null)}
+                <TimeInput
+                  label="종료시간"
+                  value={saturday.breakEndTime}
+                  onSelect={(t) => updateHour("SATURDAY", "breakEndTime", t)}
                 />
               </div>
             </div>
+            <TimeError show={isEndBeforeStart(saturday.breakStartTime, saturday.breakEndTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
         </div>
 
@@ -169,43 +198,41 @@ export default function StoreForm04() {
             <div className="store-img-list-tit">일요일</div>
             <div>
               <div className="block mb8">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={sunday.openTime ?? ""}
-                  onChange={(e) => updateHour("SUNDAY", "openTime", e.target.value || null)}
+                <TimeInput
+                  label="시작시간"
+                  value={sunday.openTime}
+                  onSelect={(t) => updateHour("SUNDAY", "openTime", t)}
                 />
               </div>
               <div className="block">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={sunday.closeTime ?? ""}
-                  onChange={(e) => updateHour("SUNDAY", "closeTime", e.target.value || null)}
+                <TimeInput
+                  label="종료시간"
+                  value={sunday.closeTime}
+                  onSelect={(t) => updateHour("SUNDAY", "closeTime", t)}
                 />
               </div>
             </div>
+            <TimeError show={isEndBeforeStart(sunday.openTime, sunday.closeTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
             <div>
               <div className="block mb8">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={sunday.breakStartTime ?? ""}
-                  onChange={(e) => updateHour("SUNDAY", "breakStartTime", e.target.value || null)}
+                <TimeInput
+                  label="시작시간"
+                  value={sunday.breakStartTime}
+                  onSelect={(t) => updateHour("SUNDAY", "breakStartTime", t)}
                 />
               </div>
               <div className="block">
-                <input
-                  type="time"
-                  className="input-frame"
-                  value={sunday.breakEndTime ?? ""}
-                  onChange={(e) => updateHour("SUNDAY", "breakEndTime", e.target.value || null)}
+                <TimeInput
+                  label="종료시간"
+                  value={sunday.breakEndTime}
+                  onSelect={(t) => updateHour("SUNDAY", "breakEndTime", t)}
                 />
               </div>
             </div>
+            <TimeError show={isEndBeforeStart(sunday.breakStartTime, sunday.breakEndTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
         </div>
       </div>
