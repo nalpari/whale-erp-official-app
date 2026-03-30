@@ -85,7 +85,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnDelete = useHeaderStore((state) => state.setOnDelete);
   const setShowDeleteButton = useHeaderStore((state) => state.setShowDeleteButton);
-  const deleteMutation = useDeleteStore();
+  const { mutateAsync: deleteStoreAsync } = useDeleteStore();
 
   const { data, isLoading } = useStoreDetail(id);
 
@@ -96,14 +96,14 @@ export default function StoreInfoDetail({ id }: { id: number }) {
       cancelText: "취소",
       onConfirm: async () => {
         try {
-          await deleteMutation.mutateAsync(id);
+          await deleteStoreAsync(id);
           router.push("/storeinfo");
         } catch {
           openAlert({ message: "삭제에 실패했습니다." });
         }
       },
     });
-  }, [id, openAlert, deleteMutation, router]);
+  }, [id, openAlert, deleteStoreAsync, router]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });

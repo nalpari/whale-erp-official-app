@@ -19,6 +19,7 @@ export default function StoreCreate() {
   const openAlert = usePopupControler((state) => state.openAlert);
   const createMutation = useCreateStore();
   const form = useStoreFormStore();
+  const resetForm = useStoreFormStore((state) => state.reset);
 
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setRightLabel = useHeaderStore((state) => state.setRightLabel);
@@ -26,9 +27,8 @@ export default function StoreCreate() {
 
   // 진입 시 폼 초기화
   useEffect(() => {
-    form.reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    resetForm();
+  }, [resetForm]);
 
   // 헤더 설정: 타이틀 + 뒤로가기 confirm
   const handleBackConfirm = useCallback(() => {

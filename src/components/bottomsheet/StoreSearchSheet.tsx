@@ -14,11 +14,10 @@ export default function StoreSearchSheet() {
   const [localFrom, setLocalFrom] = useState(searchStore.from);
   const [localTo, setLocalTo] = useState(searchStore.to);
 
-  const currentYear = new Date().getFullYear();
-  const defaultFrom = `${currentYear}-01-01`;
-  const defaultTo = new Date().toISOString().slice(0, 10);
-
   const handleOpenStart = () => {
+    const year = new Date().getFullYear();
+    const defaultFrom = `${year}-01-01`;
+    const defaultTo = new Date().toISOString().slice(0, 10);
     setLocalStatus(searchStore.status);
     setLocalFrom(searchStore.hasSearched ? searchStore.from : defaultFrom);
     setLocalTo(searchStore.hasSearched ? searchStore.to : defaultTo);

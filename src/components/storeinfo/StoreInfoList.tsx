@@ -6,10 +6,10 @@ import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
-import { useStoreList, useAuthorityDetail } from "@/hooks/queries/use-store-queries";
+import { useStoreInfiniteList, useAuthorityDetail } from "@/hooks/queries/use-store-queries";
 import { useStoreSearchStore } from "@/store/useStoreSearchStore";
 import { checkStoreSubscribe } from "@/lib/api/store";
-import type { StoreSearchParams, StoreListItem } from "@/types/store";
+import { EXTERNAL_URLS } from "@/lib/constants";
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   STOPR_001: { label: "운영", className: "badge blue" },
@@ -42,63 +42,44 @@ export default function StoreInfoList() {
 
   const { status, from, to, hasSearched } = useStoreSearchStore();
 
-  const [page, setPage] = useState(1);
-  const [accumulatedStores, setAccumulatedStores] = useState<StoreListItem[]>([]);
-  const prevParamsRef = useRef<string>("");
-
-  const params: StoreSearchParams = {
+  const params = {
     office: headOfficeId,
     franchise: authFranchiseId ?? undefined,
     store: storeId,
     status: status ?? undefined,
     from: hasSearched ? (from || undefined) : undefined,
     to: hasSearched ? (to || undefined) : undefined,
-    page,
     size: 50,
   };
 
-  // 검색 조건 변경 시 페이지/누적 데이터 초기화
-  const paramsKey = JSON.stringify({ office: params.office, store: params.store, status: params.status, from: params.from, to: params.to });
-  useEffect(() => {
-    if (prevParamsRef.current && prevParamsRef.current !== paramsKey) {
-      setPage(1);
-      setAccumulatedStores([]);
-    }
-    prevParamsRef.current = paramsKey;
-  }, [paramsKey]);
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useStoreInfiniteList(params, !!headOfficeId);
 
-  const { data, isLoading } = useStoreList(params, !!headOfficeId);
+  const allStores = data?.pages.flatMap((page) => page.content) ?? [];
+  const totalElements = data?.pages[0]?.totalElements ?? 0;
 
-  // 데이터 도착 시 누적
-  useEffect(() => {
-    if (!data?.content) return;
-    if (page === 1) {
-      setAccumulatedStores(data.content);
-    } else {
-      setAccumulatedStores((prev) => [...prev, ...data.content]);
-    }
-  }, [data, page]);
-
-  const totalElements = data?.totalElements ?? 0;
-  const hasNext = data?.hasNext ?? false;
-
-  // 무한 스크롤: 하단 감지 요소가 뷰포트에 들어오면 다음 페이지 로드
+  // 무한 스크롤
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!hasNext || isLoading) return;
+    if (!hasNextPage || isFetchingNextPage) return;
     const el = bottomRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setPage((p) => p + 1);
+          fetchNextPage();
         }
       },
       { threshold: 0.1 },
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasNext, isLoading]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const [isChecking, setIsChecking] = useState(false);
 
@@ -114,9 +95,8 @@ export default function StoreInfoList() {
           message: `${result.planName} 회원입니다. 점포를 추가하기 위해서는 회원 등급 업그레이드가 필요합니다.`,
           confirmText: "확인",
           cancelText: "취소",
-          // TODO: 업그레이드 페이지 경로 확인 필요
           onConfirm: () => {
-            window.open("https://www.whaleerp.co.kr/customer/rate-plan", "_blank");
+            window.open(EXTERNAL_URLS.RATE_PLAN, "_blank");
           },
         });
       }
@@ -153,24 +133,24 @@ export default function StoreInfoList() {
           </button>
         </div>
         <div className="sub-cont-wrap">
-          {isLoading && page === 1 ? (
+          {isLoading ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
               불러오는 중...
             </div>
-          ) : accumulatedStores.length === 0 ? (
+          ) : allStores.length === 0 ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
               등록된 점포가 없습니다.
             </div>
           ) : (
-            accumulatedStores.map((store, idx) => {
-              const status = STATUS_MAP[store.operationStatus] ?? {
+            allStores.map((store) => {
+              const itemStatus = STATUS_MAP[store.operationStatus] ?? {
                 label: store.operationStatus,
                 className: "badge grey",
               };
               return (
                 <button
                   className="sub-item-bx"
-                  key={`${store.id}-${idx}`}
+                  key={store.id}
                   onClick={() => router.push(`/storeinfo/${store.id}`)}
                 >
                   <div className="store-list-name">{store.storeName}</div>
@@ -183,7 +163,7 @@ export default function StoreInfoList() {
                       <tr>
                         <th>운영여부</th>
                         <td>
-                          <span className={status.className}>{status.label}</span>
+                          <span className={itemStatus.className}>{itemStatus.label}</span>
                         </td>
                       </tr>
                       {store.officeName && (
@@ -206,9 +186,9 @@ export default function StoreInfoList() {
               );
             })
           )}
-          {hasNext && (
+          {hasNextPage && (
             <div ref={bottomRef} style={{ padding: "20px 0", textAlign: "center", color: "#999" }}>
-              {isLoading && "불러오는 중..."}
+              {isFetchingNextPage && "불러오는 중..."}
             </div>
           )}
         </div>

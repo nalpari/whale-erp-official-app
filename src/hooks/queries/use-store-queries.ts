@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getHeadOffices,
   getStoreOptions,
@@ -15,7 +15,7 @@ export const storeKeys = {
   all: ['store'] as const,
   headOffices: () => [...storeKeys.all, 'head-offices'] as const,
   options: (officeId?: number, franchiseId?: number) => [...storeKeys.all, 'options', officeId, franchiseId] as const,
-  list: (params: StoreSearchParams) => [...storeKeys.all, 'list', params] as const,
+  list: (params: Omit<StoreSearchParams, 'page'>) => [...storeKeys.all, 'list', params] as const,
   detail: (id?: number) => [...storeKeys.all, 'detail', id] as const,
   authority: (id?: string | number) => [...storeKeys.all, 'authority', id] as const,
 }
@@ -37,11 +37,14 @@ export const useStoreOptions = (officeId?: number, franchiseId?: number) => {
   })
 }
 
-// 점포 목록 조회
-export const useStoreList = (params: StoreSearchParams, enabled = true) => {
-  return useQuery({
+// 점포 목록 조회 (무한 스크롤)
+export const useStoreInfiniteList = (params: Omit<StoreSearchParams, 'page'>, enabled = true) => {
+  return useInfiniteQuery({
     queryKey: storeKeys.list(params),
-    queryFn: () => getStoreList(params),
+    queryFn: ({ pageParam }) => getStoreList({ ...params, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      lastPage.hasNext ? lastPageParam + 1 : undefined,
     enabled,
   })
 }

@@ -14,6 +14,7 @@ export default function StoreEditTime({ id }: { id: number }) {
   const openAlert = usePopupControler((state) => state.openAlert);
   const updateMutation = useUpdateStore();
   const form = useStoreFormStore();
+  const setOperating = useStoreFormStore((state) => state.setOperating);
   const { data } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
@@ -40,9 +41,8 @@ export default function StoreEditTime({ id }: { id: number }) {
   // 운영시간 데이터로 폼 초기화 (서버 개별 요일 → 폼 WEEKDAY 구조로 역변환)
   useEffect(() => {
     if (!data) return;
-    form.setOperating(toFormOperating(data.operating));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+    setOperating(toFormOperating(data.operating));
+  }, [data, setOperating]);
 
   const handleSave = async () => {
     if (updateMutation.isPending || !data) return;

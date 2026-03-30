@@ -15,6 +15,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const openAlert = usePopupControler((state) => state.openAlert);
   const updateMutation = useUpdateStore();
   const form = useStoreFormStore();
+  const setField = useStoreFormStore((state) => state.setField);
   const { data } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
@@ -48,20 +49,19 @@ export default function StoreEditInfo({ id }: { id: number }) {
   useEffect(() => {
     if (!data) return;
     const { storeInfo } = data;
-    form.setField("storeOwner", storeInfo.storeOwner);
-    form.setField("officeId", storeInfo.officeId);
-    form.setField("franchiseId", storeInfo.franchiseId ?? null);
-    form.setField("storeName", storeInfo.storeName);
-    form.setField("operationStatus", storeInfo.operationStatus);
-    form.setField("statusUpdatedDate", storeInfo.statusUpdatedDate ?? "");
-    form.setField("ceoName", storeInfo.ceoName ?? "");
-    form.setField("businessNumber", storeInfo.businessNumber ?? "");
-    form.setField("storeAddress", storeInfo.storeAddress ?? "");
-    form.setField("storeAddressDetail", storeInfo.storeAddressDetail ?? "");
-    form.setField("ceoPhone", storeInfo.ceoPhone ?? "");
-    form.setField("storePhone", storeInfo.storePhone ?? "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+    setField("storeOwner", storeInfo.storeOwner);
+    setField("officeId", storeInfo.officeId);
+    setField("franchiseId", storeInfo.franchiseId ?? null);
+    setField("storeName", storeInfo.storeName);
+    setField("operationStatus", storeInfo.operationStatus);
+    setField("statusUpdatedDate", storeInfo.statusUpdatedDate ?? "");
+    setField("ceoName", storeInfo.ceoName ?? "");
+    setField("businessNumber", storeInfo.businessNumber ?? "");
+    setField("storeAddress", storeInfo.storeAddress ?? "");
+    setField("storeAddressDetail", storeInfo.storeAddressDetail ?? "");
+    setField("ceoPhone", storeInfo.ceoPhone ?? "");
+    setField("storePhone", storeInfo.storePhone ?? "");
+  }, [data, setField]);
 
   const handleNext = () => { window.scrollTo({ top: 0 }); setStep(step + 1); };
   const handlePrev = () => { window.scrollTo({ top: 0 }); setStep(step - 1); };

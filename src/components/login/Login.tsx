@@ -104,7 +104,7 @@ export default function Login() {
         const matchedCompany = data.companies?.find((c) => c.authorityId === data.authority!.authorityId)
         const headOfficeId = matchedCompany?.headOfficeId ?? data.companies?.[0]?.headOfficeId
         const ownerCode = matchedCompany?.ownerCode ?? data.authority.ownerCode
-        completeLogin(data, data.authority.authorityId, data.authority, ownerCode, headOfficeId)
+        await completeLogin(data, data.authority.authorityId, data.authority, ownerCode, headOfficeId)
         return
       }
 
@@ -135,7 +135,7 @@ export default function Login() {
       const ownerCode = result.authority?.ownerCode ?? selectedCompany?.ownerCode
       const headOfficeId = selectedCompany?.headOfficeId
 
-      completeLogin(
+      await completeLogin(
         { ...pendingLoginData, accessToken: pendingTokens.accessToken, refreshToken: pendingTokens.refreshToken },
         authorityId,
         result.authority ? { authorityId, programs: result.authority.programs, ownerCode: result.authority.ownerCode } : undefined,

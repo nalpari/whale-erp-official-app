@@ -13,6 +13,7 @@ export default function StoreEditPhoto({ id }: { id: number }) {
   const openAlert = usePopupControler((state) => state.openAlert);
   const updateMutation = useUpdateStore();
   const form = useStoreFormStore();
+  const setField = useStoreFormStore((state) => state.setField);
   const { data } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
@@ -39,15 +40,14 @@ export default function StoreEditPhoto({ id }: { id: number }) {
   // 기존 이미지 데이터로 폼 초기화
   useEffect(() => {
     if (!data) return;
-    form.setField("existingImages",
+    setField("existingImages",
       data.files
         .filter((f) => f.uploadFileCategory === "STORE_IMAGE")
         .map((f) => ({ id: f.id, originalFileName: f.originalFileName, publicUrl: f.publicUrl || "" }))
     );
-    form.setField("storeImages", []);
-    form.setField("deleteImageIds", []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+    setField("storeImages", []);
+    setField("deleteImageIds", []);
+  }, [data, setField]);
 
   const handleSave = async () => {
     if (updateMutation.isPending || !data) return;

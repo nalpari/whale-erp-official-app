@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { usePopupControler } from "@/store/usePopupControler";
@@ -21,13 +21,21 @@ export default function StoreForm03() {
   const openPhotoPopup = usePopupControler((state) => state.openPhotoPopup);
 
   // 기존 이미지 + 새 이미지의 미리보기 URL 목록
-  const allPreviewUrls = useMemo(() => {
-    const existingUrls = existingImages
-      .filter((img) => img.publicUrl)
-      .map((img) => img.publicUrl!);
-    const newUrls = storeImages.map((file) => URL.createObjectURL(file));
-    return [...existingUrls, ...newUrls];
-  }, [existingImages, storeImages]);
+  const newObjectUrls = useMemo(
+    () => storeImages.map((file) => URL.createObjectURL(file)),
+    [storeImages],
+  );
+  const prevUrlsRef = useRef<string[]>([]);
+  useEffect(() => {
+    const prev = prevUrlsRef.current;
+    prevUrlsRef.current = newObjectUrls;
+    return () => prev.forEach((url) => URL.revokeObjectURL(url));
+  }, [newObjectUrls]);
+
+  const allPreviewUrls = [
+    ...existingImages.filter((img) => img.publicUrl).map((img) => img.publicUrl!),
+    ...newObjectUrls,
+  ];
 
   return (
     <div className="sub-cont-wrap">
