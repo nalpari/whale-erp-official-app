@@ -99,7 +99,7 @@ export const useMemberDocuments = (memberId?: number | null, enabled = true) => 
   })
 }
 
-// 공통코드 조회
+// 공통코드 조회 (직원분류, 직급, 직책)
 export const useEmployeeCommonCode = (
   headOfficeId?: number,
   franchiseId?: number,
@@ -108,7 +108,7 @@ export const useEmployeeCommonCode = (
   return useQuery({
     queryKey: employeeKeys.commonCode(headOfficeId, franchiseId),
     queryFn: () => getEmployeeCommonCode(headOfficeId, franchiseId),
-    enabled,
+    enabled: enabled && !!headOfficeId,
   })
 }
 

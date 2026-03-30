@@ -17,6 +17,7 @@ import type {
   CheckEmployeeNumberResult,
   EmployeeSimpleListResponse,
   GetEmployeeListByTypeParams,
+  EmployeeInfoCommonCodeResponse,
 } from '@/types/employee'
 import type { PaginatedResponse } from '@/types/payroll'
 
@@ -334,19 +335,22 @@ export async function getMinimumWageList(): Promise<MinimumWageInfo[]> {
 // ========== 공통코드 ==========
 
 export async function getEmployeeCommonCode(
-  headOfficeOrganizationId?: number,
-  franchiseOrganizationId?: number,
-): Promise<Record<string, string>[]> {
-  const response = await api.get<{ data: Record<string, string>[] }>(
-    `${BASE_URL}/common-code`,
-    {
-      params: cleanParams({
-        headOfficeOrganizationId,
-        franchiseOrganizationId,
-      }),
-    },
-  )
-  return response.data.data
+  headOfficeId?: number,
+  franchiseId?: number,
+): Promise<EmployeeInfoCommonCodeResponse | null> {
+  try {
+    const params: Record<string, number> = {}
+    if (headOfficeId != null) params.headOfficeId = headOfficeId
+    if (franchiseId != null) params.franchiseId = franchiseId
+
+    const response = await api.get<{ data: EmployeeInfoCommonCodeResponse | null }>(
+      `${BASE_URL}/common-code`,
+      { params },
+    )
+    return response.data.data
+  } catch {
+    return null
+  }
 }
 
 // ========== 직원 타입별 목록 ==========

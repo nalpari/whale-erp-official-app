@@ -345,3 +345,21 @@ export interface CheckEmployeeNumberResult {
   isDuplicate: boolean
   message: string
 }
+
+// ========== 직원 정보 공통코드 ==========
+
+export interface ClassificationItem {
+  code: string
+  name: string
+  sortOrder: number
+}
+
+export interface EmployeeInfoCommonCodeResponse {
+  codeId: number
+  code: string
+  codeMemoContent: {
+    EMPLOYEE?: ClassificationItem[]
+    RANK?: ClassificationItem[]
+    POSITION?: ClassificationItem[]
+  } | null
+}

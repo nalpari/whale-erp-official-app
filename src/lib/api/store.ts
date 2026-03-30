@@ -3,7 +3,7 @@ import type { StoreOption, HeadOffice } from '@/types/store'
 
 // 운영중인 본사 목록 조회
 export const getHeadOffices = async (): Promise<HeadOffice[]> => {
-  const response = await api.get<{ data: HeadOffice[] }>('/api/master/bp/head-offices')
+  const response = await api.get<{ data: HeadOffice[] }>('/api/v1/master/bp/head-offices')
   return response.data.data
 }
 
