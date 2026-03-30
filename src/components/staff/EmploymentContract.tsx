@@ -255,9 +255,10 @@ export default function EmploymentContract({
                           <input
                             type="number"
                             className="employ-input"
+                            min="0"
                             value={monthlyTime}
                             onChange={(e) =>
-                              setMonthlyTime(Number(e.target.value))
+                              setMonthlyTime(Math.max(0, Number(e.target.value) || 0))
                             }
                           />
                         </div>
@@ -271,9 +272,10 @@ export default function EmploymentContract({
                           <input
                             type="number"
                             className="employ-input"
+                            min="0"
                             value={overtimeTime}
                             onChange={(e) =>
-                              setOvertimeTime(Number(e.target.value))
+                              setOvertimeTime(Math.max(0, Number(e.target.value) || 0))
                             }
                           />
                         </div>
@@ -291,9 +293,10 @@ export default function EmploymentContract({
                           <input
                             type="number"
                             className="employ-input"
+                            min="0"
                             value={nightTime}
                             onChange={(e) =>
-                              setNightTime(Number(e.target.value))
+                              setNightTime(Math.max(0, Number(e.target.value) || 0))
                             }
                           />
                         </div>
@@ -311,9 +314,10 @@ export default function EmploymentContract({
                           <input
                             type="number"
                             className="employ-input"
+                            min="0"
                             value={holidayTime}
                             onChange={(e) =>
-                              setHolidayTime(Number(e.target.value))
+                              setHolidayTime(Math.max(0, Number(e.target.value) || 0))
                             }
                           />
                         </div>
