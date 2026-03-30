@@ -126,3 +126,24 @@ export interface OperatingHourRequest {
 export interface FileDeleteRequest {
   shouldDeleteFileIds: number[]
 }
+
+export interface SubscribePlanCheck {
+  canSave: boolean
+  storeCount: number
+  planName: string
+  organizationId: number
+}
+
+export interface AuthorityDetail {
+  id: number
+  is_bp_master: boolean
+  details: {
+    program_id: number
+    program_name: string
+    program_path: string
+    program_level: number
+    can_read: boolean
+    can_create_delete: boolean
+    can_update: boolean
+  }[]
+}

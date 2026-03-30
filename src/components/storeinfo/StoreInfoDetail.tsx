@@ -231,12 +231,10 @@ export default function StoreInfoDetail({ id }: { id: number }) {
                       <td>{storeInfo.ceoPhone}</td>
                     </tr>
                   )}
-                  {storeInfo.storePhone && (
-                    <tr>
-                      <th>점포 전화번호</th>
-                      <td>{storeInfo.storePhone}</td>
-                    </tr>
-                  )}
+                  <tr>
+                    <th>점포 전화번호</th>
+                    <td>{storeInfo.storePhone || ""}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>

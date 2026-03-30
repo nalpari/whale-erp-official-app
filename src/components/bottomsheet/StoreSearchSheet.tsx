@@ -14,10 +14,14 @@ export default function StoreSearchSheet() {
   const [localFrom, setLocalFrom] = useState(searchStore.from);
   const [localTo, setLocalTo] = useState(searchStore.to);
 
+  const currentYear = new Date().getFullYear();
+  const defaultFrom = `${currentYear}-01-01`;
+  const defaultTo = new Date().toISOString().slice(0, 10);
+
   const handleOpenStart = () => {
     setLocalStatus(searchStore.status);
-    setLocalFrom(searchStore.from);
-    setLocalTo(searchStore.to);
+    setLocalFrom(searchStore.hasSearched ? searchStore.from : defaultFrom);
+    setLocalTo(searchStore.hasSearched ? searchStore.to : defaultTo);
   };
 
   const handleClose = () => {
@@ -25,10 +29,15 @@ export default function StoreSearchSheet() {
   };
 
   const handleSearch = () => {
+    const hasFilter = localStatus !== null || localFrom !== "" || localTo !== "";
     searchStore.setStatus(localStatus);
     searchStore.setFrom(localFrom);
     searchStore.setTo(localTo);
-    searchStore.search();
+    if (hasFilter) {
+      searchStore.search();
+    } else {
+      searchStore.reset();
+    }
     handleClose();
   };
 

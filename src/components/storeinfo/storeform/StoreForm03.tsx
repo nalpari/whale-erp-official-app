@@ -1,6 +1,8 @@
 "use client";
+import { useMemo } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+import { usePopupControler } from "@/store/usePopupControler";
 
 function getFileNameAndExt(fileName: string): { name: string; ext: string } {
   const lastDot = fileName.lastIndexOf(".");
@@ -16,6 +18,16 @@ export default function StoreForm03() {
   const setPhotoUploadSheet = useBottomSheetControler(
     (state) => state.setPhotoUploadSheet
   );
+  const openPhotoPopup = usePopupControler((state) => state.openPhotoPopup);
+
+  // 기존 이미지 + 새 이미지의 미리보기 URL 목록
+  const allPreviewUrls = useMemo(() => {
+    const existingUrls = existingImages
+      .filter((img) => img.publicUrl)
+      .map((img) => img.publicUrl!);
+    const newUrls = storeImages.map((file) => URL.createObjectURL(file));
+    return [...existingUrls, ...newUrls];
+  }, [existingImages, storeImages]);
 
   return (
     <div className="sub-cont-wrap">
@@ -32,7 +44,7 @@ export default function StoreForm03() {
           </div>
           <div className="store-img-list">
             {/* 기존 이미지 */}
-            {existingImages.map((img) => {
+            {existingImages.map((img, idx) => {
               const { name, ext } = getFileNameAndExt(img.originalFileName);
               return (
                 <div className="store-img-bx" key={`existing-${img.id}`}>
@@ -41,6 +53,12 @@ export default function StoreForm03() {
                     <span>{ext}</span>
                   </div>
                   <div className="store-img-btn-wrap">
+                    {img.publicUrl && (
+                      <button
+                        className="img-show"
+                        onClick={() => openPhotoPopup(allPreviewUrls, idx)}
+                      ></button>
+                    )}
                     <button
                       className="img-delete"
                       onClick={() => markDeleteExistingImage(img.id)}
@@ -52,6 +70,7 @@ export default function StoreForm03() {
             {/* 새로 추가된 이미지 */}
             {storeImages.map((file, index) => {
               const { name, ext } = getFileNameAndExt(file.name);
+              const previewIdx = existingImages.filter((img) => img.publicUrl).length + index;
               return (
                 <div className="store-img-bx" key={`new-${index}`}>
                   <div className="store-img-tit">
@@ -59,6 +78,10 @@ export default function StoreForm03() {
                     <span>{ext}</span>
                   </div>
                   <div className="store-img-btn-wrap">
+                    <button
+                      className="img-show"
+                      onClick={() => openPhotoPopup(allPreviewUrls, previewIdx)}
+                    ></button>
                     <button
                       className="img-delete"
                       onClick={() => removeStoreImage(index)}

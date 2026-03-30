@@ -21,7 +21,7 @@ interface StoreFormState {
 
   // Step 3
   storeImages: File[]
-  existingImages: { id: number; originalFileName: string }[]
+  existingImages: { id: number; originalFileName: string; publicUrl?: string }[]
   deleteImageIds: number[]
   businessFile: File | null
 
@@ -57,7 +57,7 @@ const initialState = {
   ceoPhone: '',
   storePhone: '',
   storeImages: [] as File[],
-  existingImages: [] as { id: number; originalFileName: string }[],
+  existingImages: [] as { id: number; originalFileName: string; publicUrl?: string }[],
   deleteImageIds: [] as number[],
   businessFile: null as File | null,
   operating: [...DEFAULT_OPERATING] as OperatingHourRequest[],

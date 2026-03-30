@@ -19,6 +19,7 @@ interface AuthState {
   affiliationId: string | null
   ownerCode: string | null
   headOfficeId: number | null
+  franchiseId: number | null
   loginId: string | null
   name: string | null
   mobilePhone: string | null
@@ -33,6 +34,7 @@ interface AuthStore extends AuthState {
   setAffiliationId: (id: string | null) => void
   setOwnerCode: (code: string | null) => void
   setHeadOfficeId: (id: number | null) => void
+  setFranchiseId: (id: number | null) => void
   setUserInfo: (loginId: string, name: string, mobilePhone: string, avatar: string | null) => void
   setPasswordChangeRequired: (required: boolean) => void
   clearAuth: () => void
@@ -47,6 +49,7 @@ export const useAuthStore = create<AuthStore>()(
       affiliationId: null,
       ownerCode: null,
       headOfficeId: null,
+      franchiseId: null,
       loginId: null,
       name: null,
       mobilePhone: null,
@@ -60,6 +63,7 @@ export const useAuthStore = create<AuthStore>()(
       setAffiliationId: (id) => set({ affiliationId: id }),
       setOwnerCode: (code) => set({ ownerCode: code }),
       setHeadOfficeId: (id) => set({ headOfficeId: id }),
+      setFranchiseId: (id) => set({ franchiseId: id }),
       setUserInfo: (loginId, name, mobilePhone, avatar) =>
         set({ loginId, name, mobilePhone, avatar }),
       setPasswordChangeRequired: (required) => set({ passwordChangeRequired: required }),
@@ -71,6 +75,7 @@ export const useAuthStore = create<AuthStore>()(
           affiliationId: null,
           ownerCode: null,
           headOfficeId: null,
+          franchiseId: null,
           loginId: null,
           name: null,
           mobilePhone: null,

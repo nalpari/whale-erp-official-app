@@ -38,12 +38,12 @@ api.interceptors.request.use((config) => {
 
   let { accessToken, affiliationId } = useAuthStore.getState()
 
-  if (!accessToken && typeof window !== 'undefined') {
+  if ((!accessToken || !affiliationId) && typeof window !== 'undefined') {
     try {
       const stored = localStorage.getItem('auth-storage')
       if (stored) {
         const parsed = JSON.parse(stored)
-        accessToken = parsed.state?.accessToken
+        accessToken = accessToken || parsed.state?.accessToken
         affiliationId = affiliationId || parsed.state?.affiliationId
       }
     } catch (e) {
@@ -58,6 +58,8 @@ api.interceptors.request.use((config) => {
   if (affiliationId) {
     config.headers['affiliationId'] = affiliationId
   }
+  // TODO: 서버 programs.path와 매핑하는 로직으로 교체 필요
+  config.headers['currentPath'] = '/store/info'
 
   return config
 })

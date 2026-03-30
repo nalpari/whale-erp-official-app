@@ -7,9 +7,18 @@ import type {
   StoreDetail,
   StoreHeaderRequest,
   FileDeleteRequest,
+  SubscribePlanCheck,
+  AuthorityDetail,
 } from '@/types/store'
 
 const BASE_URL = '/api/v1/stores'
+
+// undefined/null/빈 문자열 제거
+const cleanParams = (params: object) => {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+  )
+}
 
 // 운영중인 본사 목록 조회
 export const getHeadOffices = async (): Promise<HeadOffice[]> => {
@@ -17,19 +26,12 @@ export const getHeadOffices = async (): Promise<HeadOffice[]> => {
   return response.data.data
 }
 
-// 점포 드롭다운 목록 조회 (본사 ID 기반)
-export const getStoreOptions = async (officeId: number): Promise<StoreOption[]> => {
+// 점포 드롭다운 목록 조회 (본사/가맹점 ID 기반)
+export const getStoreOptions = async (officeId: number, franchiseId?: number): Promise<StoreOption[]> => {
   const response = await api.get<{ data: StoreOption[] }>(`${BASE_URL}/options`, {
-    params: { officeId },
+    params: cleanParams({ officeId, franchiseId }),
   })
   return response.data.data
-}
-
-// undefined/null/빈 문자열 제거
-const cleanParams = (params: object) => {
-  return Object.fromEntries(
-    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
-  )
 }
 
 // 점포 목록 조회
@@ -95,4 +97,16 @@ export const updateStore = async (
 // 점포 삭제
 export const deleteStore = async (id: number): Promise<void> => {
   await api.delete(`${BASE_URL}/${id}`)
+}
+
+// 구독 플랜 점포 등록 가능 여부 조회
+export const checkStoreSubscribe = async (): Promise<SubscribePlanCheck> => {
+  const response = await api.get<{ data: SubscribePlanCheck }>(`${BASE_URL}/subscribe`)
+  return response.data.data
+}
+
+// 권한 상세 조회
+export const getAuthorityDetail = async (id: string | number): Promise<AuthorityDetail> => {
+  const response = await api.get<{ data: AuthorityDetail }>(`/api/v1/system/authorities/${id}`)
+  return response.data.data
 }

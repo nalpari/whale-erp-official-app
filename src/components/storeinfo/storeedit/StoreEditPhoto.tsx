@@ -42,7 +42,7 @@ export default function StoreEditPhoto({ id }: { id: number }) {
     form.setField("existingImages",
       data.files
         .filter((f) => f.uploadFileCategory === "STORE_IMAGE")
-        .map((f) => ({ id: f.id, originalFileName: f.originalFileName }))
+        .map((f) => ({ id: f.id, originalFileName: f.originalFileName, publicUrl: f.publicUrl || "" }))
     );
     form.setField("storeImages", []);
     form.setField("deleteImageIds", []);

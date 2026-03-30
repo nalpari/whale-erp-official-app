@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAuthStore } from "@/store/useAuthStore"
 import { useLoginMutation, useAuthoritySelectMutation } from "@/hooks/queries/use-login-mutation"
 import { getErrorMessage } from "@/lib/api"
+import { getBpTree } from "@/lib/api/bp"
 import type { LoginResponse } from "@/types/auth"
 
 function getSafeReturnUrl(url: string | null): string {
@@ -45,7 +46,7 @@ export default function Login() {
   const loginMutation = useLoginMutation()
   const authoritySelectMutation = useAuthoritySelectMutation()
 
-  const completeLogin = useCallback((data: LoginResponse, authorityId: number, programs: LoginResponse["authority"], ownerCode?: string, headOfficeId?: number) => {
+  const completeLogin = useCallback(async (data: LoginResponse, authorityId: number, programs: LoginResponse["authority"], ownerCode?: string, headOfficeId?: number) => {
     const store = useAuthStore.getState()
     store.setTokens(data.accessToken, data.refreshToken)
     store.setAffiliationId(String(authorityId))
@@ -56,6 +57,21 @@ export default function Login() {
       store.setOwnerCode(ownerCode)
     }
     store.setHeadOfficeId(headOfficeId ?? null)
+    store.setFranchiseId(null)
+
+    // 가맹점 권한(PRGRP_002_002)이면 bp-tree에서 가맹점 ID 조회
+    if (ownerCode === "PRGRP_002_002" && headOfficeId) {
+      try {
+        const bpTree = await getBpTree()
+        const office = bpTree.find((o) => o.id === headOfficeId)
+        if (office?.franchises?.length) {
+          store.setFranchiseId(office.franchises[0].id)
+        }
+      } catch {
+        // bp-tree 조회 실패 시 무시
+      }
+    }
+
     if (data.loginId && data.name) {
       store.setUserInfo(data.loginId, data.name, data.mobilePhone ?? "", data.avatar ?? null)
     }
@@ -87,7 +103,8 @@ export default function Login() {
       if (data.authority) {
         const matchedCompany = data.companies?.find((c) => c.authorityId === data.authority!.authorityId)
         const headOfficeId = matchedCompany?.headOfficeId ?? data.companies?.[0]?.headOfficeId
-        completeLogin(data, data.authority.authorityId, data.authority, data.authority.ownerCode, headOfficeId)
+        const ownerCode = matchedCompany?.ownerCode ?? data.authority.ownerCode
+        completeLogin(data, data.authority.authorityId, data.authority, ownerCode, headOfficeId)
         return
       }
 
