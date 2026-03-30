@@ -199,14 +199,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   const contractHeader = employeeContract?.employmentContractHeader
   const isNextMonth = contractHeader?.salaryMonth === 'SLRCF_002'
 
-  // 익월지급이면 급여지급월 기본값을 전월로 변경
   const prevMonthValue = payrollMonthOptions[1]?.value ?? ''
-  const effectivePayrollMonth = isNew && employeeContract && isNextMonth && prevMonthValue
-    ? prevMonthValue
-    : payrollYearMonth
-  if (effectivePayrollMonth !== payrollYearMonth) {
-    setPayrollYearMonth(effectivePayrollMonth)
-  }
 
   // 급여지급일 자동 계산
   useEffect(() => {
@@ -235,6 +228,11 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   const currentContractId = employeeContract?.id
   useEffect(() => {
     if (!isNew || !currentContractId) return
+
+    // 익월지급이면 급여지급월을 전월로 변경
+    if (isNextMonth && prevMonthValue) {
+      setPayrollYearMonth(prevMonthValue)
+    }
 
     const si = salaryInfo
     const mappedPaymentItems: PaymentItem[] = [
@@ -283,7 +281,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
       { itemCode: 'INCOME_TAX', itemOrder: 5, amount: incomeTax, remarks: '소득세' },
       { itemCode: 'LOCAL_INCOME_TAX', itemOrder: 6, amount: localIncomeTax, remarks: '지방소득세' },
     ])
-  }, [isNew, currentContractId, salaryInfo, contractHeader])
+  }, [isNew, currentContractId, salaryInfo, contractHeader, isNextMonth, prevMonthValue])
 
   // 금액 계산
   const totalPayment = paymentItems.reduce((sum, item) => sum + (item.amount || 0), 0)
