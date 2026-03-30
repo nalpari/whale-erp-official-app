@@ -114,6 +114,10 @@ export default function StoreInfoList() {
           message: `${result.planName} 회원입니다. 점포를 추가하기 위해서는 회원 등급 업그레이드가 필요합니다.`,
           confirmText: "확인",
           cancelText: "취소",
+          // TODO: 업그레이드 페이지 경로 확인 필요
+          onConfirm: () => {
+            window.open("https://www.whaleerp.co.kr/customer/rate-plan", "_blank");
+          },
         });
       }
     } catch {
