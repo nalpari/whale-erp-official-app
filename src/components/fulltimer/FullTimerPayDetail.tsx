@@ -34,6 +34,29 @@ interface FullTimerPayDetailProps {
 
 const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
 
+// 급여지급일 계산
+const computePaymentDate = (ym: string, salaryDay?: number, nextMonth?: boolean): string => {
+  if (!ym || ym.length !== 6 || !salaryDay) return ''
+  const year = Number(ym.slice(0, 4))
+  const month = Number(ym.slice(4)) - 1
+  const offset = nextMonth ? 1 : 0
+  const d = new Date(year, month + offset, salaryDay)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// 정산기간 계산 (1일~말일)
+const computeSettlementRange = (ym: string): { start: string; end: string } | null => {
+  if (!ym || ym.length !== 6) return null
+  const year = Number(ym.slice(0, 4))
+  const month = Number(ym.slice(4))
+  const lastDay = new Date(year, month, 0).getDate()
+  const mm = String(month).padStart(2, '0')
+  return {
+    start: `${year}-${mm}-01`,
+    end: `${year}-${mm}-${String(lastDay).padStart(2, '0')}`,
+  }
+}
+
 // 오늘 기준 12개월 옵션 생성 (당월 ~ 11개월 전)
 const getPayrollMonthOptions = () => {
   const options: { value: string; label: string }[] = []
@@ -201,37 +224,35 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
 
   const prevMonthValue = payrollMonthOptions[1]?.value ?? ''
 
-  // 급여지급일 자동 계산
-  useEffect(() => {
-    if (!payrollYearMonth || payrollYearMonth.length !== 6 || !contractHeader?.salaryDay || !employeeContract) return
-    const year = Number(payrollYearMonth.slice(0, 4))
-    const month = Number(payrollYearMonth.slice(4)) - 1
-    const offset = isNextMonth ? 1 : 0
-    const d = new Date(year, month + offset, contractHeader.salaryDay)
-    const computed = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    setPaymentDate(computed)
-  }, [payrollYearMonth, contractHeader?.salaryDay, isNextMonth, employeeContract])
+  // 급여지급월 변경 시 지급일/정산기간을 함께 계산 (이벤트 핸들러 기반)
+  const handlePayrollYearMonthChange = (ym: string) => {
+    setPayrollYearMonth(ym)
+    const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
+    if (date) setPaymentDate(date)
+    const range = computeSettlementRange(ym)
+    if (range) {
+      setSettlementStartDate(range.start)
+      setSettlementEndDate(range.end)
+    }
+  }
 
-  // 급여지급월 변경 시 정산기간 자동 설정 (1일~말일)
-  useEffect(() => {
-    if (!payrollYearMonth || payrollYearMonth.length !== 6) return
-    const year = Number(payrollYearMonth.slice(0, 4))
-    const month = Number(payrollYearMonth.slice(4))
-    const lastDay = new Date(year, month, 0).getDate()
-    const mm = String(month).padStart(2, '0')
-    setSettlementStartDate(`${year}-${mm}-01`)
-    setSettlementEndDate(`${year}-${mm}-${String(lastDay).padStart(2, '0')}`)
-  }, [payrollYearMonth])
-
-  // 직원 선택 시 salaryInfo → 지급/공제 항목 자동 매핑
+  // 직원 선택 시 salaryInfo → 지급/공제 항목 + 급여지급월/지급일/정산기간 한번에 매핑
   const salaryInfo = employeeContract?.salaryInfo
   const currentContractId = employeeContract?.id
   useEffect(() => {
     if (!isNew || !currentContractId) return
 
-    // 익월지급이면 급여지급월을 전월로 변경
-    if (isNextMonth && prevMonthValue) {
-      setPayrollYearMonth(prevMonthValue)
+    // 익월지급이면 급여지급월을 전월로, 아니면 당월 유지
+    const ym = isNextMonth && prevMonthValue ? prevMonthValue : payrollYearMonth
+    setPayrollYearMonth(ym)
+
+    // 지급일/정산기간 계산
+    const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
+    if (date) setPaymentDate(date)
+    const range = computeSettlementRange(ym)
+    if (range) {
+      setSettlementStartDate(range.start)
+      setSettlementEndDate(range.end)
     }
 
     const si = salaryInfo
@@ -281,7 +302,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
       { itemCode: 'INCOME_TAX', itemOrder: 5, amount: incomeTax, remarks: '소득세' },
       { itemCode: 'LOCAL_INCOME_TAX', itemOrder: 6, amount: localIncomeTax, remarks: '지방소득세' },
     ])
-  }, [isNew, currentContractId, salaryInfo, contractHeader, isNextMonth, prevMonthValue])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- currentContractId 변경 시에만 실행, 파생 객체(salaryInfo/contractHeader) 참조 불안정 방지
+  }, [currentContractId])
 
   // 금액 계산
   const totalPayment = paymentItems.reduce((sum, item) => sum + (item.amount || 0), 0)
@@ -537,7 +559,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                     <select
                       className="select-form"
                       value={payrollYearMonth}
-                      onChange={(e) => setPayrollYearMonth(e.target.value)}
+                      onChange={(e) => handlePayrollYearMonthChange(e.target.value)}
                     >
                       <option value="">선택</option>
                       {payrollMonthOptions.map((opt) => (
