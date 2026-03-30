@@ -95,7 +95,7 @@ export const useCreateContractSalaryInfo = () => {
   return useMutation({
     mutationFn: (data: ContractSalaryInfoCreateRequest) => createContractSalaryInfo(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: contractKeys.all })
     },
   })
 }
@@ -115,9 +115,8 @@ export const useUpdateContractHeader = () => {
       workContractFile?: File
       wageContractFile?: File
     }) => updateContractHeader(id, data, workContractFile, wageContractFile),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: contractKeys.detail(variables.id) })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all })
     },
   })
 }
@@ -133,9 +132,8 @@ export const useUpdateContractWorkHours = () => {
       contractId: number
       data: ContractWorkHoursRequest
     }) => updateContractWorkHours(contractId, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: contractKeys.detail(variables.contractId) })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all })
     },
   })
 }
@@ -151,9 +149,8 @@ export const useUpdateContractSalaryInfo = () => {
       id: number
       data: ContractSalaryInfoUpdateRequest
     }) => updateContractSalaryInfo(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: contractKeys.detail(variables.id) })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all })
     },
   })
 }
@@ -164,7 +161,7 @@ export const useDeleteContract = () => {
   return useMutation({
     mutationFn: (id: number) => deleteContract(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: contractKeys.all })
     },
   })
 }
@@ -175,7 +172,7 @@ export const useSendContractEmail = () => {
   return useMutation({
     mutationFn: (id: number) => sendContractEmail(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: contractKeys.all })
     },
   })
 }
