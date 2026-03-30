@@ -8,6 +8,10 @@ type HeaderState = {
   setOnDelete: (handler: (() => void) | null) => void;
   showDeleteButton: boolean;
   setShowDeleteButton: (show: boolean) => void;
+  rightLabel: string;
+  setRightLabel: (label: string) => void;
+  onBack: (() => void) | null;
+  setOnBack: (handler: (() => void) | null) => void;
 };
 
 export const useHeaderStore = create<HeaderState>()(
@@ -21,6 +25,12 @@ export const useHeaderStore = create<HeaderState>()(
       showDeleteButton: false,
       setShowDeleteButton: (show) =>
         set({ showDeleteButton: show }, false, "header/setShowDeleteButton"),
+      rightLabel: "",
+      setRightLabel: (label) =>
+        set({ rightLabel: label }, false, "header/setRightLabel"),
+      onBack: null,
+      setOnBack: (handler) =>
+        set({ onBack: handler }, false, "header/setOnBack"),
     }),
     { name: "HeaderStore" }
   )

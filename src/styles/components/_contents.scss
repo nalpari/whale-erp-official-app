@@ -242,6 +242,9 @@
         transform: translateY(-1px);
       }
     }
+    &.filtered {
+      background-color: #ff8c00;
+    }
   }
 }
 

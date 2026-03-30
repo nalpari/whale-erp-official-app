@@ -24,8 +24,12 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// 요청 인터셉터 — 토큰 자동 첨부
+// 요청 인터셉터 — 토큰 자동 첨부 + FormData Content-Type 처리
 api.interceptors.request.use((config) => {
+  // FormData 전송 시 Content-Type 제거 (브라우저가 multipart/form-data + boundary 자동 설정)
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
   const url = config.url || ''
 
   if (url.startsWith('/api/auth/') && !url.includes('/change-password')) {

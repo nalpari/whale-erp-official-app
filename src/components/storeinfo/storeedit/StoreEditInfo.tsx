@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
+import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
 import StoreForm01 from "../storeform/StoreForm01";
@@ -15,6 +16,33 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const updateMutation = useUpdateStore();
   const form = useStoreFormStore();
   const { data } = useStoreDetail(id);
+  const setTitle = useHeaderStore((state) => state.setTitle);
+  const setOnBack = useHeaderStore((state) => state.setOnBack);
+  const setRightLabel = useHeaderStore((state) => state.setRightLabel);
+
+  const handleBackConfirm = useCallback(() => {
+    openAlert({
+      message: "점포정보 수정을 취소하시겠습니까?",
+      confirmText: "확인",
+      cancelText: "취소",
+      onConfirm: () => router.back(),
+    });
+  }, [openAlert, router]);
+
+  useEffect(() => {
+    setTitle("점포정보 수정");
+    setOnBack(handleBackConfirm);
+
+    return () => {
+      setTitle("");
+      setRightLabel("");
+      setOnBack(null);
+    };
+  }, [setTitle, setRightLabel, setOnBack, handleBackConfirm]);
+
+  useEffect(() => {
+    setRightLabel(`${step}/2`);
+  }, [step, setRightLabel]);
 
   // 상세 데이터로 폼 초기화
   useEffect(() => {
@@ -46,22 +74,24 @@ export default function StoreEditInfo({ id }: { id: number }) {
     }
 
     try {
+      const organizationId = form.storeOwner === "FRANCHISE" && form.franchiseId
+        ? form.franchiseId
+        : form.officeId!;
+
       await updateMutation.mutateAsync({
         id,
         data: {
           storeOwner: form.storeOwner,
-          officeId: form.officeId,
-          franchiseId: form.franchiseId,
+          organizationId,
           storeName: form.storeName,
           operationStatus: form.operationStatus,
-          statusUpdatedDate: form.statusUpdatedDate || null,
           ceoName: form.ceoName || null,
           businessNumber: form.businessNumber || null,
           storeAddress: form.storeAddress || null,
           storeAddressDetail: form.storeAddressDetail || null,
           ceoPhone: form.ceoPhone || null,
           storePhone: form.storePhone || null,
-          operating: data?.operating.map((o) => ({
+          operatingHours: data?.operating.map((o) => ({
             dayType: o.dayType,
             isOperating: o.isOperating,
             openTime: o.openTime,

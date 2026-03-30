@@ -6,13 +6,14 @@ import type {
   StorePaginatedResponse,
   StoreDetail,
   StoreHeaderRequest,
+  FileDeleteRequest,
 } from '@/types/store'
 
 const BASE_URL = '/api/v1/stores'
 
 // 운영중인 본사 목록 조회
 export const getHeadOffices = async (): Promise<HeadOffice[]> => {
-  const response = await api.get<{ data: HeadOffice[] }>('/api/master/bp/head-offices')
+  const response = await api.get<{ data: HeadOffice[] }>('/api/v1/master/bp/head-offices')
   return response.data.data
 }
 
@@ -77,7 +78,8 @@ export const updateStore = async (
   formData.append('storeDto', new Blob([JSON.stringify(data)], { type: 'application/json' }))
 
   if (deleteImages && deleteImages.length > 0) {
-    formData.append('deleteImages', new Blob([JSON.stringify(deleteImages)], { type: 'application/json' }))
+    const deleteRequest: FileDeleteRequest = { shouldDeleteFileIds: deleteImages }
+    formData.append('deleteImages', new Blob([JSON.stringify(deleteRequest)], { type: 'application/json' }))
   }
   if (storeImages) {
     storeImages.forEach((file) => formData.append('storeImages', file))

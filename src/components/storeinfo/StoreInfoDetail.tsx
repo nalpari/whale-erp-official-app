@@ -114,7 +114,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
 
   useEffect(() => {
     if (data) {
-      setOnDelete(() => handleDelete);
+      setOnDelete(handleDelete);
     }
   }, [data, handleDelete, setOnDelete]);
 
@@ -135,10 +135,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
   };
 
   const storeImages = files.filter((f) => f.uploadFileCategory === "STORE_IMAGE");
-  const s3Host = process.env.NEXT_PUBLIC_S3_HOSTNAME || "";
-  const imageUrls = storeImages.map(
-    (f) => f.filePath || (f.storedFileName ? `https://${s3Host}/${f.storedFileName}` : "")
-  );
+  const imageUrls = storeImages.map((f) => f.publicUrl || "");
 
   const { weekdayOperating, weekdayTime, weekdayBreak, saturday, sunday, closedDays } =
     groupOperatingHours(operating);

@@ -7,13 +7,17 @@ import { useHeaderStore } from "@/store/useHeaderStore";
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { title, onDelete, showDeleteButton } = useHeaderStore();
+  const { title, onDelete, showDeleteButton, rightLabel, onBack } = useHeaderStore();
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
 
   const handleBack = () => {
-    router.back();
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
   };
 
   if (pathname.includes("/list") || pathname === "/login") {
@@ -29,6 +33,8 @@ export default function Header() {
             <h1>{title || "서브 페이지 헤더"}</h1>
             {showDeleteButton ? (
               <button className="btn-delete" onClick={() => onDelete?.()}></button>
+            ) : rightLabel ? (
+              <div className="header-right-label">{rightLabel}</div>
             ) : (
               <div style={{ width: 24 }} />
             )}

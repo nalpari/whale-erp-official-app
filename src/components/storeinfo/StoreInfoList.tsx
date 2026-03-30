@@ -31,7 +31,8 @@ export default function StoreInfoList() {
   const headOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined;
   const storeId = selectedStore?.id ?? undefined;
 
-  const { status, from, to } = useStoreSearchStore();
+  const { status, from, to, hasSearched } = useStoreSearchStore();
+  const isFiltered = hasSearched && (status !== null || from !== "" || to !== "");
 
   const [page, setPage] = useState(0);
 
@@ -69,7 +70,7 @@ export default function StoreInfoList() {
           <div className="search-count">
             검색결과 <span>{totalElements}건</span>
           </div>
-          <button className="search-btn act" onClick={() => setStoreSearchSheet(true)}>
+          <button className={`search-btn act${isFiltered ? " filtered" : ""}`} onClick={() => setStoreSearchSheet(true)}>
             <i className="icon-search"></i>
             <span>검색</span>
           </button>

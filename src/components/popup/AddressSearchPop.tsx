@@ -1,33 +1,80 @@
+"use client";
 import { usePopupControler } from "@/store/usePopupControler";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+
+declare global {
+  interface Window {
+    daum: {
+      Postcode: new (options: {
+        oncomplete: (data: DaumPostcodeResult) => void;
+        width: string;
+        height: string;
+      }) => { embed: (container: HTMLElement) => void };
+    };
+  }
+}
+
+interface DaumPostcodeResult {
+  address: string;
+  roadAddress: string;
+  jibunAddress: string;
+  zonecode: string;
+  buildingName: string;
+}
 
 export default function AddressSearchPop() {
   const [active, setActive] = useState(false);
+  const embedRef = useRef<HTMLDivElement>(null);
   const addressSearchPopup = usePopupControler(
     (state) => state.addressSearchPopup
   );
   const setAddressSearchPopup = usePopupControler(
     (state) => state.setAddressSearchPopup
   );
+  const onAddressSelect = usePopupControler(
+    (state) => state.onAddressSelect
+  );
 
-  const dataLengthDummy = 0; // 검색 결과 건수
-
-  useEffect(() => {
-    // 팝업 열기 시간 필요
-    const timer = setTimeout(() => {
-      setActive(addressSearchPopup);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [addressSearchPopup]);
-
-  // 팝업 닫기 시간 필요
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setActive(false);
     setTimeout(() => {
       setAddressSearchPopup(false);
     }, 250);
-  };
+  }, [setAddressSearchPopup]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setActive(addressSearchPopup);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [addressSearchPopup]);
+
+  // Daum Postcode 스크립트 로드 + embed
+  useEffect(() => {
+    if (!active || !embedRef.current) return;
+
+    const loadAndEmbed = () => {
+      if (!embedRef.current) return;
+      new window.daum.Postcode({
+        oncomplete: (data: DaumPostcodeResult) => {
+          const fullAddress = data.roadAddress || data.address;
+          onAddressSelect?.(fullAddress);
+          handleClose();
+        },
+        width: "100%",
+        height: "100%",
+      }).embed(embedRef.current);
+    };
+
+    if (window.daum?.Postcode) {
+      loadAndEmbed();
+    } else {
+      const script = document.createElement("script");
+      script.src = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+      script.onload = loadAndEmbed;
+      document.head.appendChild(script);
+    }
+  }, [active, onAddressSelect, handleClose]);
 
   return (
     <div className={`modal-popup ${active ? "act" : ""}`}>
@@ -38,76 +85,10 @@ export default function AddressSearchPop() {
             <button className="modal-close" onClick={handleClose}></button>
           </div>
           <div className="modal-body">
-            <div className="back-frame">
-              <div className="address-search">
-                <div className="input-icon-frame">
-                  <input type="text" />
-                  <button
-                    type="button"
-                    className="input-icon-btn search-del"
-                  ></button>
-                  <button
-                    type="button"
-                    className="input-icon-btn search"
-                  ></button>
-                </div>
-                {dataLengthDummy <= 0 && (
-                  <div className="warning mt15">검색 결과가 없습니다.</div>
-                )}
-              </div>
-              {dataLengthDummy > 0 ? (
-                <div className="address-list-wrap">
-                  <div className="address-count">
-                    검색결과 <span>28</span>건
-                  </div>
-                  <ul className="address-list">
-                    {Array.from({ length: dataLengthDummy }).map((_, index) => (
-                      <li className="address-item" key={index}>
-                        <button className="address-item-btn">
-                          <div className="address-tit">현대백화점 판교점</div>
-                          <div className="address-addr">
-                            [주소] 경기 성남시 분당구 판교역로 146번길 20
-                          </div>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="address-list-wrap">
-                  <div className="address-list-empty-tit">
-                    <span className="tip-badge">TIP</span>
-                    <span>이렇게 검색해 보세요.</span>
-                  </div>
-                  <div className="address-example-list">
-                    <div className="address-example-item">
-                      <div className="address-example-item-tit">
-                        도로명+건물번호
-                      </div>
-                      <div className="address-example-item-addr">
-                        예) 판교역로166
-                      </div>
-                    </div>
-                    <div className="address-example-item">
-                      <div className="address-example-item-tit">
-                        지역명(동/리)+번지물번호
-                      </div>
-                      <div className="address-example-item-addr">
-                        예) 백현동 532
-                      </div>
-                    </div>
-                    <div className="address-example-item">
-                      <div className="address-example-item-tit">
-                        지역명(동/리)+건물명(아파트명)
-                      </div>
-                      <div className="address-example-item-addr">
-                        예) 분당 주공, 연수동 주공 3차
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <div
+              ref={embedRef}
+              style={{ width: "100%", height: "calc(100vh - 120px)" }}
+            />
           </div>
         </div>
       </div>

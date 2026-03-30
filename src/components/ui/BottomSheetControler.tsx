@@ -24,6 +24,7 @@ import WorkerAddSheet from '../bottomsheet/WorkerAddSheet'
 import TemporaryWorkerAddSheet from '../bottomsheet/TemporaryWorkerAddSheet'
 import WorkerSearchSheet from '../bottomsheet/WorkerSearchSheet'
 import DeductionAddSheet from '../bottomsheet/DeductionAddSheet'
+import PhotoUploadSheet from '../bottomsheet/PhotoUploadSheet'
 
 export default function BottomSheetControler() {
   // 개별 구독으로 안정성 확보
@@ -91,6 +92,9 @@ export default function BottomSheetControler() {
   const deductionAddSheet = useBottomSheetControler(
     (state) => state.deductionAddSheet,
   )
+  const photoUploadSheet = useBottomSheetControler(
+    (state) => state.photoUploadSheet,
+  )
   useEffect(() => {
     const isAnyBottomSheetOpen =
       storeSelectSheet ||
@@ -114,7 +118,8 @@ export default function BottomSheetControler() {
       workerAddSheet ||
       temporaryWorkerAddSheet ||
       workerSearchSheet ||
-      deductionAddSheet
+      deductionAddSheet ||
+      photoUploadSheet
 
     if (isAnyBottomSheetOpen) {
       if (!document.body.classList.contains('open')) {
@@ -152,6 +157,7 @@ export default function BottomSheetControler() {
     temporaryWorkerAddSheet,
     workerSearchSheet,
     deductionAddSheet,
+    photoUploadSheet,
   ])
 
   return (
@@ -178,6 +184,7 @@ export default function BottomSheetControler() {
       {temporaryWorkerAddSheet && <TemporaryWorkerAddSheet />}
       {workerSearchSheet && <WorkerSearchSheet />}
       {deductionAddSheet && <DeductionAddSheet />}
+      {photoUploadSheet && <PhotoUploadSheet />}
     </>
   )
 }

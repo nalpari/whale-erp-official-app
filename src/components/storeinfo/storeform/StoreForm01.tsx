@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBpTree } from "@/hooks/queries/use-bp-queries";
 
-export default function StoreForm01() {
+export default function StoreForm01({ submitted = false }: { submitted?: boolean }) {
   const {
     storeOwner, officeId, franchiseId, storeName, operationStatus, statusUpdatedDate,
     setField,
@@ -84,6 +84,9 @@ export default function StoreForm01() {
                 </select>
               </div>
             </div>
+            {submitted && !officeId && (
+              <div className="warning mt10">* 필수 입력 항목입니다.</div>
+            )}
           </div>
         </div>
         <div className="sub-item-bx">
@@ -100,7 +103,7 @@ export default function StoreForm01() {
                 placeholder="점포명을 입력하세요"
               />
             </div>
-            {!storeName && (
+            {submitted && !storeName && (
               <div className="warning mt10">* 필수 입력 항목입니다.</div>
             )}
           </div>

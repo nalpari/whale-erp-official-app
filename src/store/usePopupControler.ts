@@ -25,6 +25,8 @@ type PopupControlerState = {
   openPhotoPopup: (images: string[], index: number) => void;
   addressSearchPopup: boolean;
   setAddressSearchPopup: (isOpen: boolean) => void;
+  onAddressSelect: ((address: string) => void) | null;
+  openAddressSearch: (onSelect: (address: string) => void) => void;
 };
 
 export const usePopupControler = create<PopupControlerState>()(
@@ -66,6 +68,13 @@ export const usePopupControler = create<PopupControlerState>()(
       addressSearchPopup: false,
       setAddressSearchPopup: (isOpen: boolean) =>
         set({ addressSearchPopup: isOpen }, false, "popup/setAddressSearch"),
+      onAddressSelect: null,
+      openAddressSearch: (onSelect: (address: string) => void) =>
+        set(
+          { addressSearchPopup: true, onAddressSelect: onSelect },
+          false,
+          "popup/openAddressSearch"
+        ),
     }),
     { name: "PopupControlerStore" }
   )

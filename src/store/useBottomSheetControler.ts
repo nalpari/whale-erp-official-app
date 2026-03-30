@@ -46,6 +46,8 @@ type BottomSheetControlerState = {
   setWorkerSearchSheet: (isOpen: boolean) => void
   deductionAddSheet: boolean
   setDeductionAddSheet: (isOpen: boolean) => void
+  photoUploadSheet: boolean
+  setPhotoUploadSheet: (isOpen: boolean) => void
 }
 
 export const useBottomSheetControler = create<BottomSheetControlerState>()(
@@ -168,6 +170,13 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           { deductionAddSheet: isOpen },
           false,
           'bottomSheet/setDeductionAdd',
+        ),
+      photoUploadSheet: false,
+      setPhotoUploadSheet: (isOpen: boolean) =>
+        set(
+          { photoUploadSheet: isOpen },
+          false,
+          'bottomSheet/setPhotoUpload',
         ),
     }),
     { name: 'BottomSheetControlerStore' },

@@ -86,6 +86,7 @@ export interface StoreFile {
   fileSize?: number | null
   contentType?: string | null
   mimeType?: string | null
+  publicUrl?: string | null
 }
 
 // 점포 상세 응답
@@ -95,21 +96,19 @@ export interface StoreDetail {
   files: StoreFile[]
 }
 
-// 점포 생성/수정 요청 DTO
+// 점포 생성/수정 요청 DTO (서버 StoreHeaderRequest 기준)
 export interface StoreHeaderRequest {
   storeOwner: string
-  officeId: number
-  franchiseId?: number | null
-  storeName: string
+  organizationId: number
   operationStatus: string
-  statusUpdatedDate?: string | null
-  ceoName?: string | null
+  storeName: string
   businessNumber?: string | null
   storeAddress?: string | null
   storeAddressDetail?: string | null
+  ceoName?: string | null
   ceoPhone?: string | null
   storePhone?: string | null
-  operating: OperatingHourRequest[]
+  operatingHours?: OperatingHourRequest[]
 }
 
 export interface OperatingHourRequest {
@@ -117,7 +116,13 @@ export interface OperatingHourRequest {
   isOperating: boolean
   openTime?: string | null
   closeTime?: string | null
+  breakTimeEnabled?: boolean
   breakStartTime?: string | null
   breakEndTime?: string | null
   selectWeekDayList?: string[]
+}
+
+// 파일 삭제 요청 DTO
+export interface FileDeleteRequest {
+  shouldDeleteFileIds: number[]
 }

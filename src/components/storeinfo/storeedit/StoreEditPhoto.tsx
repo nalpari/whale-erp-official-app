@@ -1,8 +1,9 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
+import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
 import StoreForm03 from "../storeform/StoreForm03";
@@ -13,6 +14,27 @@ export default function StoreEditPhoto({ id }: { id: number }) {
   const updateMutation = useUpdateStore();
   const form = useStoreFormStore();
   const { data } = useStoreDetail(id);
+  const setTitle = useHeaderStore((state) => state.setTitle);
+  const setOnBack = useHeaderStore((state) => state.setOnBack);
+
+  const handleBackConfirm = useCallback(() => {
+    openAlert({
+      message: "점포정보 수정을 취소하시겠습니까?",
+      confirmText: "확인",
+      cancelText: "취소",
+      onConfirm: () => router.back(),
+    });
+  }, [openAlert, router]);
+
+  useEffect(() => {
+    setTitle("점포 사진 수정");
+    setOnBack(handleBackConfirm);
+
+    return () => {
+      setTitle("");
+      setOnBack(null);
+    };
+  }, [setTitle, setOnBack, handleBackConfirm]);
 
   // 기존 이미지 데이터로 폼 초기화
   useEffect(() => {
@@ -31,12 +53,13 @@ export default function StoreEditPhoto({ id }: { id: number }) {
     if (updateMutation.isPending || !data) return;
 
     try {
+      const orgId = data.storeInfo.franchiseId ?? data.storeInfo.officeId;
+
       await updateMutation.mutateAsync({
         id,
         data: {
           storeOwner: data.storeInfo.storeOwner,
-          officeId: data.storeInfo.officeId,
-          franchiseId: data.storeInfo.franchiseId,
+          organizationId: orgId,
           storeName: data.storeInfo.storeName,
           operationStatus: data.storeInfo.operationStatus,
           ceoName: data.storeInfo.ceoName,
@@ -45,7 +68,7 @@ export default function StoreEditPhoto({ id }: { id: number }) {
           storeAddressDetail: data.storeInfo.storeAddressDetail,
           ceoPhone: data.storeInfo.ceoPhone,
           storePhone: data.storeInfo.storePhone,
-          operating: data.operating.map((o) => ({
+          operatingHours: data.operating.map((o) => ({
             dayType: o.dayType,
             isOperating: o.isOperating,
             openTime: o.openTime,

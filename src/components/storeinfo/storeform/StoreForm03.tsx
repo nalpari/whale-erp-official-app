@@ -1,6 +1,6 @@
 "use client";
-import { useRef } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
+import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 
 function getFileNameAndExt(fileName: string): { name: string; ext: string } {
   const lastDot = fileName.lastIndexOf(".");
@@ -11,16 +11,11 @@ function getFileNameAndExt(fileName: string): { name: string; ext: string } {
 export default function StoreForm03() {
   const {
     storeImages, existingImages,
-    addStoreImage, removeStoreImage, markDeleteExistingImage,
+    removeStoreImage, markDeleteExistingImage,
   } = useStoreFormStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    Array.from(files).forEach((file) => addStoreImage(file));
-    e.target.value = "";
-  };
+  const setPhotoUploadSheet = useBottomSheetControler(
+    (state) => state.setPhotoUploadSheet
+  );
 
   return (
     <div className="sub-cont-wrap">
@@ -28,17 +23,9 @@ export default function StoreForm03() {
         <div className="sub-item-bx">
           <div className="store-img-list-tit">점포사진</div>
           <div className="block mb20">
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              multiple
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-            />
             <button
               className="btn-form block blue"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setPhotoUploadSheet(true)}
             >
               <i className="camera"></i>사진 등록하기
             </button>
