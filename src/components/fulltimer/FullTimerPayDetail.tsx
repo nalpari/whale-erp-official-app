@@ -199,68 +199,54 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   const contractHeader = employeeContract?.employmentContractHeader
   const isNextMonth = contractHeader?.salaryMonth === 'SLRCF_002'
 
-  // 익월지급이면 급여지급월 기본값을 전월로 변경 (최초 1회)
-  const [autoMonthApplied, setAutoMonthApplied] = useState(false)
+  // 익월지급이면 급여지급월 기본값을 전월로 변경
   const prevMonthValue = payrollMonthOptions[1]?.value ?? ''
-  if (isNew && employeeContract && isNextMonth && !autoMonthApplied && prevMonthValue) {
-    setAutoMonthApplied(true)
-    setPayrollYearMonth(prevMonthValue)
+  const effectivePayrollMonth = isNew && employeeContract && isNextMonth && prevMonthValue
+    ? prevMonthValue
+    : payrollYearMonth
+  if (effectivePayrollMonth !== payrollYearMonth) {
+    setPayrollYearMonth(effectivePayrollMonth)
   }
 
   // 급여지급일 자동 계산
-  const autoPaymentDate = (() => {
-    if (!payrollYearMonth || payrollYearMonth.length !== 6 || !contractHeader?.salaryDay) return ''
+  useEffect(() => {
+    if (!payrollYearMonth || payrollYearMonth.length !== 6 || !contractHeader?.salaryDay || !employeeContract) return
     const year = Number(payrollYearMonth.slice(0, 4))
     const month = Number(payrollYearMonth.slice(4)) - 1
     const offset = isNextMonth ? 1 : 0
     const d = new Date(year, month + offset, contractHeader.salaryDay)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  })()
-  if (autoPaymentDate && autoPaymentDate !== paymentDate && employeeContract) {
-    setPaymentDate(autoPaymentDate)
-  }
+    const computed = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    setPaymentDate(computed)
+  }, [payrollYearMonth, contractHeader?.salaryDay, isNextMonth, employeeContract])
 
   // 급여지급월 변경 시 정산기간 자동 설정 (1일~말일)
-  const autoSettlement = (() => {
-    if (!payrollYearMonth || payrollYearMonth.length !== 6) return null
+  useEffect(() => {
+    if (!payrollYearMonth || payrollYearMonth.length !== 6) return
     const year = Number(payrollYearMonth.slice(0, 4))
     const month = Number(payrollYearMonth.slice(4))
     const lastDay = new Date(year, month, 0).getDate()
     const mm = String(month).padStart(2, '0')
-    return {
-      start: `${year}-${mm}-01`,
-      end: `${year}-${mm}-${String(lastDay).padStart(2, '0')}`,
-    }
-  })()
-  if (autoSettlement && autoSettlement.start !== settlementStartDate) {
-    setSettlementStartDate(autoSettlement.start)
-  }
-  if (autoSettlement && autoSettlement.end !== settlementEndDate) {
-    setSettlementEndDate(autoSettlement.end)
-  }
+    setSettlementStartDate(`${year}-${mm}-01`)
+    setSettlementEndDate(`${year}-${mm}-${String(lastDay).padStart(2, '0')}`)
+  }, [payrollYearMonth])
 
-  // 직원 선택 시 salaryInfo → 지급/공제 항목 자동 매핑 (직원 변경 시마다)
-  const [salaryMappedFor, setSalaryMappedFor] = useState<number | undefined>()
+  // 직원 선택 시 salaryInfo → 지급/공제 항목 자동 매핑
   const salaryInfo = employeeContract?.salaryInfo
   const currentContractId = employeeContract?.id
-  if (isNew && currentContractId && currentContractId !== salaryMappedFor) {
-    setSalaryMappedFor(currentContractId)
+  useEffect(() => {
+    if (!isNew || !currentContractId) return
 
-    // 지급 항목 매핑 (salaryInfo가 null이면 모두 0원)
     const si = salaryInfo
     const mappedPaymentItems: PaymentItem[] = [
       { itemCode: 'BASIC', itemOrder: 1, amount: si?.monthlyBaseSalary ?? 0, remarks: '기본급' },
       { itemCode: 'MEAL', itemOrder: 2, amount: si?.mealAllowance ?? 0, remarks: '식대' },
       { itemCode: 'VEHICLE', itemOrder: 3, amount: si?.vehicleAllowance ?? 0, remarks: '자가운전보조금' },
       { itemCode: 'CHILD_CARE', itemOrder: 4, amount: si?.childcareAllowance ?? 0, remarks: '육아수당' },
-    ]
-    // 수당 항목 (항상 표시, 값 없으면 0원)
-    mappedPaymentItems.push(
       { itemCode: 'OVERTIME', itemOrder: 5, amount: si?.monthlyOvertimeAllowance ?? 0, remarks: '연장수당' },
       { itemCode: 'NIGHT', itemOrder: 6, amount: si?.monthlyNightAllowance ?? 0, remarks: '야간수당' },
       { itemCode: 'MONTHLY_HOLIDAY', itemOrder: 7, amount: si?.monthlyHolidayAllowance ?? 0, remarks: '휴일근무수당' },
       { itemCode: 'ADD', itemOrder: 8, amount: si?.monthlyAddHolidayAllowance ?? 0, remarks: '추가근무수당' },
-    )
+    ]
     setPaymentItems(mappedPaymentItems)
 
     // 공제 항목 자동 계산 (4대보험 + 소득세)
@@ -278,7 +264,6 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
     const longTermCare = contractHeader?.healthInsuranceEnrolled ? Math.round(healthInsurance * LONG_TERM_CARE_RATE) : 0
     const employmentInsurance = contractHeader?.employmentInsuranceEnrolled ? Math.round(taxable * EMPLOYMENT_INSURANCE_RATE) : 0
 
-    // 소득세 간이세액표 (부양가족 1인 기준)
     const calcIncomeTax = (monthly: number) => {
       if (monthly <= 1060000) return 0
       if (monthly <= 1500000) return Math.round((monthly - 1060000) * 0.06)
@@ -290,16 +275,15 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
     const incomeTax = calcIncomeTax(taxable)
     const localIncomeTax = Math.round(incomeTax * 0.1)
 
-    const mappedDeductionItems: DeductionItem[] = [
+    setDeductionItems([
       { itemCode: 'NATIONAL_PENSION', itemOrder: 1, amount: nationalPension, remarks: '국민연금' },
       { itemCode: 'HEALTH_INSURANCE', itemOrder: 2, amount: healthInsurance, remarks: '건강보험' },
       { itemCode: 'EMPLOYMENT_INSURANCE', itemOrder: 3, amount: employmentInsurance, remarks: '고용보험' },
       { itemCode: 'LONG_TERM_CARE_INSURANCE', itemOrder: 4, amount: longTermCare, remarks: '장기요양보험' },
       { itemCode: 'INCOME_TAX', itemOrder: 5, amount: incomeTax, remarks: '소득세' },
       { itemCode: 'LOCAL_INCOME_TAX', itemOrder: 6, amount: localIncomeTax, remarks: '지방소득세' },
-    ]
-    setDeductionItems(mappedDeductionItems)
-  }
+    ])
+  }, [isNew, currentContractId, salaryInfo, contractHeader])
 
   // 금액 계산
   const totalPayment = paymentItems.reduce((sum, item) => sum + (item.amount || 0), 0)

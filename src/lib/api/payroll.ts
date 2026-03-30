@@ -37,6 +37,7 @@ export const getPayrollStatement = async (id: number): Promise<PayrollStatementD
 export const createPayrollStatement = async (data: PayrollStatementCreateRequest, file?: File): Promise<PayrollStatementDetail> => {
   const formData = new FormData()
   formData.append('employeeInfoId', String(data.employeeInfoId))
+  formData.append('employmentContractId', String(data.employmentContractId))
   formData.append('payrollYearMonth', data.payrollYearMonth)
   formData.append('settlementStartDate', data.settlementStartDate)
   formData.append('settlementEndDate', data.settlementEndDate)
@@ -94,8 +95,10 @@ export const downloadPayrollExcel = async (id: number): Promise<void> => {
   const a = document.createElement('a')
   a.href = url
   a.download = `payroll-statement-${id}.xlsx`
+  document.body.appendChild(a)
   a.click()
-  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => window.URL.revokeObjectURL(url), 100)
 }
 
 // 이전 급여 조회
@@ -126,9 +129,7 @@ export const getBonusCategories = async (headOfficeId: number, franchiseId?: num
       `${BASE_URL}/common-code`,
       { params },
     )
-    console.log('[getBonusCategories] response:', JSON.stringify(response.data))
     const memo = response.data.data?.codeMemoContent
-    console.log('[getBonusCategories] memo:', memo)
     if (!memo?.bonusInfo) return []
     return memo.bonusInfo.map((item, index) => ({
       id: index + 1,
