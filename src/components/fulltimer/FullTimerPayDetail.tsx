@@ -299,7 +299,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
 
   // 저장
   const handleSave = async () => {
-    if (isNew && !employmentContractId) {
+    if (isNew && (!employmentContractId || !selectedEmployeeInfoId)) {
       alert('직원을 선택해주세요.')
       return
     }
@@ -379,7 +379,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
       })
     }
     return () => setOnDelete(null)
-  }, [isNew, id, setOnDelete, deleteMutation, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deleteMutation은 매 렌더마다 새 참조, mutateAsync만 사용
+  }, [isNew, id, setOnDelete, router])
 
   // 이메일 전송
   const handleSendEmail = async () => {

@@ -195,7 +195,7 @@ export default function PaymentConditionSheet({
                       <td>
                         <div className="payment-data-list">
                           {localPaymentItems.map((item, index) => (
-                            <div className="payment-data-item" key={item.itemCode}>
+                            <div className="payment-data-item" key={`${item.itemCode}-${index}`}>
                               <div className="payment-data-item-tit">
                                 {item.remarks || PAYMENT_ITEM_CODES[item.itemCode as keyof typeof PAYMENT_ITEM_CODES] || item.itemCode}
                                 {item.itemCode === 'BASIC' && (
@@ -285,7 +285,7 @@ export default function PaymentConditionSheet({
                       <td>
                         <div className="payment-data-list">
                           {localDeductionItems.map((item, index) => (
-                            <div className="payment-data-item" key={item.itemCode}>
+                            <div className="payment-data-item" key={`${item.itemCode}-${index}`}>
                               <div className="payment-data-item-tit">
                                 {item.remarks || DEDUCTION_ITEM_CODES[item.itemCode as keyof typeof DEDUCTION_ITEM_CODES] || item.itemCode}
                               </div>
