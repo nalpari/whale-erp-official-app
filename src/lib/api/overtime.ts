@@ -39,5 +39,5 @@ export const getOvertimeStatement = async (id: number): Promise<OvertimeDetailRe
   const response = await api.get<{ data: OvertimeDetailResponse }>(
     `/api/employee/payroll/overtime/${id}`,
   )
-  return response.data.data
+  return response.data.data ?? { id: 0, totalAmount: 0 }
 }
