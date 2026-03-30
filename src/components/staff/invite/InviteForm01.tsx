@@ -1,21 +1,54 @@
+'use client'
+import { useStaffInviteStore } from '@/store/useStaffInviteStore'
+import { useHeadOffices, useStoreOptions } from '@/hooks/queries/use-store-queries'
+import type { WorkplaceType } from '@/types/employee'
+
 export default function InviteForm01() {
+  const { stepOne, setStepOne } = useStaffInviteStore()
+  const { data: headOffices } = useHeadOffices()
+  const { data: storeOptions } = useStoreOptions(
+    stepOne.headOfficeOrganizationId ?? undefined,
+  )
+
+  const handleWorkplaceTypeChange = (type: WorkplaceType) => {
+    setStepOne({
+      workplaceType: type,
+      franchiseOrganizationId: null,
+      storeId: null,
+    })
+  }
+
   return (
     <div className="sub-cont-wrap">
       <div className="sub-cont-item-wrap">
         <div className="sub-cont-tit-wrap">
           <div className="sub-cont-tit">직원 기본정보</div>
         </div>
+
+        {/* 정의서 #1: 직원 소속 선택 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
               근무장소 <span className="imp">*</span>
             </div>
             <div className="flex g8">
-              <button className="radio-btn block act">본사</button>
-              <button className="radio-btn block">가맹점</button>
+              <button
+                className={`radio-btn block${stepOne.workplaceType === 'HEAD_OFFICE' ? ' act' : ''}`}
+                onClick={() => handleWorkplaceTypeChange('HEAD_OFFICE')}
+              >
+                본사
+              </button>
+              <button
+                className={`radio-btn block${stepOne.workplaceType === 'FRANCHISE' ? ' act' : ''}`}
+                onClick={() => handleWorkplaceTypeChange('FRANCHISE')}
+              >
+                가맹점
+              </button>
             </div>
           </div>
         </div>
+
+        {/* 정의서 #2,2-1,3: 본사/가맹점/점포 선택 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
@@ -23,53 +56,112 @@ export default function InviteForm01() {
             </div>
             <div>
               <div className="block mb8">
-                <select name="" id="" className="select-form">
-                  <option value="1">본사 선택</option>
+                <select
+                  className="select-form"
+                  value={stepOne.headOfficeOrganizationId ?? ''}
+                  onChange={(e) =>
+                    setStepOne({
+                      headOfficeOrganizationId: e.target.value ? Number(e.target.value) : null,
+                      storeId: null,
+                    })
+                  }
+                >
+                  <option value="">본사 선택</option>
+                  {headOffices?.map((ho) => (
+                    <option key={ho.id} value={ho.id}>
+                      {ho.companyName}
+                    </option>
+                  ))}
                 </select>
               </div>
-              <div className="block mb8">
-                <select name="" id="" className="select-form">
-                  <option value="1">본사 선택</option>
-                </select>
-              </div>
+              {/* 가맹점 선택: workplaceType이 FRANCHISE일 때만 표시 */}
+              {stepOne.workplaceType === 'FRANCHISE' && (
+                <div className="block mb8">
+                  <select
+                    className="select-form"
+                    value={stepOne.franchiseOrganizationId ?? ''}
+                    onChange={(e) =>
+                      setStepOne({
+                        franchiseOrganizationId: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                  >
+                    <option value="">가맹점 선택</option>
+                  </select>
+                </div>
+              )}
               <div className="block">
-                <select name="" id="" className="select-form" disabled>
-                  <option value="1">가맹점 선택</option>
+                <select
+                  className="select-form"
+                  value={stepOne.storeId ?? ''}
+                  onChange={(e) =>
+                    setStepOne({
+                      storeId: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  disabled={!stepOne.headOfficeOrganizationId}
+                >
+                  <option value="">점포 선택</option>
+                  {storeOptions?.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.storeName}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
           </div>
         </div>
+
+        {/* 정의서 #4: 직원명 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
               직원명<span className="imp">*</span>
             </div>
             <div className="block">
-              <input type="text" className="input-frame" />
+              <input
+                type="text"
+                className="input-frame"
+                value={stepOne.employeeName}
+                onChange={(e) => setStepOne({ employeeName: e.target.value })}
+                placeholder="직원명 입력"
+              />
             </div>
-            <div className="warning mt10">점포명 입력</div>
           </div>
         </div>
+
+        {/* 정의서 #5: 휴대폰 번호 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
               휴대폰 번호<span className="imp"> *</span>
             </div>
             <div className="block">
-              <input type="text" className="input-frame" />
+              <input
+                type="tel"
+                className="input-frame"
+                value={stepOne.mobilePhone}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9-]/g, '')
+                  setStepOne({ mobilePhone: value })
+                }}
+                placeholder="010-0000-0000"
+              />
             </div>
             <div className="s-txt mt10">※ 숫자만 입력 가능</div>
           </div>
         </div>
+
+        {/* Partner Office 권한 설정 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="tit-head">
               <div className="filed-tit">Partner Office 권한 설정</div>
             </div>
             <div className="block">
-              <select name="" id="" className="select-form">
-                <option value="1"> 선택</option>
+              <select className="select-form">
+                <option value="">선택</option>
               </select>
             </div>
             <div className="s-txt mt10">
@@ -79,5 +171,5 @@ export default function InviteForm01() {
         </div>
       </div>
     </div>
-  );
+  )
 }

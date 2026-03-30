@@ -1,66 +1,125 @@
-"use client";
-import { Tooltip } from "react-tooltip";
+'use client'
+import { Tooltip } from 'react-tooltip'
+import { useStaffInviteStore } from '@/store/useStaffInviteStore'
+import type { ContractClassificationType, SalaryCycle, SalaryMonth } from '@/types/employee'
+
+const CONTRACT_CLASSIFICATION_OPTIONS: { label: string; value: ContractClassificationType }[] = [
+  { label: '포괄연봉제', value: 'CNTCFWK_001' },
+  { label: '비포괄연봉제', value: 'CNTCFWK_002' },
+  { label: '파트타임', value: 'CNTCFWK_003' },
+]
+
+const SALARY_CYCLE_OPTIONS: { label: string; value: SalaryCycle }[] = [
+  { label: '월급', value: 'SLRCC_002' },
+  { label: '시급', value: 'SLRCC_001' },
+]
+
+const SALARY_MONTH_OPTIONS: { label: string; value: SalaryMonth }[] = [
+  { label: '당월', value: 'SLRCF_001' },
+  { label: '익월', value: 'SLRCF_002' },
+]
+
+const JOB_DESCRIPTION_OPTIONS = [
+  '메뉴조리',
+  '홀서빙',
+  '고객응대',
+  '업무보조',
+  '매장청소',
+]
 
 export default function InviteForm02() {
+  const { stepTwo, setStepTwo } = useStaffInviteStore()
+
+  const selectedJobs = stepTwo.jobDescription
+    ? stepTwo.jobDescription.split(',').map((s) => s.trim()).filter(Boolean)
+    : []
+
+  const toggleJobDescription = (job: string) => {
+    const newJobs = selectedJobs.includes(job)
+      ? selectedJobs.filter((j) => j !== job)
+      : [...selectedJobs, job]
+    setStepTwo({ jobDescription: newJobs.join(', ') })
+  }
+
   return (
     <div className="sub-cont-wrap">
       <div className="sub-cont-item-wrap">
         <div className="sub-cont-tit-wrap">
           <div className="sub-cont-tit">근로/계약조건</div>
         </div>
+
+        {/* 정의서 #10: 계약 기간 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
               계약기간 <span className="imp">*</span>
             </div>
             <div className="flex g8 mb8">
-              <button className="radio-btn block blue act">
+              <button
+                className={`radio-btn block blue${!stepTwo.noEndDate ? ' act' : ''}`}
+                onClick={() => setStepTwo({ noEndDate: false })}
+              >
                 계약기간 있음
               </button>
-              <button className="radio-btn block blue">계약기간 미정</button>
+              <button
+                className={`radio-btn block blue${stepTwo.noEndDate ? ' act' : ''}`}
+                onClick={() => setStepTwo({ noEndDate: true, contractEndDate: '' })}
+              >
+                계약기간 미정
+              </button>
             </div>
             <div className="flex g6">
               <div className="date-picker-custom">
                 <input
-                  type="text"
+                  type="date"
                   className="date-picker-input"
-                  defaultValue="2025.10.28"
+                  value={stepTwo.contractStartDate}
+                  onChange={(e) => setStepTwo({ contractStartDate: e.target.value })}
                 />
               </div>
               <span>~</span>
               <div className="date-picker-custom">
                 <input
-                  type="text"
+                  type="date"
                   className="date-picker-input"
-                  defaultValue="2025.10.28"
+                  value={stepTwo.contractEndDate}
+                  onChange={(e) => setStepTwo({ contractEndDate: e.target.value })}
+                  disabled={stepTwo.noEndDate}
                 />
               </div>
             </div>
           </div>
         </div>
+
+        {/* 정의서 #11: 업무 내용 - 체크박스 교체 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
               업무내용 <span className="imp">*</span>
             </div>
-            <div className="radio-btn-grid ">
-              <button className="radio-btn block blue act">메뉴조리</button>
-              <button className="radio-btn block blue ">홀서빙</button>
-              <button className="radio-btn block blue ">고객응대</button>
-              <button className="radio-btn block blue ">업무보조</button>
-              <button className="radio-btn block blue act">매장청소</button>
-              <button className="radio-btn block blue act">직접입력</button>
+            <div className="radio-btn-grid">
+              {JOB_DESCRIPTION_OPTIONS.map((job) => (
+                <button
+                  key={job}
+                  className={`radio-btn block blue${selectedJobs.includes(job) ? ' act' : ''}`}
+                  onClick={() => toggleJobDescription(job)}
+                >
+                  {job}
+                </button>
+              ))}
             </div>
             <div className="block">
               <textarea
-                name=""
-                id=""
                 className="textarea-form"
                 placeholder="업무 내용을 직접 입력해주세요."
+                value={stepTwo.jobDescription}
+                onChange={(e) => setStepTwo({ jobDescription: e.target.value })}
               ></textarea>
             </div>
           </div>
         </div>
+
+        {/* 정의서 #7: 계약 분류 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="tit-head">
@@ -75,28 +134,64 @@ export default function InviteForm02() {
                     anchorSelect="#tooltip-btn-anchor"
                     opacity={1}
                   >
-                    <div>tooltip text</div>
+                    <div>
+                      포괄연봉제: 연봉에 초과근무 수당 포함
+                      <br />
+                      비포괄연봉제: 실제 근무시간에 따라 수당 계산
+                      <br />
+                      파트타임: 시급제 계약
+                    </div>
                   </Tooltip>
                 </button>
               </div>
             </div>
             <div className="block">
-              <select name="" id="" className="select-form">
-                <option value="1"> 선택</option>
+              <select
+                className="select-form"
+                value={stepTwo.contractClassification}
+                onChange={(e) =>
+                  setStepTwo({
+                    contractClassification: e.target.value as ContractClassificationType,
+                  })
+                }
+              >
+                {CONTRACT_CLASSIFICATION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
         </div>
+
+        {/* 정의서 #8,8-1: 4대보험 가입 여부 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
               4대보험 가입여부<span className="imp"> *</span>
             </div>
             <div className="flex g8">
-              <button className="radio-btn block blue act">
+              <button
+                className={`radio-btn block blue${stepTwo.healthInsuranceEnrolled && stepTwo.nationalPensionEnrolled ? ' act' : ''}`}
+                onClick={() =>
+                  setStepTwo({
+                    healthInsuranceEnrolled: !stepTwo.healthInsuranceEnrolled,
+                    nationalPensionEnrolled: !stepTwo.nationalPensionEnrolled,
+                  })
+                }
+              >
                 건강보험, 국민연금
               </button>
-              <button className="radio-btn block blue">
+              <button
+                className={`radio-btn block blue${stepTwo.employmentInsuranceEnrolled && stepTwo.workersCompensationEnrolled ? ' act' : ''}`}
+                onClick={() =>
+                  setStepTwo({
+                    employmentInsuranceEnrolled: !stepTwo.employmentInsuranceEnrolled,
+                    workersCompensationEnrolled: !stepTwo.workersCompensationEnrolled,
+                  })
+                }
+              >
                 고용보험, 산재보험
               </button>
             </div>
@@ -105,6 +200,8 @@ export default function InviteForm02() {
             </div>
           </div>
         </div>
+
+        {/* 정의서 #9,9-1,9-2: 급여 지급일 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="tit-head">
@@ -113,18 +210,48 @@ export default function InviteForm02() {
               </div>
             </div>
             <div className="block mb8">
-              <select name="" id="" className="select-form">
-                <option value="1"> 월급</option>
+              <select
+                className="select-form"
+                value={stepTwo.salaryCycle}
+                onChange={(e) =>
+                  setStepTwo({ salaryCycle: e.target.value as SalaryCycle })
+                }
+              >
+                {SALARY_CYCLE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="block mb8">
-              <select name="" id="" className="select-form">
-                <option value="1"> 익월</option>
+              <select
+                className="select-form"
+                value={stepTwo.salaryMonth}
+                onChange={(e) =>
+                  setStepTwo({ salaryMonth: e.target.value as SalaryMonth })
+                }
+              >
+                {SALARY_MONTH_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="block">
-              <select name="" id="" className="select-form">
-                <option value="1"> 15일</option>
+              <select
+                className="select-form"
+                value={stepTwo.salaryDay}
+                onChange={(e) =>
+                  setStepTwo({ salaryDay: Number(e.target.value) })
+                }
+              >
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                  <option key={day} value={day}>
+                    {day}일
+                  </option>
+                ))}
               </select>
             </div>
             <div className="s-txt mt10">
@@ -132,7 +259,26 @@ export default function InviteForm02() {
             </div>
           </div>
         </div>
+
+        {/* 입사일 */}
+        <div className="sub-item-bx">
+          <div className="data-filed">
+            <div className="filed-tit">
+              입사일 <span className="imp">*</span>
+            </div>
+            <div className="block">
+              <div className="date-picker-custom">
+                <input
+                  type="date"
+                  className="date-picker-input"
+                  value={stepTwo.hireDate}
+                  onChange={(e) => setStepTwo({ hireDate: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  );
+  )
 }
