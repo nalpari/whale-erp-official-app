@@ -3,13 +3,13 @@ import type { StoreOption, HeadOffice, HeadOfficeTree } from '@/types/store'
 
 // 운영중인 본사 목록 조회
 export const getHeadOffices = async (): Promise<HeadOffice[]> => {
-  const response = await api.get<{ data: HeadOffice[] }>('/api/master/bp/head-offices')
+  const response = await api.get<{ data: HeadOffice[] }>('/api/v1/master/bp/head-offices')
   return response.data.data
 }
 
 // 본사-가맹점 트리 조회
 export const getHeadOfficeTree = async (): Promise<HeadOfficeTree[]> => {
-  const response = await api.get<{ data: HeadOfficeTree[] }>('/api/master/bp/head-office-tree')
+  const response = await api.get<{ data: HeadOfficeTree[] }>('/api/v1/master/bp/head-office-tree')
   return response.data.data
 }
 

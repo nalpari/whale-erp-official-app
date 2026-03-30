@@ -31,6 +31,12 @@ export const getContracts = async (
   return response.data.data
 }
 
+// 직원별 계약 목록 조회
+export const getContractsByEmployee = async (employeeInfoId: number): Promise<ContractDetail[]> => {
+  const response = await api.get<{ data: ContractDetail[] }>(`${BASE_URL}/by-employee-info/${employeeInfoId}`)
+  return response.data.data
+}
+
 // 상세 조회
 export const getContract = async (id: number): Promise<ContractDetail> => {
   const response = await api.get<{ data: ContractDetail }>(`${BASE_URL}/${id}`)

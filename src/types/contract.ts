@@ -5,7 +5,7 @@ export type ContractType = 'ECNT_001' | 'ECNT_002'  // 전자계약 | 서류계�
 export type ContractClassificationType = 'CNTCFWK_001' | 'CNTCFWK_002' | 'CNTCFWK_003'  // 포괄 | 비포괄 | 파트타임
 export type ElectronicContractStatus = 'WRITING' | 'PROGRESS' | 'COMPLETE' | 'REFUSAL'
 export type SalaryCycle = 'SLRCC_001' | 'SLRCC_002'  // 월급제 | 시급제
-export type SalaryMonth = 'SLRMO_001' | 'SLRMO_002'  // 당월 | 익월
+export type SalaryMonth = 'SLRCF_001' | 'SLRCF_002'  // 당월 | 익월
 export type DayType = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY' | 'WEEKDAY' | 'WEEKEND'
 
 // 계약 목록 항목
@@ -53,7 +53,7 @@ export interface ContractWorkHour {
   breakEndTime?: string
 }
 
-// 급여정보
+// 급여정보 (API 응답: EmploymentContractSalaryInfoResponse 기준)
 export interface ContractSalaryInfo {
   id?: number
   annualSalary: number
@@ -62,16 +62,16 @@ export interface ContractSalaryInfo {
   monthlyTime: number
   monthlyBaseSalary: number
   monthlyOvertimeAllowanceTime?: number
-  monthlyOvertimeAllowanceAmount?: number
+  monthlyOvertimeAllowance?: number
   monthlyNightAllowanceTime?: number
-  monthlyNightAllowanceAmount?: number
+  monthlyNightAllowance?: number
   monthlyHolidayAllowanceTime?: number
-  monthlyHolidayAllowanceAmount?: number
+  monthlyHolidayAllowance?: number
   monthlyAddHolidayAllowanceTime?: number
-  monthlyAddHolidayAllowanceAmount?: number
-  mealAllowanceAmount?: number
-  vehicleAllowanceAmount?: number
-  childcareAllowanceAmount?: number
+  monthlyAddHolidayAllowance?: number
+  mealAllowance?: number
+  vehicleAllowance?: number
+  childcareAllowance?: number
   weekDayAllowanceAmount?: number
   overtimeDayAllowanceAmount?: number
   nightDayAllowanceAmount?: number

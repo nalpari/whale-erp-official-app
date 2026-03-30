@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getContracts,
   getContract,
+  getContractsByEmployee,
   createContractHeader,
   createContractWorkHours,
   createContractSalaryInfo,
@@ -28,6 +29,16 @@ export const contractKeys = {
   details: () => [...contractKeys.all, 'detail'] as const,
   detail: (id: number) => [...contractKeys.details(), id] as const,
   minimumWage: (year: number) => [...contractKeys.all, 'minimum-wage', year] as const,
+  byEmployee: (employeeInfoId: number) => [...contractKeys.all, 'by-employee', employeeInfoId] as const,
+}
+
+// 직원별 계약 목록 조회
+export const useContractsByEmployee = (employeeInfoId: number, enabled = true) => {
+  return useQuery({
+    queryKey: contractKeys.byEmployee(employeeInfoId),
+    queryFn: () => getContractsByEmployee(employeeInfoId),
+    enabled: enabled && !!employeeInfoId,
+  })
 }
 
 // 목록 조회

@@ -2,10 +2,12 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import StoreSelect from "./StoreSelect";
+import { useHeaderStore } from "@/store/useHeaderStore";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const onDelete = useHeaderStore((s) => s.onDelete);
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
@@ -31,7 +33,7 @@ export default function Header() {
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
             <h1>{getPageTitle()}</h1>
-            <button className="btn-delete"></button>
+            {onDelete && <button className="btn-delete" onClick={onDelete}></button>}
           </div>
         </div>
       </header>

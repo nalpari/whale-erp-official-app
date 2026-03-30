@@ -29,6 +29,18 @@
 | 리뷰 | FullTimerSearchSheet onOpenStart 동기화 | ✅ 완료 | `95adf2f` |
 | 리뷰 | WorkStatus 공통 타입 정의 | ✅ 완료 | `3577c2c` |
 | 리뷰 | cleanParams 주석 정확화 | ✅ 완료 | `290e662` |
+| 추가 | 상여금(bonuses) 매핑 누락 수정 | ✅ 완료 | - |
+| 추가 | 지급 항목 상세 표시 형식 변경 (산출 근거 표시) | ✅ 완료 | - |
+| 수정 | 신규 등록 API employeeInfoId 누락 수정 | ✅ 완료 | - |
+| 추가 | Header btn-delete에 삭제 연결 (useHeaderStore) | ✅ 완료 | - |
+| 추가 | 조회 모드 본사/가맹점/점포 표시 연결 | 🔧 진행중 | - |
+| 수정 | bonuses를 지급 항목 추가(paymentItems)로 통합 | ✅ 완료 | - |
+| 수정 | 지급 항목 추가 데이터 소스를 bonusCategories API → salaryInfo.bonuses로 변경 | ✅ 완료 | - |
+| 수정 | 기본항목 판별에 DPTBS/DDTBS 공통코드 동적 조회 추가 | ✅ 완료 | - |
+| 수정 | 수정 모드 저장 시 employmentContractId 체크 제거 | ✅ 완료 | - |
+| 수정 | 수정 완료 후 목록 화면으로 이동 | ✅ 완료 | - |
+| 수정 | 등록/수정 이력 createdBy → createdByName 필드명 일치 | ✅ 완료 | - |
+| 수정 | PaymentConditionSheet 초기화 버튼을 원래 값으로 리셋 | ✅ 완료 | - |
 
 ---
 
@@ -58,6 +70,19 @@
 | 수정 | `src/store/useAuthStore.ts` | headOfficeId 상태 추가 |
 | 수정 | `src/types/auth.ts` | LoginResponse에 headOfficeId 타입 추가 |
 | 수정 | `src/components/login/Login.tsx` | 로그인 시 headOfficeId 저장 |
+| 생성 | `src/hooks/queries/use-common-code-queries.ts` | 공통코드 계층 조회 훅 |
+| 생성 | `src/hooks/queries/use-employee-queries.ts` | 직원 목록 조회 훅 |
+| 생성 | `src/hooks/queries/use-contract-queries.ts` | 고용계약 조회 훅 |
+| 생성 | `src/lib/api/common-code.ts` | 공통코드 API |
+| 생성 | `src/lib/api/employee.ts` | 직원 API |
+| 생성 | `src/lib/api/overtime.ts` | 초과근무수당 API |
+| 생성 | `src/lib/api/contract.ts` | 고용계약 API |
+| 생성 | `src/store/useHeaderStore.ts` | 헤더 삭제 버튼 핸들러 스토어 |
+| 생성 | `src/types/common-code.ts` | 공통코드 타입 |
+| 생성 | `src/types/employee.ts` | 직원 타입 |
+| 생성 | `src/types/contract.ts` | 고용계약 타입 |
+| 수정 | `src/components/ui/Header.tsx` | 삭제 버튼 useHeaderStore 연동 |
+| 수정 | `src/types/payroll.ts` | createdByName/updatedByName 필드명 수정 |
 
 ### whale-erp-api 수정
 
@@ -149,3 +174,31 @@
 | 스타일링 | Tailwind CSS | SCSS |
 | 엑셀 업로드 | 지원 (모달) | 미지원 (모바일 UX 부적합) |
 | 엑셀 다운로드 | 지원 | 추후 검토 |
+| 상여금 처리 | bonuses 별도 배열 관리 → 저장 시 paymentItems 병합 | salaryInfo.bonuses를 "지급 항목 추가" UI로 수동 선택 |
+| 항목 코드 체계 | DPTBS/DDTBS 공통코드 사용 | BASIC/MEAL enum 코드 + DPTBS/DDTBS 공통코드 양쪽 호환 |
+
+---
+
+## 아키텍처 결정 사항 (추가)
+
+### 상여금(bonuses) 처리 (2026-03-27 → 2026-03-30 통합)
+- **배경**: whale-erp-front에서는 `salaryInfo.bonuses`를 급여명세서에 반영하지만, official-app에서는 누락
+- **1차 해결 (2026-03-27)**: bonuses를 별도 `BonusItem[]` state로 관리, 저장 시 paymentItems에 병합
+- **2차 수정 (2026-03-30)**: bonuses가 "지급 항목 추가" UI의 데이터 소스가 되도록 변경
+  - **핵심 변경**: `bonusCategories` API 호출 제거 → `salaryInfo.bonuses`가 "지급 항목 추가" 선택 목록으로 대체
+  - 직원 선택 시 bonuses 자동 매핑 제거 (사용자가 수동으로 "지급 항목 추가"에서 선택)
+  - `PaymentConditionSheet`에 `availableBonuses` props 추가 (`salaryInfo.bonuses` 또는 `initialData.bonuses` 전달)
+  - "지급 항목 추가" 버튼 클릭 시 availableBonuses 목록에서 선택 → `PaymentItem`으로 변환하여 추가
+  - 이미 추가된 항목은 선택 목록에서 자동 제외
+  - `useBonusCategories` 훅/API 호출 제거, `headOfficeId`/`franchiseId` props 제거
+
+### 기본항목 코드 호환 (2026-03-30)
+- **배경**: whale-erp-front는 공통코드 `DPTBS_001~008`/`DDTBS_001~006`으로 저장, official-app은 `BASIC`/`MEAL` 등 enum 코드 사용 → 같은 DB 공유로 조회 시 코드 불일치
+- **해결**: `useCommonCodeHierarchy('DPTBS')`/`useCommonCodeHierarchy('DDTBS')`로 공통코드를 동적 조회하여 `defaultPaymentCodes`/`defaultDeductionCodes`에 추가
+- 하드코딩 없이 양쪽 코드 체계 모두 기본항목으로 인식
+
+### 수정 모드 개선 (2026-03-30)
+- 수정 시 `employmentContractId` 검증 제거 (API 상세 응답에 해당 필드 없음)
+- 수정 완료 후 목록 화면(`/fulltimer`)으로 이동
+- 등록/수정 이력 필드명 `createdBy` → `createdByName` API 응답과 일치
+- PaymentConditionSheet 초기화 버튼: 등록 시 salaryInfo 매핑값, 수정 시 API 원본값으로 리셋
