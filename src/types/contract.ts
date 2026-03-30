@@ -157,6 +157,8 @@ export interface ContractSearchParams {
   contractClassification?: ContractClassificationType
   contractStatus?: string
   electronicContract?: string[]
+  paymentStartDate?: string
+  paymentEndDate?: string
   contractStartDt?: string
   contractEndDt?: string
   page: number

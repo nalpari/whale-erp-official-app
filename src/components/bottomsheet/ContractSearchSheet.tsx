@@ -49,8 +49,8 @@ export default function ContractSearchSheet() {
   const [electronicContract, setElectronicContract] = useState<string>(
     searchParams.electronicContract?.[0] ?? '',
   )
-  const [paymentStartDate, setPaymentStartDate] = useState('')
-  const [paymentEndDate, setPaymentEndDate] = useState('')
+  const [paymentStartDate, setPaymentStartDate] = useState(searchParams.paymentStartDate ?? '')
+  const [paymentEndDate, setPaymentEndDate] = useState(searchParams.paymentEndDate ?? '')
   const [contractStartDt, setContractStartDt] = useState(searchParams.contractStartDt ?? '')
   const [contractEndDt, setContractEndDt] = useState(searchParams.contractEndDt ?? '')
 
@@ -63,8 +63,8 @@ export default function ContractSearchSheet() {
     setContractClassification(searchParams.contractClassification ?? '')
     setContractStatus(searchParams.contractStatus ?? '')
     setElectronicContract(searchParams.electronicContract?.[0] ?? '')
-    setPaymentStartDate('')
-    setPaymentEndDate('')
+    setPaymentStartDate(searchParams.paymentStartDate ?? '')
+    setPaymentEndDate(searchParams.paymentEndDate ?? '')
     setContractStartDt(searchParams.contractStartDt ?? '')
     setContractEndDt(searchParams.contractEndDt ?? '')
   }
@@ -88,6 +88,8 @@ export default function ContractSearchSheet() {
       contractClassification: (contractClassification as ContractClassificationType) || undefined,
       contractStatus: contractStatus || undefined,
       electronicContract: electronicContract ? [electronicContract] : undefined,
+      paymentStartDate: paymentStartDate || undefined,
+      paymentEndDate: paymentEndDate || undefined,
       contractStartDt: contractStartDt || undefined,
       contractEndDt: contractEndDt || undefined,
     })
