@@ -5,7 +5,7 @@ export type ContractType = 'ECNT_001' | 'ECNT_002'  // 전자계약 | 서류계�
 export type ContractClassificationType = 'CNTCFWK_001' | 'CNTCFWK_002' | 'CNTCFWK_003'  // 포괄 | 비포괄 | 파트타임
 export type ElectronicContractStatus = 'WRITING' | 'PROGRESS' | 'COMPLETE' | 'REFUSAL'
 export type SalaryCycle = 'SLRCC_001' | 'SLRCC_002'  // 월급제 | 시급제
-export type SalaryMonth = 'SLRCF_001' | 'SLRCF_002'  // 당월 | 익월
+export type SalaryMonth = 'SLRMO_001' | 'SLRMO_002'  // 당월 | 익월
 export type DayType = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY' | 'WEEKDAY' | 'WEEKEND'
 
 // 계약 목록 항목

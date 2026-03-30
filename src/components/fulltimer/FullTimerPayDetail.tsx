@@ -197,7 +197,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   // 계약 정보에서 급여지급월/급여지급일 자동 설정
   const employeeContract = employeeContracts[0] ?? null
   const contractHeader = employeeContract?.employmentContractHeader
-  const isNextMonth = contractHeader?.salaryMonth === 'SLRCF_002'
+  const isNextMonth = contractHeader?.salaryMonth === 'SLRMO_002'
 
   const prevMonthValue = payrollMonthOptions[1]?.value ?? ''
 
