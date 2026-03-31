@@ -8,6 +8,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const onDelete = useHeaderStore((s) => s.onDelete);
+  const onSave = useHeaderStore((s) => s.onSave);
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
@@ -19,6 +20,7 @@ export default function Header() {
   const getPageTitle = () => {
     if (pathname.startsWith("/fulltimer")) return "정직원 급여명세서 정보";
     if (pathname.startsWith("/contract")) return "근로계약 관리";
+    if (pathname === "/todo/new") return "TO-DO 등록";
     return "서브 페이지 헤더";
   };
 
@@ -33,7 +35,18 @@ export default function Header() {
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
             <h1>{getPageTitle()}</h1>
-            {onDelete && <button className="btn-delete" onClick={onDelete}></button>}
+            {onSave && (
+              <button
+                className="btn-s black"
+                style={{ marginLeft: "auto" }}
+                onClick={onSave}
+              >
+                저장
+              </button>
+            )}
+            {onDelete && !onSave && (
+              <button className="btn-delete" onClick={onDelete}></button>
+            )}
           </div>
         </div>
       </header>
