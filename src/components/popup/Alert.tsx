@@ -10,9 +10,14 @@ export default function Alert() {
   const cancelText = alertOptions?.cancelText;
   const isConfirm = !!cancelText;
 
-  const handleConfirm = () => {
-    alertOptions?.onConfirm?.();
-    closeAlert();
+  const handleConfirm = async () => {
+    try {
+      await alertOptions?.onConfirm?.();
+    } catch (err) {
+      console.error('[Alert] onConfirm 콜백 실행 실패:', err);
+    } finally {
+      closeAlert();
+    }
   };
 
   const handleCancel = () => {

@@ -5,6 +5,8 @@ import { WhaleCalendar } from "whale-calendar";
 import "whale-calendar/styles.css";
 import type { CalendarDayData } from "@/types/todo";
 
+const SWIPE_THRESHOLD = 50;
+
 interface TodoCalendarProps {
   selectedDate: Date;
   todoData: CalendarDayData[];
@@ -27,8 +29,7 @@ export default function TodoCalendar({
   const selectedYear = selectedDate.getFullYear();
   const selectedMonth = selectedDate.getMonth() + 1;
 
-  // selectedDate가 변경되면 browseTarget 해제 (하단 스와이프로 월이 바뀌면 달력도 따라감)
-  // browseTarget이 현재 선택된 월과 같으면 자동 해제하여 불필요한 상태 유지 방지
+  // browseTarget이 현재 선택된 월과 같으면 자동 해제
   const effectiveBrowseTarget =
     browseTarget &&
     (browseTarget.year !== selectedYear || browseTarget.month !== selectedMonth)
@@ -68,8 +69,13 @@ export default function TodoCalendar({
   const browseMonth = useCallback(
     async (year: number, month: number) => {
       setBrowseTarget({ year, month });
-      const data = await onMonthDataNeeded(year, month);
-      setBrowseData(data);
+      try {
+        const data = await onMonthDataNeeded(year, month);
+        setBrowseData(data);
+      } catch (err) {
+        console.error('[TodoCalendar] 월 탐색 실패:', { year, month }, err);
+        setBrowseData(null);
+      }
     },
     [onMonthDataNeeded]
   );
@@ -103,7 +109,7 @@ export default function TodoCalendar({
     [handleDayClick]
   );
 
-  // 캘린더 영역 스와이프 → 월 탐색 (열려있을 때만, 하단 목록 유지)
+  // 캘린더 영역 스와이프 → 월 탐색 (열려있을 때만)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!isCalendarOpen) return;
     e.stopPropagation();
@@ -120,7 +126,7 @@ export default function TodoCalendar({
       const dy = touch.clientY - touchStartRef.current.y;
       touchStartRef.current = null;
 
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= 50) {
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= SWIPE_THRESHOLD) {
         let nextMonth = viewMonth + (dx > 0 ? -1 : 1);
         let nextYear = viewYear;
         if (nextMonth < 1) { nextMonth = 12; nextYear--; }

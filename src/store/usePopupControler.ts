@@ -5,7 +5,7 @@ type AlertOptions = {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  onConfirm?: () => void;
+  onConfirm?: () => void | Promise<void>;
   onCancel?: () => void;
 };
 
@@ -16,8 +16,6 @@ type PopupControlerState = {
   alertOptions: AlertOptions | null;
   openAlert: (options: AlertOptions) => void;
   closeAlert: () => void;
-  /** @deprecated setAlertPopup 대신 openAlert/closeAlert 사용 */
-  setAlertPopup: (isOpen: boolean) => void;
   photoPopup: boolean;
   setPhotoPopup: (isOpen: boolean) => void;
   addressSearchPopup: boolean;
@@ -36,12 +34,6 @@ export const usePopupControler = create<PopupControlerState>()(
         set({ alertPopup: true, alertOptions: options }, false, "popup/openAlert"),
       closeAlert: () =>
         set({ alertPopup: false, alertOptions: null }, false, "popup/closeAlert"),
-      setAlertPopup: (isOpen: boolean) =>
-        set(
-          isOpen ? { alertPopup: true } : { alertPopup: false, alertOptions: null },
-          false,
-          "popup/setAlert"
-        ),
       photoPopup: false,
       setPhotoPopup: (isOpen: boolean) =>
         set({ photoPopup: isOpen }, false, "popup/setPhoto"),

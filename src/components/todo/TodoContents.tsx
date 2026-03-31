@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { usePopupControler } from "@/store/usePopupControler";
-import { useDeleteTodos } from "@/hooks/queries/use-todo-queries";
+import { useDeleteTodos, useCalendarData } from "@/hooks/queries/use-todo-queries";
+import { getCalendarData } from "@/lib/api/todo";
 import TodoCalendar from "@/components/todo/TodoCalendar";
 import type { CalendarDayData, OrgGroup, EmployeeGroup, TodoItem } from "@/types/todo";
 import "./css/todo.scss";
@@ -14,11 +14,8 @@ import "./css/todo.scss";
 const DAY_NAMES = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
 const SWIPE_THRESHOLD = 50;
 
-const API_BASE = "/api/v1/employee-todos";
-
 function parseInitialDate(dateParam: string | null): Date {
   if (dateParam) {
-    // YYYY-MM-DD 형식은 로컬 타임존으로 파싱 (UTC 파싱 시 날짜 밀림 방지)
     const matched = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateParam);
     if (matched) {
       const [, year, month, day] = matched;
@@ -44,7 +41,6 @@ export default function TodoContents() {
   const initialDate = parseInitialDate(searchParams.get("date"));
 
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
-  const [todoData, setTodoData] = useState<CalendarDayData[]>([]);
 
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId);
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice);
@@ -55,97 +51,53 @@ export default function TodoContents() {
   const openAlert = usePopupControler((state) => state.openAlert);
   const deleteTodosMutation = useDeleteTodos();
 
-  const loadedMonthRef = useRef<string>("");
-  const requestKeyRef = useRef<string>("");
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  const today = useMemo(() => new Date(), []);
+  const today = new Date();
   const isToday = isSameDay(selectedDate, today);
+
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth() + 1;
+
+  // React Query로 월별 데이터 조회
+  const { data: todoData = [] } = useCalendarData(year, month, headOfficeId, storeId);
 
   // 선택된 날짜의 organizations
   const selectedDayData = todoData.find((d) => d.day === selectedDate.getDate());
   const organizations = selectedDayData?.organizations ?? [];
 
-  // 월별 데이터 fetch (headOfficeId 필수)
+  // 캘린더 스와이프 시 다른 월 데이터 가져오기 (browseMonth 용)
   const fetchMonthlyData = useCallback(
-    async (year: number, month: number): Promise<CalendarDayData[]> => {
+    async (y: number, m: number): Promise<CalendarDayData[]> => {
       if (!headOfficeId) return [];
-
       try {
-        const params: Record<string, number> = { year, month, headOfficeId };
-        if (storeId) params.storeId = storeId;
-
-        const res = await api.get(
-          `${API_BASE}/mobile/calendar`,
-          { params }
-        );
-        if (res.data.success || res.data.status === "SUCCESS") {
-          return res.data.data as CalendarDayData[];
-        }
-      } catch {
-        // API 실패 시 빈 배열
+        return await getCalendarData({
+          year: y,
+          month: m,
+          headOfficeId,
+          ...(storeId ? { storeId } : {}),
+        });
+      } catch (err) {
+        console.error('[TodoContents] 월별 데이터 조회 실패:', { year: y, month: m }, err);
+        return [];
       }
-      return [];
     },
     [headOfficeId, storeId]
   );
 
-  // 초기 로드 및 월/점포 변경 시 데이터 로드
-  const cacheKey = useMemo(
-    () => `${selectedDate.getFullYear()}-${selectedDate.getMonth() + 1}-${headOfficeId}-${storeId}`,
-    [selectedDate, headOfficeId, storeId]
-  );
-
-  // 데이터 리페치 함수 (이벤트 핸들러용)
-  const refetchCurrentMonth = useCallback(async (expectedKey: string) => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1;
-    requestKeyRef.current = expectedKey;
-    setTodoData([]);
-    const nextData = await fetchMonthlyData(year, month);
-    if (requestKeyRef.current !== expectedKey) return;
-    setTodoData(nextData);
-    loadedMonthRef.current = expectedKey;
-  }, [selectedDate, fetchMonthlyData]);
-
-  // 월/점포 변경 시 데이터 로드 (effect → 외부 시스템 동기화)
-  useEffect(() => {
-    if (cacheKey === loadedMonthRef.current) return;
-    let cancelled = false;
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1;
-    requestKeyRef.current = cacheKey;
-
-    fetchMonthlyData(year, month).then((nextData) => {
-      if (cancelled || requestKeyRef.current !== cacheKey) return;
-      setTodoData(nextData);
-      loadedMonthRef.current = cacheKey;
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cacheKey, selectedDate, fetchMonthlyData]);
-
   // 날짜 변경
-  const changeDate = useCallback(
-    (date: Date) => {
-      setSelectedDate(date);
-    },
-    []
-  );
+  const changeDate = useCallback((date: Date) => {
+    setSelectedDate(date);
+  }, []);
 
   // 하루 이동
-  const moveDay = useCallback(
-    (offset: number) => {
-      setSelectedDate((prev) => {
-        const next = new Date(prev);
-        next.setDate(next.getDate() + offset);
-        return next;
-      });
-    },
-    []
-  );
+  const moveDay = useCallback((offset: number) => {
+    setSelectedDate((prev) => {
+      const next = new Date(prev);
+      next.setDate(next.getDate() + offset);
+      return next;
+    });
+  }, []);
 
   // 오늘로 복귀
   const goToToday = useCallback(() => {
@@ -160,16 +112,11 @@ export default function TodoContents() {
         confirmText: "삭제",
         cancelText: "취소",
         onConfirm: async () => {
-          try {
-            await deleteTodosMutation.mutateAsync([todoId]);
-            void refetchCurrentMonth(cacheKey);
-          } catch {
-            openAlert({ message: "삭제에 실패했습니다." });
-          }
+          await deleteTodosMutation.mutateAsync([todoId]);
         },
       });
     },
-    [openAlert, deleteTodosMutation, refetchCurrentMonth, cacheKey]
+    [openAlert, deleteTodosMutation]
   );
 
   // 스와이프 핸들러
@@ -185,7 +132,6 @@ export default function TodoContents() {
       const dx = touch.clientX - touchStartRef.current.x;
       const dy = touch.clientY - touchStartRef.current.y;
 
-      // 수평이 수직보다 클 때만 + 50px 이상
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= SWIPE_THRESHOLD) {
         moveDay(dx > 0 ? -1 : 1);
       }
@@ -244,8 +190,7 @@ export default function TodoContents() {
             </div>
             {organizations.length > 0 ? (
               storeId
-                ? // 점포 선택됨 → 직원명을 메인 타이틀로, 할 일 바로 나열
-                  organizations.flatMap((org, orgIdx) =>
+                ? organizations.flatMap((org, orgIdx) =>
                     org.employees.map((emp) => (
                       <TodoEmployeeFlatSection
                         key={`${orgIdx}-${emp.employeeInfoId}`}
@@ -254,8 +199,7 @@ export default function TodoContents() {
                       />
                     ))
                   )
-                : // 점포 미선택 → 조직 → 직원 그룹핑
-                  organizations.map((org) => (
+                : organizations.map((org) => (
                     <TodoOrgSection
                       key={`${org.headOfficeId}-${org.franchiseId}-${org.storeId}`}
                       org={org}

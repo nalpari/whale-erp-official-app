@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
+import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateTodo } from "@/hooks/queries/use-todo-queries";
 import { useEmployeeOptions } from "@/hooks/queries/use-todo-queries";
 import { getErrorMessage } from "@/lib/api";
@@ -59,15 +60,26 @@ export default function TodoCreate() {
     setSubmitError("");
 
     try {
-      await createMutation.mutateAsync({
-        headOfficeId: headOfficeId ?? null,
-        storeId: storeId ?? null,
-        employeeInfoId: Number(employeeInfoId),
-        content: content.trim(),
-        hasPeriod,
-        startDate,
-        endDate: hasPeriod ? endDate : null,
-      });
+      await createMutation.mutateAsync(
+        hasPeriod
+          ? {
+              headOfficeId: headOfficeId ?? undefined,
+              storeId: storeId ?? undefined,
+              employeeInfoId: Number(employeeInfoId),
+              content: content.trim(),
+              hasPeriod: true,
+              startDate,
+              endDate,
+            }
+          : {
+              headOfficeId: headOfficeId ?? undefined,
+              storeId: storeId ?? undefined,
+              employeeInfoId: Number(employeeInfoId),
+              content: content.trim(),
+              hasPeriod: false,
+              startDate,
+            },
+      );
       router.push(`/todo?date=${startDate}`);
     } catch (err) {
       setSubmitError(getErrorMessage(err, "등록에 실패했습니다."));
@@ -85,12 +97,12 @@ export default function TodoCreate() {
     router,
   ]);
 
-  // 헤더 저장 버튼 이벤트 수신
+  // 헤더 저장 버튼 연동
+  const setOnSave = useHeaderStore((s) => s.setOnSave);
   useEffect(() => {
-    const handler = () => handleSubmit();
-    window.addEventListener("todo-create-save", handler);
-    return () => window.removeEventListener("todo-create-save", handler);
-  }, [handleSubmit]);
+    setOnSave(() => handleSubmit());
+    return () => setOnSave(null);
+  }, [handleSubmit, setOnSave]);
 
   return (
     <div className="container sub">

@@ -1,9 +1,3 @@
-export interface ApiResponse<T> {
-  status: string;
-  message: string;
-  data: T;
-}
-
 export interface CalendarDayData {
   day: number;
   totalCount: number;
@@ -35,16 +29,19 @@ export interface TodoItem {
   isCompleted: boolean;
 }
 
-export interface TodoCreateRequest {
+type TodoCreateBase = {
   headOfficeId?: number | null;
   franchiseId?: number | null;
   storeId?: number | null;
   employeeInfoId: number;
   content: string;
-  hasPeriod: boolean;
-  startDate: string;
-  endDate?: string | null;
-}
+};
+
+export type TodoCreateRequest = TodoCreateBase &
+  (
+    | { hasPeriod: true; startDate: string; endDate: string }
+    | { hasPeriod: false; startDate: string; endDate?: never }
+  );
 
 export interface EmployeeOption {
   employeeInfoId: number;
