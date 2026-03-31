@@ -126,4 +126,78 @@ export interface PartTimerPayrollUpdateRequest {
   remarks?: string
 }
 
+// 일별 근무 기록 (daily-work-hours API 응답)
+export interface DailyWorkRecord {
+  workDay: string
+  workHour: number
+  breakTimeHour: number
+  overtimeHour: number
+  nightHour: number
+  holidayHour: number
+  contractTimelyAmount: number
+  applyTimelyAmount: number
+  totalAmount: number
+  deductionAmount: number
+}
+
+export interface WeeklySubtotal {
+  weekNumber: number
+  totalWorkHours: number
+  totalPaymentAmount: number
+  totalDeductionAmount: number
+  totalAmount: number
+}
+
+export interface WeeklyHolidayAllowanceItem {
+  weekNumber: number
+  workTime: number
+  applyTimelyAmount: number
+  totalAmount: number
+  deductionAmount: number
+  netAmount: number
+}
+
+export interface WeeklyTotal {
+  weekNumber: number
+  totalAmount: number
+}
+
+export type WorkHoursItemType = 'DAILY' | 'WEEKLY_SUBTOTAL' | 'WEEKLY_HOLIDAY_ALLOWANCE' | 'WEEKLY_TOTAL'
+
+export interface DailyWorkHoursItem {
+  type: WorkHoursItemType
+  dailyRecord?: DailyWorkRecord
+  weeklySubtotal?: WeeklySubtotal
+  weeklyHolidayAllowance?: WeeklyHolidayAllowanceItem
+  weeklyTotal?: WeeklyTotal
+}
+
+export interface DailyWorkHoursSummaryResponse {
+  memberId: number
+  memberName: string
+  startDate: string
+  endDate: string
+  applyTimelyAmount: number
+  contractHourlyWageInfo: {
+    weekDayHourlyWage: number
+    overtimeHourlyWage: number
+    holidayHourlyWage: number
+  }
+  items: DailyWorkHoursItem[]
+  grandTotalWorkHours: number
+  grandTotalPaymentAmount: number
+  grandTotalDeductionAmount: number
+  grandTotalAmount: number
+  previousMonthWorkHours: number
+}
+
+export interface GetDailyWorkHoursParams {
+  headOfficeId?: number
+  franchiseStoreId?: number
+  storeId?: number
+  employeeInfoId: number
+  startDate: string
+  endDate: string
+}
+
 export type { PaginatedResponse }

@@ -6,6 +6,8 @@ import type {
   PartTimerPayrollSearchParams,
   PartTimerPayrollCreateRequest,
   PartTimerPayrollUpdateRequest,
+  DailyWorkHoursSummaryResponse,
+  GetDailyWorkHoursParams,
 } from '@/types/parttime-payroll'
 
 const BASE_URL = '/api/v1/employee/payroll/parttime'
@@ -75,4 +77,15 @@ export const downloadPartTimerPayrollExcel = async (id: number): Promise<void> =
   a.click()
   document.body.removeChild(a)
   setTimeout(() => window.URL.revokeObjectURL(url), 100)
+}
+
+// 일별 근무시간 조회
+export const getDailyWorkHours = async (
+  params: GetDailyWorkHoursParams,
+): Promise<DailyWorkHoursSummaryResponse | null> => {
+  const response = await api.get<{ data: DailyWorkHoursSummaryResponse }>(
+    `${BASE_URL}/daily-work-hours`,
+    { params: cleanParams(params) },
+  )
+  return response.data?.data ?? null
 }

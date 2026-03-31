@@ -11,6 +11,7 @@ import {
   useDownloadPartTimerPayrollExcel,
 } from '@/hooks/queries/use-parttime-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
+import { getDailyWorkHours } from '@/lib/api/parttime-payroll'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
 import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
@@ -82,8 +83,8 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     (state) => state.setDeductionAddSheet,
   )
 
-  // DeductionAddSheet 저장 콜백
-  const handleDeductionSheetSave = (data: {
+  // DeductionAddSheet 저장 콜백 — 근무기간 설정 후 일별 근무내역 자동 조회
+  const handleDeductionSheetSave = async (data: {
     settlementStartDate: string
     settlementEndDate: string
     deductionItems: PartTimerDeductionItem[]
@@ -91,6 +92,39 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     setSettlementStartDate(data.settlementStartDate)
     setSettlementEndDate(data.settlementEndDate)
     setDeductionItems(data.deductionItems)
+
+    // 직원이 선택된 상태에서만 일별 근무내역 조회
+    if (selectedEmployeeInfoId && data.settlementStartDate && data.settlementEndDate) {
+      try {
+        const result = await getDailyWorkHours({
+          employeeInfoId: selectedEmployeeInfoId,
+          startDate: data.settlementStartDate,
+          endDate: data.settlementEndDate,
+          headOfficeId: selectedOfficeId,
+          franchiseStoreId: selectedFranchiseId,
+          storeId: selectedStoreId,
+        })
+        if (result?.items) {
+          const dailyItems: PartTimerPaymentItem[] = result.items
+            .filter((item) => item.type === 'DAILY' && item.dailyRecord)
+            .map((item) => {
+              const r = item.dailyRecord!
+              return {
+                workDay: r.workDay,
+                workHour: r.workHour,
+                breakTimeHour: r.breakTimeHour,
+                contractTimelyAmount: r.contractTimelyAmount,
+                applyTimelyAmount: r.applyTimelyAmount,
+                totalAmount: r.totalAmount,
+                deductionAmount: r.deductionAmount,
+              }
+            })
+          setPaymentItems(dailyItems)
+        }
+      } catch (error) {
+        alert(getErrorMessage(error, '근무내역을 불러오는데 실패했습니다.'))
+      }
+    }
   }
 
   const createMutation = useCreatePartTimerPayroll()
