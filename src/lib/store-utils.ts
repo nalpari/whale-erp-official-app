@@ -1,6 +1,54 @@
 import type { OperatingHour, OperatingHourRequest } from '@/types/store'
 
+// ── 공통 상수 ──
+
+export const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  STOPR_001: { label: '운영', className: 'badge blue' },
+  STOPR_002: { label: '미운영', className: 'badge red' },
+}
+
+export const WEEKDAY_LABEL: Record<string, string> = {
+  MONDAY: '월',
+  TUESDAY: '화',
+  WEDNESDAY: '수',
+  THURSDAY: '목',
+  FRIDAY: '금',
+  SATURDAY: '토',
+  SUNDAY: '일',
+}
+
+export const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] as const
+export const ALL_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const
+
 const ALL_WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
+
+// ── 공통 유틸 함수 ──
+
+export function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return ''
+  return dateStr.slice(0, 10).replace(/-/g, '.')
+}
+
+export function formatTime(timeStr?: string | null): string {
+  if (!timeStr) return ''
+  return timeStr.slice(0, 5)
+}
+
+export function getFileNameAndExt(fileName: string): { name: string; ext: string } {
+  const lastDot = fileName.lastIndexOf('.')
+  if (lastDot === -1) return { name: fileName, ext: '' }
+  return { name: fileName.slice(0, lastDot), ext: fileName.slice(lastDot) }
+}
+
+/** storeOwner 기반으로 organizationId를 결정하는 공통 로직 */
+export function getOrganizationId(
+  storeOwner: string,
+  officeId: number | null,
+  franchiseId?: number | null,
+): number {
+  if (storeOwner === 'FRANCHISE' && franchiseId) return franchiseId
+  return officeId!
+}
 
 /**
  * 서버 응답의 개별 요일 데이터를 폼의 WEEKDAY/SATURDAY/SUNDAY 구조로 역변환
@@ -19,7 +67,7 @@ export function toFormOperating(serverOperating: OperatingHour[]): OperatingHour
   const firstWeekday = weekdayEntries[0]
   const weekdayForm: OperatingHourRequest = {
     dayType: 'WEEKDAY',
-    isOperating: true,
+    isOperating: weekdayEntries.length > 0,
     openTime: firstWeekday?.openTime ?? null,
     closeTime: firstWeekday?.closeTime ?? null,
     breakStartTime: firstWeekday?.breakStartTime ?? null,
@@ -90,6 +138,7 @@ export function buildOperatingHoursRequest(
   }
 
   // 토요일
+  // TODO: 서버가 isOperating: false를 명시적으로 요구하는지 확인 필요 (현재는 미입력 시 미전송)
   const saturday = operating.find((o) => o.dayType === 'SATURDAY')
   if (saturday && saturday.openTime && saturday.closeTime) {
     const hasBreak = !!(saturday.breakStartTime && saturday.breakEndTime)

@@ -43,13 +43,17 @@ const DEFAULT_OPERATING: OperatingHourRequest[] = [
   { dayType: 'SUNDAY', isOperating: true, openTime: null, closeTime: null, breakStartTime: null, breakEndTime: null },
 ]
 
+function getToday(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 const initialState = {
   storeOwner: 'HEAD_OFFICE',
   officeId: null,
   franchiseId: null,
   storeName: '',
   operationStatus: 'STOPR_001',
-  statusUpdatedDate: new Date().toISOString().slice(0, 10),
+  statusUpdatedDate: '',
   ceoName: '',
   businessNumber: '',
   storeAddress: '',
@@ -96,7 +100,7 @@ export const useStoreFormStore = create<StoreFormState>()(
           'storeForm/markDeleteImage',
         ),
 
-      reset: () => set({ ...initialState, operating: [...DEFAULT_OPERATING] }, false, 'storeForm/reset'),
+      reset: () => set({ ...initialState, statusUpdatedDate: getToday(), operating: [...DEFAULT_OPERATING] }, false, 'storeForm/reset'),
     }),
     { name: 'StoreFormStore' },
   ),

@@ -6,40 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useCallback } from "react";
 import { useStoreDetail, useDeleteStore } from "@/hooks/queries/use-store-queries";
 import type { OperatingHour } from "@/types/store";
-
-const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  STOPR_001: { label: "운영", className: "badge blue" },
-  STOPR_002: { label: "미운영", className: "badge red" },
-};
-
-const WEEKDAY_LABEL: Record<string, string> = {
-  MONDAY: "월",
-  TUESDAY: "화",
-  WEDNESDAY: "수",
-  THURSDAY: "목",
-  FRIDAY: "금",
-  SATURDAY: "토",
-  SUNDAY: "일",
-};
-
-const WEEKDAY_ORDER = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"] as const;
-const ALL_DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const;
-
-function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return "";
-  return dateStr.slice(0, 10).replace(/-/g, ".");
-}
-
-function formatTime(timeStr?: string | null): string {
-  if (!timeStr) return "";
-  return timeStr.slice(0, 5);
-}
-
-function getFileNameAndExt(fileName: string): { name: string; ext: string } {
-  const lastDot = fileName.lastIndexOf(".");
-  if (lastDot === -1) return { name: fileName, ext: "" };
-  return { name: fileName.slice(0, lastDot), ext: fileName.slice(lastDot) };
-}
+import { STATUS_MAP, WEEKDAY_LABEL, WEEKDAY_ORDER, ALL_DAYS, formatDate, formatTime, getFileNameAndExt } from "@/lib/store-utils";
 
 /** 개별 요일 엔트리들을 평일/토요일/일요일 + 정기휴일로 그룹핑 */
 function groupOperatingHours(operating: OperatingHour[]) {

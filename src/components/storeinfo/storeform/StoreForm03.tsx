@@ -3,12 +3,7 @@ import { useMemo, useEffect, useRef } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { usePopupControler } from "@/store/usePopupControler";
-
-function getFileNameAndExt(fileName: string): { name: string; ext: string } {
-  const lastDot = fileName.lastIndexOf(".");
-  if (lastDot === -1) return { name: fileName, ext: "" };
-  return { name: fileName.slice(0, lastDot), ext: fileName.slice(lastDot) };
-}
+import { getFileNameAndExt } from "@/lib/store-utils";
 
 export default function StoreForm03() {
   const {

@@ -67,8 +67,8 @@ export default function Login() {
         if (office?.franchises?.length) {
           store.setFranchiseId(office.franchises[0].id)
         }
-      } catch {
-        // bp-tree 조회 실패 시 무시
+      } catch (err) {
+        console.error('[Login] bp-tree 조회 실패:', err)
       }
     }
 

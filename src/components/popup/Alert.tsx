@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { usePopupControler } from "@/store/usePopupControler";
 
 export default function Alert() {
@@ -7,10 +8,17 @@ export default function Alert() {
   const alertConfirmText = usePopupControler((state) => state.alertConfirmText);
   const alertCancelText = usePopupControler((state) => state.alertCancelText);
   const alertOnConfirm = usePopupControler((state) => state.alertOnConfirm);
+  const [isPending, setIsPending] = useState(false);
 
-  const handleConfirm = () => {
-    alertOnConfirm?.();
-    setAlertPopup(false);
+  const handleConfirm = async () => {
+    if (isPending) return;
+    setIsPending(true);
+    try {
+      await alertOnConfirm?.();
+    } finally {
+      setIsPending(false);
+      setAlertPopup(false);
+    }
   };
 
   const handleCancel = () => {
@@ -38,8 +46,9 @@ export default function Alert() {
                 <button
                   className="btn-form black min block"
                   onClick={handleConfirm}
+                  disabled={isPending}
                 >
-                  {alertConfirmText || "확인"}
+                  {isPending ? "처리 중..." : (alertConfirmText || "확인")}
                 </button>
               </div>
             </div>

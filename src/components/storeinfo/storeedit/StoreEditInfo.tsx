@@ -6,6 +6,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
+import { getOrganizationId } from "@/lib/store-utils";
 import StoreForm01 from "../storeform/StoreForm01";
 import StoreForm02 from "../storeform/StoreForm02";
 
@@ -14,7 +15,6 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const [step, setStep] = useState(1);
   const openAlert = usePopupControler((state) => state.openAlert);
   const updateMutation = useUpdateStore();
-  const form = useStoreFormStore();
   const setField = useStoreFormStore((state) => state.setField);
   const { data } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
@@ -68,15 +68,15 @@ export default function StoreEditInfo({ id }: { id: number }) {
 
   const handleSave = async () => {
     if (updateMutation.isPending) return;
+    const form = useStoreFormStore.getState();
+
     if (!form.officeId || !form.storeName) {
       openAlert({ message: "필수 입력 항목을 확인해주세요." });
       return;
     }
 
     try {
-      const organizationId = form.storeOwner === "FRANCHISE" && form.franchiseId
-        ? form.franchiseId
-        : form.officeId!;
+      const organizationId = getOrganizationId(form.storeOwner, form.officeId, form.franchiseId);
 
       await updateMutation.mutateAsync({
         id,

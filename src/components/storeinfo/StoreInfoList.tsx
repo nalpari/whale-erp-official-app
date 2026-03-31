@@ -10,16 +10,7 @@ import { useStoreInfiniteList } from "@/hooks/queries/use-store-queries";
 import { useStoreSearchStore } from "@/store/useStoreSearchStore";
 import { checkStoreSubscribe } from "@/lib/api/store";
 import { EXTERNAL_URLS } from "@/lib/constants";
-
-const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  STOPR_001: { label: "운영", className: "badge blue" },
-  STOPR_002: { label: "미운영", className: "badge red" },
-};
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return "";
-  return dateStr.slice(0, 10).replace(/-/g, ".");
-}
+import { STATUS_MAP, formatDate } from "@/lib/store-utils";
 
 export default function StoreInfoList() {
   const router = useRouter();

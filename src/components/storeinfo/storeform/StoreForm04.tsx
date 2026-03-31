@@ -2,14 +2,9 @@
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import type { OperatingHourRequest } from "@/types/store";
+import { WEEKDAY_ORDER, WEEKDAY_LABEL } from "@/lib/store-utils";
 
-const WEEKDAYS = [
-  { key: "MONDAY", label: "월" },
-  { key: "TUESDAY", label: "화" },
-  { key: "WEDNESDAY", label: "수" },
-  { key: "THURSDAY", label: "목" },
-  { key: "FRIDAY", label: "금" },
-];
+const WEEKDAYS = WEEKDAY_ORDER.map((key) => ({ key, label: WEEKDAY_LABEL[key] }));
 
 function isEndBeforeStart(start?: string | null, end?: string | null): boolean {
   if (!start || !end) return false;

@@ -7,20 +7,20 @@ import { Sheet } from "react-modal-sheet";
 export default function StoreSearchSheet() {
   const storeSearchSheet = useBottomSheetControler((state) => state.storeSearchSheet);
   const setStoreSearchSheet = useBottomSheetControler((state) => state.setStoreSearchSheet);
-  const searchStore = useStoreSearchStore();
 
   // 로컬 상태 (시트 내부에서만 관리, 검색 시 글로벌에 반영)
-  const [localStatus, setLocalStatus] = useState<string | null>(searchStore.status);
-  const [localFrom, setLocalFrom] = useState(searchStore.from);
-  const [localTo, setLocalTo] = useState(searchStore.to);
+  const [localStatus, setLocalStatus] = useState<string | null>(null);
+  const [localFrom, setLocalFrom] = useState("");
+  const [localTo, setLocalTo] = useState("");
 
   const handleOpenStart = () => {
+    const store = useStoreSearchStore.getState();
     const year = new Date().getFullYear();
     const defaultFrom = `${year}-01-01`;
     const defaultTo = new Date().toISOString().slice(0, 10);
-    setLocalStatus(searchStore.status);
-    setLocalFrom(searchStore.hasSearched ? searchStore.from : defaultFrom);
-    setLocalTo(searchStore.hasSearched ? searchStore.to : defaultTo);
+    setLocalStatus(store.status);
+    setLocalFrom(store.hasSearched ? store.from : defaultFrom);
+    setLocalTo(store.hasSearched ? store.to : defaultTo);
   };
 
   const handleClose = () => {
@@ -28,14 +28,15 @@ export default function StoreSearchSheet() {
   };
 
   const handleSearch = () => {
+    const store = useStoreSearchStore.getState();
     const hasFilter = localStatus !== null || localFrom !== "" || localTo !== "";
-    searchStore.setStatus(localStatus);
-    searchStore.setFrom(localFrom);
-    searchStore.setTo(localTo);
+    store.setStatus(localStatus);
+    store.setFrom(localFrom);
+    store.setTo(localTo);
     if (hasFilter) {
-      searchStore.search();
+      store.search();
     } else {
-      searchStore.reset();
+      store.reset();
     }
     handleClose();
   };

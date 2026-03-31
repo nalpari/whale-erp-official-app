@@ -6,14 +6,13 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
-import { buildOperatingHoursRequest, toFormOperating } from "@/lib/store-utils";
+import { buildOperatingHoursRequest, toFormOperating, getOrganizationId } from "@/lib/store-utils";
 import StoreForm04 from "../storeform/StoreForm04";
 
 export default function StoreEditTime({ id }: { id: number }) {
   const router = useRouter();
   const openAlert = usePopupControler((state) => state.openAlert);
   const updateMutation = useUpdateStore();
-  const form = useStoreFormStore();
   const setOperating = useStoreFormStore((state) => state.setOperating);
   const { data } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
@@ -46,9 +45,10 @@ export default function StoreEditTime({ id }: { id: number }) {
 
   const handleSave = async () => {
     if (updateMutation.isPending || !data) return;
+    const form = useStoreFormStore.getState();
 
     try {
-      const orgId = data.storeInfo.franchiseId ?? data.storeInfo.officeId;
+      const orgId = getOrganizationId(data.storeInfo.storeOwner, data.storeInfo.officeId, data.storeInfo.franchiseId);
 
       await updateMutation.mutateAsync({
         id,

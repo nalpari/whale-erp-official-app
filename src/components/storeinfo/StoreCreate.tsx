@@ -6,7 +6,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
-import { buildOperatingHoursRequest } from "@/lib/store-utils";
+import { buildOperatingHoursRequest, getOrganizationId } from "@/lib/store-utils";
 import StoreForm01 from "./storeform/StoreForm01";
 import StoreForm02 from "./storeform/StoreForm02";
 import StoreForm03 from "./storeform/StoreForm03";
@@ -18,7 +18,6 @@ export default function StoreCreate() {
   const [submitted, setSubmitted] = useState(false);
   const openAlert = usePopupControler((state) => state.openAlert);
   const createMutation = useCreateStore();
-  const form = useStoreFormStore();
   const resetForm = useStoreFormStore((state) => state.reset);
 
   const setTitle = useHeaderStore((state) => state.setTitle);
@@ -58,11 +57,12 @@ export default function StoreCreate() {
 
   // Step별 필수값 검증
   const validateStep = (s: number): boolean => {
+    const state = useStoreFormStore.getState();
     switch (s) {
       case 1:
-        return !!form.officeId && !!form.storeName;
+        return !!state.officeId && !!state.storeName;
       case 2:
-        return !!form.ceoName && !!form.businessNumber && !!form.storeAddress && !!form.ceoPhone;
+        return !!state.ceoName && !!state.businessNumber && !!state.storeAddress && !!state.ceoPhone;
       default:
         return true;
     }
@@ -86,6 +86,7 @@ export default function StoreCreate() {
 
   const handleSave = async () => {
     if (createMutation.isPending) return;
+    const form = useStoreFormStore.getState();
 
     if (!form.officeId || !form.storeName) {
       openAlert({ message: "필수 입력 항목을 확인해주세요." });
@@ -93,9 +94,7 @@ export default function StoreCreate() {
     }
 
     try {
-      const organizationId = form.storeOwner === "FRANCHISE" && form.franchiseId
-        ? form.franchiseId
-        : form.officeId!;
+      const organizationId = getOrganizationId(form.storeOwner, form.officeId, form.franchiseId);
 
       await createMutation.mutateAsync({
         data: {

@@ -8,7 +8,11 @@ import "./css/header-right-label.scss";
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { title, onDelete, showDeleteButton, rightLabel, onBack } = useHeaderStore();
+  const title = useHeaderStore((s) => s.title);
+  const onDelete = useHeaderStore((s) => s.onDelete);
+  const showDeleteButton = useHeaderStore((s) => s.showDeleteButton);
+  const rightLabel = useHeaderStore((s) => s.rightLabel);
+  const onBack = useHeaderStore((s) => s.onBack);
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
