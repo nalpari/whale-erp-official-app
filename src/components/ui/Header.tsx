@@ -2,16 +2,24 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import StoreSelect from "./StoreSelect";
+import { useHeaderStore } from "@/store/useHeaderStore";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const onDelete = useHeaderStore((s) => s.onDelete);
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
 
   const handleBack = () => {
     router.back();
+  };
+
+  const getPageTitle = () => {
+    if (pathname.startsWith("/fulltimer")) return "정직원 급여명세서 정보";
+    if (pathname.startsWith("/contract")) return "근로계약 관리";
+    return "서브 페이지 헤더";
   };
 
   if (pathname.includes("/list") || pathname === "/login") {
@@ -24,8 +32,8 @@ export default function Header() {
         <div className="header-container">
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
-            <h1>서브 페이지 헤더</h1>
-            <button className="btn-delete"></button>
+            <h1>{getPageTitle()}</h1>
+            {onDelete && <button className="btn-delete" onClick={onDelete}></button>}
           </div>
         </div>
       </header>

@@ -1,8 +1,26 @@
 "use client";
+import { useState } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+import { useMinimumWage } from "@/hooks/queries/use-contract-queries";
 import { Sheet } from "react-modal-sheet";
 
-export default function ContractOptionSheet() {
+interface ContractOptionSheetProps {
+  year?: number;
+  timelyAmount?: number;
+  weeklyHours?: number;
+  onChange?: (values: {
+    year: number;
+    timelyAmount: number;
+    weeklyHours: number;
+  }) => void;
+}
+
+export default function ContractOptionSheet({
+  year: initialYear = new Date().getFullYear(),
+  timelyAmount: initialTimelyAmount = 0,
+  weeklyHours: initialWeeklyHours = 40,
+  onChange,
+}: ContractOptionSheetProps) {
   const contractOptionSheet = useBottomSheetControler(
     (state) => state.contractOptionSheet
   );
@@ -10,7 +28,29 @@ export default function ContractOptionSheet() {
     (state) => state.setContractOptionSheet
   );
 
+  const [year, setYear] = useState(initialYear);
+  const [timelyAmount, setTimelyAmount] = useState(initialTimelyAmount);
+  const [weeklyHours, setWeeklyHours] = useState(initialWeeklyHours);
+
+  const { data: minimumWageData, isLoading: isMinWageLoading } = useMinimumWage(year);
+  const minimumWageLabel = isMinWageLoading
+    ? '...'
+    : minimumWageData?.minimumWage
+      ? `${minimumWageData.minimumWage.toLocaleString('ko-KR')}원`
+      : '-';
+
   const handleClose = () => {
+    setContractOptionSheet(false);
+  };
+
+  const handleReset = () => {
+    setYear(new Date().getFullYear());
+    setTimelyAmount(0);
+    setWeeklyHours(40);
+  };
+
+  const handleConfirm = () => {
+    onChange?.({ year, timelyAmount, weeklyHours });
     setContractOptionSheet(false);
   };
 
@@ -35,8 +75,19 @@ export default function ContractOptionSheet() {
                     계약년도 <span className="imp">*</span>
                   </div>
                   <div className="block">
-                    <select name="" id="" className="select-form">
-                      <option value="1">2025년</option>
+                    <select
+                      className="select-form"
+                      value={year}
+                      onChange={(e) => setYear(Number(e.target.value))}
+                    >
+                      {Array.from({ length: 10 }, (_, i) => {
+                        const y = new Date().getFullYear() - 2 + i;
+                        return (
+                          <option key={y} value={y}>
+                            {y}년
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 </div>
@@ -46,14 +97,15 @@ export default function ContractOptionSheet() {
                   </div>
                   <div className="block">
                     <input
-                      type="text"
+                      type="number"
                       className="input-frame al-r"
-                      defaultValue="15,000"
+                      value={timelyAmount}
+                      onChange={(e) => setTimelyAmount(Number(e.target.value))}
                     />
                   </div>
                   <div className="filed-guide">
                     <span>
-                      <i>2025년</i> 최저시급은 <i>10,030원</i> 입니다.
+                      <i>{year}년</i> 최저시급은 <i>{minimumWageLabel}</i> 입니다.
                     </span>
                     <span>통상시급은 최저시급 이상으로 설정해야 합니다.</span>
                   </div>
@@ -64,9 +116,10 @@ export default function ContractOptionSheet() {
                   </div>
                   <div className="block">
                     <input
-                      type="text"
+                      type="number"
                       className="input-frame"
-                      defaultValue="40"
+                      value={weeklyHours}
+                      onChange={(e) => setWeeklyHours(Number(e.target.value))}
                     />
                   </div>
                   <div className="filed-guide">
@@ -80,8 +133,12 @@ export default function ContractOptionSheet() {
               </div>
             </div>
             <div className="bottom-sheet-footer">
-              <button className="btn-form sky">초기화</button>
-              <button className="btn-form blue">설정 완료</button>
+              <button className="btn-form sky" onClick={handleReset}>
+                초기화
+              </button>
+              <button className="btn-form blue" onClick={handleConfirm}>
+                설정 완료
+              </button>
             </div>
           </div>
         </Sheet.Content>
