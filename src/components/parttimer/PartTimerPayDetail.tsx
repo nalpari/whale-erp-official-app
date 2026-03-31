@@ -142,15 +142,30 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   const [paymentItems, setPaymentItems] = useState<PartTimerPaymentItem[]>(initialData?.paymentItems ?? [])
   const [deductionItems, setDeductionItems] = useState<PartTimerDeductionItem[]>(initialData?.deductionItems ?? [])
 
+  // 지급일 기준 근무기간 계산 (지급일 한달전 ~ 지급일 하루전)
+  const computeWorkPeriodFromPaymentDate = (pd: string) => {
+    if (!pd) return null
+    const payDate = new Date(pd)
+    const end = new Date(payDate)
+    end.setDate(end.getDate() - 1)
+    const start = new Date(end)
+    start.setMonth(start.getMonth() - 1)
+    start.setDate(start.getDate() + 1)
+    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return { start: fmt(start), end: fmt(end) }
+  }
+
   // 급여지급월 변경 시 지급일/정산기간을 함께 계산
   const handlePayrollYearMonthChange = (ym: string) => {
     setPayrollYearMonth(ym)
     const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
-    if (date) setPaymentDate(date)
-    const range = computeSettlementRange(ym)
-    if (range) {
-      setSettlementStartDate(range.start)
-      setSettlementEndDate(range.end)
+    if (date) {
+      setPaymentDate(date)
+      const period = computeWorkPeriodFromPaymentDate(date)
+      if (period) {
+        setSettlementStartDate(period.start)
+        setSettlementEndDate(period.end)
+      }
     }
   }
 
@@ -163,11 +178,13 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     setPayrollYearMonth(ym)
 
     const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
-    if (date) setPaymentDate(date)
-    const range = computeSettlementRange(ym)
-    if (range) {
-      setSettlementStartDate(range.start)
-      setSettlementEndDate(range.end)
+    if (date) {
+      setPaymentDate(date)
+      const period = computeWorkPeriodFromPaymentDate(date)
+      if (period) {
+        setSettlementStartDate(period.start)
+        setSettlementEndDate(period.end)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- employeeContract 변경 시에만 실행
   }, [employeeContract?.id])
