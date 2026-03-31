@@ -23,7 +23,7 @@ import WorkerDeleteSheet from '../bottomsheet/WorkerDeleteSheet'
 import WorkerAddSheet from '../bottomsheet/WorkerAddSheet'
 import TemporaryWorkerAddSheet from '../bottomsheet/TemporaryWorkerAddSheet'
 import WorkerSearchSheet from '../bottomsheet/WorkerSearchSheet'
-import DeductionAddSheet from '../bottomsheet/DeductionAddSheet'
+// DeductionAddSheet는 PartTimerPayDetail 내부에서 직접 렌더링 (props 전달 필요)
 
 export default function BottomSheetControler() {
   // 개별 구독으로 안정성 확보
@@ -177,7 +177,7 @@ export default function BottomSheetControler() {
       {workerAddSheet && <WorkerAddSheet />}
       {temporaryWorkerAddSheet && <TemporaryWorkerAddSheet />}
       {workerSearchSheet && <WorkerSearchSheet />}
-      {deductionAddSheet && <DeductionAddSheet />}
+      {/* DeductionAddSheet는 PartTimerPayDetail 내부에서 직접 렌더링 */}
     </>
   )
 }
