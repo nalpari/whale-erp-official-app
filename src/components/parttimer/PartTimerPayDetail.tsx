@@ -13,6 +13,7 @@ import {
 import { getErrorMessage } from '@/lib/api'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
+import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import type {
@@ -40,6 +41,15 @@ const getPayrollMonthOptions = () => {
     options.push({ value: `${yyyy}${mm}`, label: `${yyyy}. ${mm}` })
   }
   return options
+}
+
+const computePaymentDate = (ym: string, salaryDay?: number, nextMonth?: boolean): string => {
+  if (!ym || ym.length !== 6 || !salaryDay) return ''
+  const year = Number(ym.slice(0, 4))
+  const month = Number(ym.slice(4)) - 1
+  const offset = nextMonth ? 1 : 0
+  const d = new Date(year, month + offset, salaryDay)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 const computeSettlementRange = (ym: string): { start: string; end: string } | null => {
@@ -99,6 +109,15 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
 
   const [selectedEmployeeInfoId, setSelectedEmployeeInfoId] = useState<number | undefined>()
 
+  // 직원 선택 시 계약 정보 자동 조회
+  const { data: employeeContracts = [] } = useContractsByEmployee(
+    selectedEmployeeInfoId ?? 0,
+    !!selectedEmployeeInfoId,
+  )
+  const employeeContract = employeeContracts[0] ?? null
+  const contractHeader = employeeContract?.employmentContractHeader
+  const isNextMonth = contractHeader?.salaryMonth === 'SLRCF_002'
+
   // 폼 상태
   const [payrollYearMonth, setPayrollYearMonth] = useState(
     initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '',
@@ -111,15 +130,35 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   const [paymentItems, setPaymentItems] = useState<PartTimerPaymentItem[]>(initialData?.paymentItems ?? [])
   const [deductionItems, setDeductionItems] = useState<PartTimerDeductionItem[]>(initialData?.deductionItems ?? [])
 
-  // 급여지급월 변경 시 정산기간 자동 설정
+  // 급여지급월 변경 시 지급일/정산기간을 함께 계산
   const handlePayrollYearMonthChange = (ym: string) => {
     setPayrollYearMonth(ym)
+    const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
+    if (date) setPaymentDate(date)
     const range = computeSettlementRange(ym)
     if (range) {
       setSettlementStartDate(range.start)
       setSettlementEndDate(range.end)
     }
   }
+
+  // 직원 선택 시 계약 정보 기반으로 급여지급월/지급일 자동 설정
+  const prevMonthValue = payrollMonthOptions[1]?.value ?? ''
+  useEffect(() => {
+    if (!isNew || !employeeContract) return
+
+    const ym = isNextMonth && prevMonthValue ? prevMonthValue : payrollYearMonth
+    setPayrollYearMonth(ym)
+
+    const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
+    if (date) setPaymentDate(date)
+    const range = computeSettlementRange(ym)
+    if (range) {
+      setSettlementStartDate(range.start)
+      setSettlementEndDate(range.end)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- employeeContract 변경 시에만 실행
+  }, [employeeContract?.id])
 
   // 금액 계산
   const totalPayment = paymentItems.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
