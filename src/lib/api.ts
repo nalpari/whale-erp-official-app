@@ -57,6 +57,8 @@ api.interceptors.request.use((config) => {
   if (affiliationId) {
     config.headers['affiliationId'] = affiliationId
   }
+  // TODO: 서버 programs.path와 매핑하는 로직으로 교체 필요
+  // config.headers['currentPath'] = '/store/info'
   return config
 })
 
