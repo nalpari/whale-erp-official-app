@@ -121,25 +121,21 @@ export interface BonusCategory {
 export const getBonusCategories = async (headOfficeId: number, franchiseId?: number): Promise<BonusCategory[]> => {
   const params: Record<string, number> = { headOfficeId }
   if (franchiseId) params.franchiseId = franchiseId
-  try {
-    interface CodeMemoContent {
-      bonusInfo?: Array<{ code: string; name: string; amount: number; remark: string }>
-    }
-    const response = await api.get<{ data: { codeMemoContent: CodeMemoContent | null } | null }>(
-      `${BASE_URL}/common-code`,
-      { params },
-    )
-    const memo = response.data.data?.codeMemoContent
-    if (!memo?.bonusInfo) return []
-    return memo.bonusInfo.map((item, index) => ({
-      id: index + 1,
-      code: item.code || `BONUS_${String(index + 1).padStart(3, '0')}`,
-      name: item.name,
-      amount: item.amount,
-      remark: item.remark || '',
-      sortOrder: index + 1,
-    }))
-  } catch {
-    return []
+  interface CodeMemoContent {
+    bonusInfo?: Array<{ code: string; name: string; amount: number; remark: string }>
   }
+  const response = await api.get<{ data: { codeMemoContent: CodeMemoContent | null } | null }>(
+    `${BASE_URL}/common-code`,
+    { params },
+  )
+  const memo = response.data.data?.codeMemoContent
+  if (!memo?.bonusInfo) return []
+  return memo.bonusInfo.map((item, index) => ({
+    id: index + 1,
+    code: item.code || `BONUS_${String(index + 1).padStart(3, '0')}`,
+    name: item.name,
+    amount: item.amount,
+    remark: item.remark || '',
+    sortOrder: index + 1,
+  }))
 }
