@@ -138,13 +138,14 @@ Login supports multi-authority (조직) selection:
 - **필수**: `useQuery`/`useInfiniteQuery` 사용. 뮤테이션은 `useMutation` 사용
 - **이유**: 캐시, 리페치, 에러/로딩 상태, stale 관리를 React Query에 위임
 - **예외**: 캘린더 스와이프 등 일회성 직접 호출은 API 함수 직접 호출 허용 (단 try/catch 필수)
-- **isLoading/isError 활용 필수**: `useQuery` 반환값의 `isLoading`, `isError` 상태를 UI에 반영하여 로딩 중/에러/빈 상태를 명확히 구분할 것
+- **isLoading/isError 활용 필수**: `useQuery` 반환값의 `isLoading`, `isError` 상태를 UI에 반영하여 로딩 중/에러/빈 상태를 명확히 구분할 것. 목록/상세/수정 페이지 모두 동일 적용
+- **`data` 기본값으로 에러 숨기기 금지**: `const { data: items = [] } = useQuery(...)` 패턴에서 `isError`를 체크하지 않으면 API 에러 시 빈 목록으로 보임 → 에러와 빈 데이터를 구분할 것
 
 ## 3. 에러 처리: 빈 catch 블록 금지
 
-- **금지**: `catch { }` 또는 `catch { // 빈 주석 }`
-- **필수**: 최소 `console.error('[컴포넌트명] 동작 실패:', err)` 로깅
-- **뮤테이션 훅**: `onError` 콜백에 `console.error` 로깅 추가
+- **금지**: `catch { }`, `catch { // 주석 }`, `catch { /* noop */ }` — 어떤 형태든 err 바인딩 없는 catch 금지
+- **필수**: 최소 `console.error('[컴포넌트명] 동작 실패:', err)` 로깅. 유틸 함수(localStorage 래퍼 등)도 예외 없음
+- **뮤테이션 훅**: `useMutation`에 반드시 `onError` 콜백 추가 (`onError: (err) => console.error('[훅명] 실패:', err)`)
 - **Promise 체인**: `.then()` 사용 시 반드시 `.catch()` 추가
 - **Alert onConfirm 등 async 콜백**: `await` + `try/catch` 패턴 적용. `finally`에서 무조건 팝업을 닫으면 실패가 성공으로 위장됨 — 성공 시에만 닫을 것
 - **onCancel 콜백**: 사용자 제공 콜백이므로 `try/catch`로 감싸서 에러 전파 방지
@@ -153,9 +154,11 @@ Login supports multi-authority (조직) selection:
 
 - **Discriminated union 활용**: 상호 배타적 필드 조합은 union 타입으로 제약 (예: `hasPeriod: true → endDate 필수`, `hasPeriod: false → endDate?: never`)
 - **이중 부재 표현 금지**: `headOfficeId?: number | null`처럼 optional + null을 동시에 사용하지 않음. optional(`?:`)이면 `number`만, required면 `number | null`만 사용
+- **리터럴 유니온 우선**: 비즈니스 코드(`operationStatus`, `dayType`, `storeOwner`, `ownerCode` 등)는 `string` 대신 리터럴 유니온 또는 기존 상수에서 파생한 타입 사용 (`typeof OPERATION_STATUS[keyof typeof OPERATION_STATUS]`)
 - **dead code 제거**: 미사용 타입/인터페이스는 즉시 삭제
 - **deprecated API 제거**: deprecated 표기한 함수/속성은 모든 호출부 마이그레이션 후 즉시 삭제 (deprecated 상태로 방치하지 않음)
 - **공유 타입 export**: 다른 파일에서 사용될 수 있는 타입은 반드시 `export` 선언 (예: `AlertOptions`)
+- **중복 타입 통합**: 2개 이상의 파일에서 동일 구조의 타입을 각각 정의하지 않음. 공통 타입 파일에서 한 번 정의하고 import
 
 ## 5. 상태 관리: stale 값 주의
 
@@ -168,8 +171,9 @@ Login supports multi-authority (조직) selection:
 ## 6. 매직넘버/매직스트링 금지
 
 - **필수**: 반복 사용되는 숫자/문자열은 상수(`const SWIPE_THRESHOLD = 50`)로 선언
-- **여러 파일에서 동일 값 사용 시**: 동일한 상수명 사용 (3곳 이상이면 공통 모듈 추출 고려)
-- **중복 함수/상수**: 2곳 이상에서 동일한 유틸 함수(formatDate, STATUS_MAP 등)가 사용되면 `lib/` 공통 모듈로 추출
+- **비즈니스 코드**: 서버 코드값(`STOPR_001`, `PRGRP_002_002` 등)은 반드시 `lib/constants.ts` 또는 도메인별 `lib/*.ts`에 의미 있는 이름의 상수로 정의 (예: `OPERATION_STATUS.OPERATING`, `OWNER_CODE.FRANCHISE`)
+- **여러 파일에서 동일 값 사용 시**: 동일한 상수명 사용 (2곳 이상이면 공통 모듈 추출)
+- **중복 함수/상수**: 2곳 이상에서 동일한 유틸 함수(formatDate, getToday, STATUS_MAP 등)가 사용되면 `lib/` 공통 모듈로 추출
 
 ## 7. pathname 하드코딩 최소화
 
@@ -264,6 +268,19 @@ Login supports multi-authority (조직) selection:
 - **서버 데이터 없이 저장 비활성화**: `useQuery`의 `data`가 undefined인 동안 저장 버튼을 disabled 처리하거나, 로딩/에러 UI를 먼저 표시
 
 # Development Guidelines
+
+## 14. 라우트 파라미터 검증
+
+- **`[id]` 동적 라우트**: `Number(id)` 변환 후 반드시 `isNaN(rawId) || rawId <= 0` 검증. 유효하지 않으면 `redirect` 또는 에러 UI 표시
+  ```tsx
+  const { id } = await params;
+  const rawId = Number(id);
+  if (isNaN(rawId) || rawId <= 0) {
+    redirect('/storeinfo');
+  }
+  return <StoreInfoDetail id={rawId} />;
+  ```
+- **이유**: 검증 없이 `NaN`이 컴포넌트에 전달되면 `enabled: !!NaN` → query 미실행 → "불러오는 중..." 무한 표시
 
 ## 새 기능 추가 순서
 
