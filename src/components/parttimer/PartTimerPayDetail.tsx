@@ -16,6 +16,7 @@ import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
 import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
+import DeductionAddSheet from '@/components/bottomsheet/DeductionAddSheet'
 import type {
   PartTimerPaymentItem,
   PartTimerDeductionItem,
@@ -80,6 +81,17 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   const setDeductionAddSheet = useBottomSheetControler(
     (state) => state.setDeductionAddSheet,
   )
+
+  // DeductionAddSheet 저장 콜백
+  const handleDeductionSheetSave = (data: {
+    settlementStartDate: string
+    settlementEndDate: string
+    deductionItems: PartTimerDeductionItem[]
+  }) => {
+    setSettlementStartDate(data.settlementStartDate)
+    setSettlementEndDate(data.settlementEndDate)
+    setDeductionItems(data.deductionItems)
+  }
 
   const createMutation = useCreatePartTimerPayroll()
   const updateMutation = useUpdatePartTimerPayroll()
@@ -434,24 +446,16 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
               <div className="sub-item-bx">
                 <div className="data-filed">
                   <div className="filed-tit">근무기간</div>
-                  <div className="flex g6">
-                    <div className="date-picker-custom">
-                      <input
-                        type="date"
-                        className="date-picker-input"
-                        value={settlementStartDate}
-                        onChange={(e) => setSettlementStartDate(e.target.value)}
-                      />
-                    </div>
-                    <span>~</span>
-                    <div className="date-picker-custom">
-                      <input
-                        type="date"
-                        className="date-picker-input"
-                        value={settlementEndDate}
-                        onChange={(e) => setSettlementEndDate(e.target.value)}
-                      />
-                    </div>
+                  <div className="block">
+                    <input
+                      type="text"
+                      className="input-frame"
+                      value={settlementStartDate && settlementEndDate
+                        ? `${settlementStartDate.replace(/-/g, '.')} ~ ${settlementEndDate.replace(/-/g, '.')}`
+                        : '설정해주세요'}
+                      readOnly
+                      onClick={() => setDeductionAddSheet(true)}
+                    />
                   </div>
                 </div>
               </div>
@@ -587,6 +591,12 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           {createMutation.isPending || updateMutation.isPending ? '저장 중...' : '저장하기'}
         </button>
       </div>
+      <DeductionAddSheet
+        settlementStartDate={settlementStartDate}
+        settlementEndDate={settlementEndDate}
+        deductionItems={deductionItems}
+        onSave={handleDeductionSheetSave}
+      />
     </>
   )
 }
