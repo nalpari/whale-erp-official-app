@@ -40,7 +40,10 @@ export const useHeadOfficeTree = () => {
 export const useStoreOptions = (officeId?: number, franchiseId?: number) => {
   return useQuery({
     queryKey: storeKeys.options(officeId, franchiseId),
-    queryFn: () => getStoreOptions(officeId!, franchiseId ?? undefined),
+    queryFn: () => {
+      if (!officeId) throw new Error('officeId가 없습니다.')
+      return getStoreOptions(officeId, franchiseId ?? undefined)
+    },
     enabled: !!officeId,
   })
 }
@@ -61,7 +64,10 @@ export const useStoreInfiniteList = (params: Omit<StoreSearchParams, 'page'>, en
 export const useStoreDetail = (id?: number) => {
   return useQuery({
     queryKey: storeKeys.detail(id),
-    queryFn: () => getStoreDetail(id!),
+    queryFn: () => {
+      if (!id) throw new Error('id가 없습니다.')
+      return getStoreDetail(id)
+    },
     enabled: !!id,
   })
 }
