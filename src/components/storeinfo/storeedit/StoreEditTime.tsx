@@ -12,11 +12,12 @@ import StoreOperatingHourForm from "../storeform/StoreOperatingHourForm";
 export default function StoreEditTime({ id }: { id: number }) {
   const router = useRouter();
   const openAlert = usePopupControler((state) => state.openAlert);
-  const updateMutation = useUpdateStore();
+  const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
   const setOperating = useStoreFormStore((state) => state.setOperating);
   const { data } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
+  const setRightLabel = useHeaderStore((state) => state.setRightLabel);
 
   const handleBackConfirm = useCallback(() => {
     openAlert({
@@ -33,9 +34,10 @@ export default function StoreEditTime({ id }: { id: number }) {
 
     return () => {
       setTitle("");
+      setRightLabel("");
       setOnBack(null);
     };
-  }, [setTitle, setOnBack, handleBackConfirm]);
+  }, [setTitle, setRightLabel, setOnBack, handleBackConfirm]);
 
   // 운영시간 데이터로 폼 초기화 (서버 개별 요일 → 폼 WEEKDAY 구조로 역변환)
   useEffect(() => {
@@ -44,13 +46,13 @@ export default function StoreEditTime({ id }: { id: number }) {
   }, [data, setOperating]);
 
   const handleSave = async () => {
-    if (updateMutation.isPending || !data) return;
+    if (isUpdating || !data) return;
     const form = useStoreFormStore.getState();
 
     try {
       const orgId = getOrganizationId(data.storeInfo.storeOwner, data.storeInfo.officeId, data.storeInfo.franchiseId);
 
-      await updateMutation.mutateAsync({
+      await updateStore({
         id,
         data: {
           storeOwner: data.storeInfo.storeOwner,
@@ -71,6 +73,7 @@ export default function StoreEditTime({ id }: { id: number }) {
         onConfirm: () => router.push(`/storeinfo/${id}`),
       });
     } catch (err) {
+      console.error('[StoreEditTime] 영업시간 저장 실패:', err);
       openAlert({ message: getErrorMessage(err, "저장에 실패했습니다.") });
     }
   };
@@ -86,9 +89,9 @@ export default function StoreEditTime({ id }: { id: number }) {
         <button
           className="btn-form block blue"
           onClick={handleSave}
-          disabled={updateMutation.isPending}
+          disabled={isUpdating}
         >
-          {updateMutation.isPending ? "저장 중..." : "저장"}
+          {isUpdating ? "저장 중..." : "저장"}
         </button>
       </div>
     </>

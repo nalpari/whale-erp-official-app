@@ -17,7 +17,7 @@ export default function StoreCreate() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const openAlert = usePopupControler((state) => state.openAlert);
-  const createMutation = useCreateStore();
+  const { mutateAsync: createStore, isPending: isCreating } = useCreateStore();
   const resetForm = useStoreFormStore((state) => state.reset);
 
   const setTitle = useHeaderStore((state) => state.setTitle);
@@ -60,6 +60,7 @@ export default function StoreCreate() {
     const state = useStoreFormStore.getState();
     switch (s) {
       case 1:
+        if (state.storeOwner === "FRANCHISE" && !state.franchiseId) return false;
         return !!state.officeId && !!state.storeName;
       case 2:
         return !!state.ceoName && !!state.businessNumber && !!state.storeAddress && !!state.ceoPhone;
@@ -85,18 +86,22 @@ export default function StoreCreate() {
   };
 
   const handleSave = async () => {
-    if (createMutation.isPending) return;
+    if (isCreating) return;
     const form = useStoreFormStore.getState();
 
     if (!form.officeId || !form.storeName) {
       openAlert({ message: "필수 입력 항목을 확인해주세요." });
       return;
     }
+    if (form.storeOwner === "FRANCHISE" && !form.franchiseId) {
+      openAlert({ message: "가맹점을 선택해주세요." });
+      return;
+    }
 
     try {
       const organizationId = getOrganizationId(form.storeOwner, form.officeId, form.franchiseId);
 
-      await createMutation.mutateAsync({
+      await createStore({
         data: {
           storeOwner: form.storeOwner,
           organizationId,
@@ -118,6 +123,7 @@ export default function StoreCreate() {
         onConfirm: () => router.push("/storeinfo"),
       });
     } catch (err) {
+      console.error('[StoreCreate] 점포 등록 실패:', err);
       openAlert({ message: getErrorMessage(err, "등록에 실패했습니다.") });
     }
   };
@@ -138,9 +144,9 @@ export default function StoreCreate() {
             <button
               className="btn-form block blue"
               onClick={handleSave}
-              disabled={createMutation.isPending}
+              disabled={isCreating}
             >
-              {createMutation.isPending ? "저장 중..." : "저장"}
+              {isCreating ? "저장 중..." : "저장"}
             </button>
           </div>
         )}

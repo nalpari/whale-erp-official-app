@@ -14,7 +14,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const openAlert = usePopupControler((state) => state.openAlert);
-  const updateMutation = useUpdateStore();
+  const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
   const setField = useStoreFormStore((state) => state.setField);
   const { data } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
@@ -67,7 +67,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const handlePrev = () => { window.scrollTo({ top: 0 }); setStep(step - 1); };
 
   const handleSave = async () => {
-    if (updateMutation.isPending) return;
+    if (isUpdating) return;
     const form = useStoreFormStore.getState();
 
     if (!form.officeId || !form.storeName) {
@@ -78,7 +78,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
     try {
       const organizationId = getOrganizationId(form.storeOwner, form.officeId, form.franchiseId);
 
-      await updateMutation.mutateAsync({
+      await updateStore({
         id,
         data: {
           storeOwner: form.storeOwner,
@@ -106,6 +106,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
         onConfirm: () => router.push(`/storeinfo/${id}`),
       });
     } catch (err) {
+      console.error('[StoreEditInfo] 점포정보 저장 실패:', err);
       openAlert({ message: getErrorMessage(err, "저장에 실패했습니다.") });
     }
   };
@@ -124,9 +125,9 @@ export default function StoreEditInfo({ id }: { id: number }) {
             <button
               className="btn-form block blue"
               onClick={handleSave}
-              disabled={updateMutation.isPending}
+              disabled={isUpdating}
             >
-              {updateMutation.isPending ? "저장 중..." : "저장"}
+              {isUpdating ? "저장 중..." : "저장"}
             </button>
           </div>
         )}
