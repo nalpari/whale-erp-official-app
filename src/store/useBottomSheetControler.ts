@@ -1,7 +1,35 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import type { WorkerEditItem } from '@/types/schedule'
+
+// 근무자 시트에 전달할 컨텍스트
+interface WorkerSheetContext {
+  worker: WorkerEditItem | null
+  date: string
+}
 
 type BottomSheetControlerState = {
+  // 근무자 시트 컨텍스트 (교체/삭제용)
+  workerSheetContext: WorkerSheetContext
+  setWorkerSheetContext: (ctx: WorkerSheetContext) => void
+  // 근무자 추가 콜백
+  onWorkerAdd: ((worker: WorkerEditItem) => void) | null
+  openWorkerAddSheet: (onAdd: (worker: WorkerEditItem) => void) => void
+  // 임시 근무자 추가 콜백
+  onTempWorkerAdd: ((worker: WorkerEditItem) => void) | null
+  openTempWorkerAddSheet: (onAdd: (worker: WorkerEditItem) => void) => void
+  // 근무자 교체 콜백
+  onWorkerReplace: ((newWorkerId: number, newWorkerName: string, newContractType: string) => void) | null
+  openWorkerChangeSheet: (worker: WorkerEditItem, date: string, onReplace: (newWorkerId: number, newWorkerName: string, newContractType: string) => void) => void
+  // 근무자 삭제 콜백
+  onWorkerDelete: (() => void) | null
+  openWorkerDeleteSheet: (worker: WorkerEditItem, date: string, onDelete: () => void) => void
+  // 근무자 검색 콜백
+  onWorkerSearch: ((filters: { employeeName: string; tempWorkerName: string }) => void) | null
+  openWorkerSearchSheet: (onSearch: (filters: { employeeName: string; tempWorkerName: string }) => void) => void
+  // 직원 목록 (근무자 추가/교체 시 사용)
+  workerSheetEmployees: { id: number; name: string; contractType: string }[]
+  setWorkerSheetEmployees: (employees: { id: number; name: string; contractType: string }[]) => void
   storeSelectSheet: boolean
   setStoreSelectSheet: (isOpen: boolean) => void
   goToOptionSheet: boolean
@@ -59,6 +87,27 @@ type BottomSheetControlerState = {
 export const useBottomSheetControler = create<BottomSheetControlerState>()(
   devtools(
     (set) => ({
+      workerSheetContext: { worker: null, date: '' },
+      setWorkerSheetContext: (ctx: WorkerSheetContext) =>
+        set({ workerSheetContext: ctx }, false, 'bottomSheet/setWorkerSheetContext'),
+      onWorkerAdd: null,
+      openWorkerAddSheet: (onAdd) =>
+        set({ workerAddSheet: true, onWorkerAdd: onAdd }, false, 'bottomSheet/openWorkerAdd'),
+      onTempWorkerAdd: null,
+      openTempWorkerAddSheet: (onAdd) =>
+        set({ temporaryWorkerAddSheet: true, onTempWorkerAdd: onAdd }, false, 'bottomSheet/openTempWorkerAdd'),
+      onWorkerReplace: null,
+      openWorkerChangeSheet: (worker, date, onReplace) =>
+        set({ workerChangeSheet: true, workerSheetContext: { worker, date }, onWorkerReplace: onReplace }, false, 'bottomSheet/openWorkerChange'),
+      onWorkerDelete: null,
+      openWorkerDeleteSheet: (worker, date, onDelete) =>
+        set({ workerDeleteSheet: true, workerSheetContext: { worker, date }, onWorkerDelete: onDelete }, false, 'bottomSheet/openWorkerDelete'),
+      onWorkerSearch: null,
+      openWorkerSearchSheet: (onSearch) =>
+        set({ workerSearchSheet: true, onWorkerSearch: onSearch }, false, 'bottomSheet/openWorkerSearch'),
+      workerSheetEmployees: [],
+      setWorkerSheetEmployees: (employees) =>
+        set({ workerSheetEmployees: employees }, false, 'bottomSheet/setWorkerSheetEmployees'),
       storeSelectSheet: false,
       setStoreSelectSheet: (isOpen: boolean) =>
         set({ storeSelectSheet: isOpen }, false, 'bottomSheet/setStoreSelect'),

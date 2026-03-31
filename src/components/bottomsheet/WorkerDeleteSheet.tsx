@@ -1,19 +1,36 @@
-"use client";
-import { useBottomSheetControler } from "@/store/useBottomSheetControler";
-import Image from "next/image";
-import { Sheet } from "react-modal-sheet";
+'use client'
+import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import Image from 'next/image'
+import { Sheet } from 'react-modal-sheet'
+
+function getContractBadge(contractType: string) {
+  switch (contractType) {
+    case '파트타이머':
+      return { wrapClass: 'part', badgeClass: 'badge green', label: '파트' }
+    case '임시근무':
+      return { wrapClass: 'temporary', badgeClass: 'badge brown', label: '임시' }
+    default:
+      return { wrapClass: 'full', badgeClass: 'badge blue', label: contractType }
+  }
+}
 
 export default function WorkerDeleteSheet() {
-  const workerDeleteSheet = useBottomSheetControler(
-    (state) => state.workerDeleteSheet
-  );
-  const setWorkerDeleteSheet = useBottomSheetControler(
-    (state) => state.setWorkerDeleteSheet
-  );
+  const workerDeleteSheet = useBottomSheetControler((state) => state.workerDeleteSheet)
+  const setWorkerDeleteSheet = useBottomSheetControler((state) => state.setWorkerDeleteSheet)
+  const context = useBottomSheetControler((state) => state.workerSheetContext)
+  const onWorkerDelete = useBottomSheetControler((state) => state.onWorkerDelete)
 
   const handleClose = () => {
-    setWorkerDeleteSheet(false);
-  };
+    setWorkerDeleteSheet(false)
+  }
+
+  const handleDelete = () => {
+    onWorkerDelete?.()
+    handleClose()
+  }
+
+  const worker = context.worker
+  const badge = worker ? getContractBadge(worker.contractType) : null
 
   return (
     <Sheet
@@ -29,69 +46,41 @@ export default function WorkerDeleteSheet() {
             <div className="bottom-sheet-header">
               <h3>근무자 삭제</h3>
             </div>
-            <div className=" bottom-sheet-body">
+            <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
-                <div className="worker-info-wrap full">
-                  <div className="worker-img">
-                    <Image
-                      src="/assets/images/layout/avatar02.svg"
-                      alt="근무자 이미지"
-                      width={46}
-                      height={46}
-                    />
-                  </div>
-                  <div className="worker-info">
-                    <div className="worker-name">
-                      <span>김직원 님</span>의
-                      <b className="badge blue ml5">정직원 4h</b>
+                {worker && badge && (
+                  <div className={`worker-info-wrap ${badge.wrapClass}`}>
+                    <div className="worker-img">
+                      <Image
+                        src="/assets/images/layout/avatar02.svg"
+                        alt="근무자 이미지"
+                        width={46}
+                        height={46}
+                      />
                     </div>
-                    <div className="worker-name">근무일정을 삭제 하시겠습니까?</div>
-                  </div>
-                </div>
-                <div className="worker-info-wrap part">
-                  <div className="worker-img">
-                    <Image
-                      src="/assets/images/layout/avatar01.svg"
-                      alt="근무자 이미지"
-                      width={46}
-                      height={46}
-                    />
-                  </div>
-                  <div className="worker-info">
-                    <div className="worker-name">
-                      <span>김직원 님</span>의
-                      <b className="badge green ml5">파트 4h</b>
+                    <div className="worker-info">
+                      <div className="worker-name">
+                        <span>{worker.workerName} 님</span>의
+                        <b className={`${badge.badgeClass} ml5`}>{badge.label}</b>
+                      </div>
+                      <div className="worker-name">근무일정을 삭제 하시겠습니까?</div>
                     </div>
-                    <div className="worker-name">근무일정을 삭제 하시겠습니까?</div>
                   </div>
-                </div>
-                <div className="worker-info-wrap temporary">
-                  <div className="worker-img">
-                    <Image
-                      src="/assets/images/layout/avatar01.svg"
-                      alt="근무자 이미지"
-                      width={46}
-                      height={46}
-                    />
-                  </div>
-                  <div className="worker-info">
-                    <div className="worker-name">
-                      <span>김직원 님</span>의
-                      <b className="badge brown ml5">임시 4h</b>
-                    </div>
-                    <div className="worker-name">근무일정을 삭제 하시겠습니까?</div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
             <div className="bottom-sheet-footer">
-              <button className="btn-form sky">취소</button>
-              <button className="btn-form blue">삭제</button>
+              <button className="btn-form sky" onClick={handleClose}>
+                취소
+              </button>
+              <button className="btn-form blue" onClick={handleDelete}>
+                삭제
+              </button>
             </div>
           </div>
         </Sheet.Content>
       </Sheet.Container>
       <Sheet.Backdrop onTap={handleClose} />
     </Sheet>
-  );
+  )
 }
