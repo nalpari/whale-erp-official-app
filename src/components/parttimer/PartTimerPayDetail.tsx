@@ -134,9 +134,26 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   const [payrollYearMonth, setPayrollYearMonth] = useState(
     initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '',
   )
-  const defaultRange = computeSettlementRange(initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '')
-  const [settlementStartDate, setSettlementStartDate] = useState(initialData?.settlementStartDate ?? defaultRange?.start ?? '')
-  const [settlementEndDate, setSettlementEndDate] = useState(initialData?.settlementEndDate ?? defaultRange?.end ?? '')
+  // 초기 근무기간: initialData가 있으면 그 값, 없으면 paymentDate 기반, 그래도 없으면 지급월 기반
+  const initialPeriod = (() => {
+    if (initialData?.settlementStartDate && initialData?.settlementEndDate) {
+      return { start: initialData.settlementStartDate, end: initialData.settlementEndDate }
+    }
+    if (initialData?.paymentDate) {
+      const payDate = new Date(initialData.paymentDate)
+      const end = new Date(payDate)
+      end.setDate(end.getDate() - 1)
+      const start = new Date(end)
+      start.setMonth(start.getMonth() - 1)
+      start.setDate(start.getDate() + 1)
+      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      return { start: fmt(start), end: fmt(end) }
+    }
+    const range = computeSettlementRange(initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '')
+    return range ?? { start: '', end: '' }
+  })()
+  const [settlementStartDate, setSettlementStartDate] = useState(initialPeriod.start)
+  const [settlementEndDate, setSettlementEndDate] = useState(initialPeriod.end)
   const [paymentDate, setPaymentDate] = useState(initialData?.paymentDate ?? '')
   const [remarks, setRemarks] = useState(initialData?.remarks ?? '')
   const [paymentItems, setPaymentItems] = useState<PartTimerPaymentItem[]>(initialData?.paymentItems ?? [])
