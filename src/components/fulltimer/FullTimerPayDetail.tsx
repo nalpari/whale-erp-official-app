@@ -138,8 +138,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
       setDeductionItems(latestPayroll.deductionItems)
       setRemarks(latestPayroll.remarks ?? '')
       alert('이전 급여 정보를 불러왔습니다.')
-    } catch {
-      alert('이전 급여 정보가 없습니다.')
+    } catch (error) {
+      alert(getErrorMessage(error, '이전 급여 정보를 불러오는데 실패했습니다.'))
     }
   }
 
@@ -175,8 +175,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
         ),
       )
       alert(`추가근무수당 ${overtimeAmount.toLocaleString()}원을 불러왔습니다.`)
-    } catch {
-      alert('추가근무수당을 불러오는데 실패했습니다.')
+    } catch (error) {
+      alert(getErrorMessage(error, '추가근무수당을 불러오는데 실패했습니다.'))
     }
   }
 
