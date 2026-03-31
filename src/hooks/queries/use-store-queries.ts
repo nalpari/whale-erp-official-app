@@ -1,6 +1,7 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getHeadOffices,
+  getHeadOfficeTree,
   getStoreOptions,
   getStoreList,
   getStoreDetail,
@@ -13,6 +14,7 @@ import type { StoreSearchParams, StoreHeaderRequest } from '@/types/store'
 export const storeKeys = {
   all: ['store'] as const,
   headOffices: () => [...storeKeys.all, 'head-offices'] as const,
+  headOfficeTree: () => [...storeKeys.all, 'head-office-tree'] as const,
   options: (officeId?: number, franchiseId?: number) => [...storeKeys.all, 'options', officeId, franchiseId] as const,
   list: (params: Omit<StoreSearchParams, 'page'>) => [...storeKeys.all, 'list', params] as const,
   detail: (id?: number) => [...storeKeys.all, 'detail', id] as const,
@@ -23,6 +25,14 @@ export const useHeadOffices = () => {
   return useQuery({
     queryKey: storeKeys.headOffices(),
     queryFn: getHeadOffices,
+  })
+}
+
+// 본사-가맹점 트리
+export const useHeadOfficeTree = () => {
+  return useQuery({
+    queryKey: storeKeys.headOfficeTree(),
+    queryFn: getHeadOfficeTree,
   })
 }
 

@@ -21,7 +21,6 @@ export function getErrorMessage(error: unknown, fallback = '알 수 없는 오�
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
 })
 
 // 요청 인터셉터 — 토큰 자동 첨부 + FormData Content-Type 처리

@@ -6,7 +6,9 @@ import {
   updatePayrollStatement,
   deletePayrollStatement,
   sendPayrollEmail,
+  downloadPayrollExcel,
   getLatestPayroll,
+  getBonusCategories,
 } from '@/lib/api/payroll'
 import type {
   PayrollSearchParams,
@@ -22,6 +24,7 @@ export const payrollKeys = {
   details: () => [...payrollKeys.all, 'detail'] as const,
   detail: (id: number) => [...payrollKeys.details(), id] as const,
   latest: (employeeInfoId: number) => [...payrollKeys.all, 'latest', employeeInfoId] as const,
+  bonusCategories: (headOfficeId: number) => [...payrollKeys.all, 'bonus-categories', headOfficeId] as const,
 }
 
 // 목록 조회
@@ -95,5 +98,22 @@ export const useSendPayrollEmail = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: payrollKeys.lists() })
     },
+  })
+}
+
+// 급여명세서 엑셀 다운로드
+export const useDownloadPayrollExcel = () => {
+  return useMutation({
+    mutationFn: (id: number) => downloadPayrollExcel(id),
+  })
+}
+
+// 상여금 카테고리 조회
+export const useBonusCategories = (headOfficeId?: number, franchiseId?: number) => {
+  return useQuery({
+    queryKey: [...payrollKeys.bonusCategories(headOfficeId ?? 0), franchiseId] as const,
+    queryFn: () => getBonusCategories(headOfficeId ?? 0, franchiseId),
+    enabled: !!headOfficeId,
+    staleTime: 10 * 60 * 1000,
   })
 }

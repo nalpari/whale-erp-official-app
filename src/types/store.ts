@@ -20,6 +20,21 @@ export interface HeadOffice {
   organizationCode: string
 }
 
+// 가맹점 정보
+export interface FranchiseSimple {
+  id: number
+  name?: string
+  organizationCode: string
+}
+
+// 본사-가맹점 트리
+export interface HeadOfficeTree {
+  id: number
+  name?: string
+  organizationCode: string
+  franchises: FranchiseSimple[]
+}
+
 // 점포 목록 조회 파라미터
 export interface StoreSearchParams {
   office?: number
