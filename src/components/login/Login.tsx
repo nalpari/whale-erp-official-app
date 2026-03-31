@@ -8,6 +8,7 @@ import { useLoginMutation, useAuthoritySelectMutation } from "@/hooks/queries/us
 import { getErrorMessage } from "@/lib/api"
 import { getBpTree } from "@/lib/api/bp"
 import { usePopupControler } from "@/store/usePopupControler"
+import { OWNER_CODE } from "@/lib/constants"
 import type { LoginResponse } from "@/types/auth"
 
 function getSafeReturnUrl(url: string | null): string {
@@ -17,15 +18,15 @@ function getSafeReturnUrl(url: string | null): string {
 
 function safeGetItem(key: string): string | null {
   if (typeof window === "undefined") return null
-  try { return localStorage.getItem(key) } catch { return null }
+  try { return localStorage.getItem(key) } catch (err) { console.warn('[Login] localStorage 읽기 실패:', err); return null }
 }
 
 function safeSetItem(key: string, value: string) {
-  try { localStorage.setItem(key, value) } catch { /* noop */ }
+  try { localStorage.setItem(key, value) } catch (err) { console.warn('[Login] localStorage 저장 실패:', err) }
 }
 
 function safeRemoveItem(key: string) {
-  try { localStorage.removeItem(key) } catch { /* noop */ }
+  try { localStorage.removeItem(key) } catch (err) { console.warn('[Login] localStorage 삭제 실패:', err) }
 }
 
 export default function Login() {
@@ -62,7 +63,7 @@ export default function Login() {
     store.setFranchiseId(null)
 
     // 가맹점 권한(PRGRP_002_002)이면 bp-tree에서 가맹점 ID 조회
-    if (ownerCode === "PRGRP_002_002" && headOfficeId) {
+    if (ownerCode === OWNER_CODE.FRANCHISE && headOfficeId) {
       try {
         const bpTree = await getBpTree()
         const office = bpTree.find((o) => o.id === headOfficeId)
@@ -106,7 +107,7 @@ export default function Login() {
       const data = await loginMutation.mutateAsync({ loginId: loginId.trim(), password })
 
       if (data.authority) {
-        const matchedCompany = data.companies?.find((c) => c.authorityId === data.authority!.authorityId)
+        const matchedCompany = data.companies?.find((c) => c.authorityId === data.authority.authorityId)
         const headOfficeId = matchedCompany?.headOfficeId ?? data.companies?.[0]?.headOfficeId
         const ownerCode = matchedCompany?.ownerCode ?? data.authority.ownerCode
         await completeLogin(data, data.authority.authorityId, data.authority, ownerCode, headOfficeId)

@@ -114,8 +114,8 @@ api.interceptors.response.use(
           const parsed = JSON.parse(stored)
           refreshToken = parsed.state?.refreshToken ?? null
         }
-      } catch {
-        // localStorage 접근 실패
+      } catch (err) {
+        console.warn('[api] 리프레시 토큰 localStorage 읽기 실패:', err)
       }
     }
 

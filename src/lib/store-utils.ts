@@ -27,6 +27,12 @@ export const ALL_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY',
 
 const ALL_WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
 
+/** 오늘 날짜를 YYYY-MM-DD 로컬 타임존 문자열로 반환 */
+export function getToday(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // ── 공통 유틸 함수 ──
 
 export function formatDate(dateStr?: string | null): string {

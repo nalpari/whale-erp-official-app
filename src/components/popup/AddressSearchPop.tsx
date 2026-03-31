@@ -34,6 +34,7 @@ export default function AddressSearchPop() {
   const onAddressSelect = usePopupControler(
     (state) => state.onAddressSelect
   );
+  const openAlert = usePopupControler((state) => state.openAlert);
 
   const handleClose = useCallback(() => {
     setActive(false);
@@ -74,11 +75,12 @@ export default function AddressSearchPop() {
       script.onload = loadAndEmbed;
       script.onerror = () => {
         console.error('[AddressSearchPop] 주소 검색 스크립트 로드 실패');
+        openAlert({ message: '주소 검색 서비스를 불러올 수 없습니다. 네트워크 연결을 확인해주세요.' });
         handleClose();
       };
       document.head.appendChild(script);
     }
-  }, [active, onAddressSelect, handleClose]);
+  }, [active, onAddressSelect, handleClose, openAlert]);
 
   return (
     <div className={`modal-popup ${active ? "act" : ""}`}>

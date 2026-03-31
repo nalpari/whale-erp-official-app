@@ -2,3 +2,8 @@
 export const EXTERNAL_URLS = {
   RATE_PLAN: "https://www.whaleerp.co.kr/customer/rate-plan",
 } as const
+
+export const OWNER_CODE = {
+  HEAD_OFFICE: "PRGRP_002_001",
+  FRANCHISE: "PRGRP_002_002",
+} as const

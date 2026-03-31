@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { OperatingHourRequest } from '@/types/store'
+import { OPERATION_STATUS, getToday } from '@/lib/store-utils'
 
 interface StoreFormState {
   // Step 1
@@ -44,17 +45,12 @@ const DEFAULT_OPERATING: OperatingHourRequest[] = [
   { dayType: 'SUNDAY', isOperating: false, openTime: null, closeTime: null, breakStartTime: null, breakEndTime: null },
 ]
 
-function getToday(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 const initialState = {
   storeOwner: 'HEAD_OFFICE',
   officeId: null,
   franchiseId: null,
   storeName: '',
-  operationStatus: 'STOPR_001',
+  operationStatus: OPERATION_STATUS.OPERATING,
   statusUpdatedDate: '',
   ceoName: '',
   businessNumber: '',

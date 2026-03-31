@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBpTree } from "@/hooks/queries/use-bp-queries";
-import { OPERATION_STATUS } from "@/lib/store-utils";
+import { OPERATION_STATUS, getToday } from "@/lib/store-utils";
 
 export default function StoreBasicInfoForm({ submitted = false }: { submitted?: boolean }) {
   const storeOwner = useStoreFormStore((s) => s.storeOwner);
@@ -121,10 +121,8 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
               <button
                 className={`radio-btn block ${operationStatus === OPERATION_STATUS.OPERATING ? "act" : ""}`}
                 onClick={() => {
-                  const d = new Date();
-                  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
                   setField("operationStatus", OPERATION_STATUS.OPERATING);
-                  setField("statusUpdatedDate", today);
+                  setField("statusUpdatedDate", getToday());
                 }}
               >
                 운영
@@ -132,10 +130,8 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
               <button
                 className={`radio-btn block ${operationStatus === OPERATION_STATUS.NOT_OPERATING ? "act" : ""}`}
                 onClick={() => {
-                  const d = new Date();
-                  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
                   setField("operationStatus", OPERATION_STATUS.NOT_OPERATING);
-                  setField("statusUpdatedDate", today);
+                  setField("statusUpdatedDate", getToday());
                 }}
               >
                 미운영

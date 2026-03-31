@@ -25,7 +25,7 @@ export default function StorePhotoForm() {
   }, [newObjectUrls]);
 
   const allPreviewUrls = [
-    ...existingImages.filter((img) => img.publicUrl).map((img) => img.publicUrl!),
+    ...existingImages.flatMap((img) => img.publicUrl ? [img.publicUrl] : []),
     ...newObjectUrls,
   ];
 
