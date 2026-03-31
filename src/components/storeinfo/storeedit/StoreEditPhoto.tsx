@@ -7,7 +7,7 @@ import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
 import { getOrganizationId } from "@/lib/store-utils";
-import StoreForm03 from "../storeform/StoreForm03";
+import StorePhotoForm from "../storeform/StorePhotoForm";
 
 export default function StoreEditPhoto({ id }: { id: number }) {
   const router = useRouter();
@@ -94,7 +94,7 @@ export default function StoreEditPhoto({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          <StoreForm03 />
+          <StorePhotoForm />
         </div>
       </div>
       <div className="content-pagination">

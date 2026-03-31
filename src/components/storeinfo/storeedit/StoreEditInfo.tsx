@@ -7,8 +7,8 @@ import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
 import { getOrganizationId } from "@/lib/store-utils";
-import StoreForm01 from "../storeform/StoreForm01";
-import StoreForm02 from "../storeform/StoreForm02";
+import StoreBasicInfoForm from "../storeform/StoreBasicInfoForm";
+import StoreContactForm from "../storeform/StoreContactForm";
 
 export default function StoreEditInfo({ id }: { id: number }) {
   const router = useRouter();
@@ -114,8 +114,8 @@ export default function StoreEditInfo({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreForm01 />}
-          {step === 2 && <StoreForm02 />}
+          {step === 1 && <StoreBasicInfoForm />}
+          {step === 2 && <StoreContactForm />}
         </div>
       </div>
       <div className="content-pagination">

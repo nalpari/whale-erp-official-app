@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useStoreSearchStore } from "@/store/useStoreSearchStore";
+import { OPERATION_STATUS } from "@/lib/store-utils";
 import { Sheet } from "react-modal-sheet";
 
 export default function StoreSearchSheet() {
@@ -17,7 +18,8 @@ export default function StoreSearchSheet() {
     const store = useStoreSearchStore.getState();
     const year = new Date().getFullYear();
     const defaultFrom = `${year}-01-01`;
-    const defaultTo = new Date().toISOString().slice(0, 10);
+    const d = new Date();
+    const defaultTo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     setLocalStatus(store.status);
     setLocalFrom(store.hasSearched ? store.from : defaultFrom);
     setLocalTo(store.hasSearched ? store.to : defaultTo);
@@ -74,14 +76,14 @@ export default function StoreSearchSheet() {
                       전체
                     </button>
                     <button
-                      className={`radio-btn block ${localStatus === "STOPR_001" ? "act" : ""}`}
-                      onClick={() => setLocalStatus("STOPR_001")}
+                      className={`radio-btn block ${localStatus === OPERATION_STATUS.OPERATING ? "act" : ""}`}
+                      onClick={() => setLocalStatus(OPERATION_STATUS.OPERATING)}
                     >
                       운영
                     </button>
                     <button
-                      className={`radio-btn block ${localStatus === "STOPR_002" ? "act" : ""}`}
-                      onClick={() => setLocalStatus("STOPR_002")}
+                      className={`radio-btn block ${localStatus === OPERATION_STATUS.NOT_OPERATING ? "act" : ""}`}
+                      onClick={() => setLocalStatus(OPERATION_STATUS.NOT_OPERATING)}
                     >
                       미운영
                     </button>

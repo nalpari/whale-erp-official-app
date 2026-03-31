@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useCallback } from "react";
 import { useStoreDetail, useDeleteStore } from "@/hooks/queries/use-store-queries";
 import type { OperatingHour } from "@/types/store";
+import { getErrorMessage } from "@/lib/api";
 import { STATUS_MAP, WEEKDAY_LABEL, WEEKDAY_ORDER, ALL_DAYS, formatDate, formatTime, getFileNameAndExt } from "@/lib/store-utils";
 
 /** 개별 요일 엔트리들을 평일/토요일/일요일 + 정기휴일로 그룹핑 */
@@ -54,7 +55,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
   const setShowDeleteButton = useHeaderStore((state) => state.setShowDeleteButton);
   const { mutateAsync: deleteStoreAsync } = useDeleteStore();
 
-  const { data, isLoading } = useStoreDetail(id);
+  const { data, isLoading, isError } = useStoreDetail(id);
 
   const handleDelete = useCallback(() => {
     openAlert({
@@ -65,8 +66,9 @@ export default function StoreInfoDetail({ id }: { id: number }) {
         try {
           await deleteStoreAsync(id);
           router.push("/storeinfo");
-        } catch {
-          openAlert({ message: "삭제에 실패했습니다." });
+        } catch (err) {
+          console.error('[StoreInfoDetail] 점포 삭제 실패:', err);
+          openAlert({ message: getErrorMessage(err, "삭제에 실패했습니다.") });
         }
       },
     });
@@ -94,7 +96,7 @@ export default function StoreInfoDetail({ id }: { id: number }) {
     return (
       <div className="container sub">
         <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
-          불러오는 중...
+          {isError ? "점포 정보를 불러올 수 없습니다." : "불러오는 중..."}
         </div>
       </div>
     );

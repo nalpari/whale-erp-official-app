@@ -7,7 +7,7 @@ import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
 import { buildOperatingHoursRequest, toFormOperating, getOrganizationId } from "@/lib/store-utils";
-import StoreForm04 from "../storeform/StoreForm04";
+import StoreOperatingHourForm from "../storeform/StoreOperatingHourForm";
 
 export default function StoreEditTime({ id }: { id: number }) {
   const router = useRouter();
@@ -79,7 +79,7 @@ export default function StoreEditTime({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          <StoreForm04 />
+          <StoreOperatingHourForm />
         </div>
       </div>
       <div className="content-pagination">

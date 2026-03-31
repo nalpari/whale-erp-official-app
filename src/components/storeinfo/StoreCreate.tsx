@@ -7,10 +7,10 @@ import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage } from "@/lib/api";
 import { buildOperatingHoursRequest, getOrganizationId } from "@/lib/store-utils";
-import StoreForm01 from "./storeform/StoreForm01";
-import StoreForm02 from "./storeform/StoreForm02";
-import StoreForm03 from "./storeform/StoreForm03";
-import StoreForm04 from "./storeform/StoreForm04";
+import StoreBasicInfoForm from "./storeform/StoreBasicInfoForm";
+import StoreContactForm from "./storeform/StoreContactForm";
+import StorePhotoForm from "./storeform/StorePhotoForm";
+import StoreOperatingHourForm from "./storeform/StoreOperatingHourForm";
 
 export default function StoreCreate() {
   const router = useRouter();
@@ -126,10 +126,10 @@ export default function StoreCreate() {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreForm01 submitted={submitted} />}
-          {step === 2 && <StoreForm02 submitted={submitted} />}
-          {step === 3 && <StoreForm03 />}
-          {step === 4 && <StoreForm04 />}
+          {step === 1 && <StoreBasicInfoForm submitted={submitted} />}
+          {step === 2 && <StoreContactForm submitted={submitted} />}
+          {step === 3 && <StorePhotoForm />}
+          {step === 4 && <StoreOperatingHourForm />}
         </div>
       </div>
       <div className="content-pagination">

@@ -66,42 +66,42 @@ export interface StoreInfo {
   storeOwner: string
   officeId: number
   officeName: string
-  franchiseId?: number | null
-  franchiseName?: string | null
+  franchiseId: number | null
+  franchiseName: string | null
   operationStatus: string
-  statusUpdatedDate?: string | null
+  statusUpdatedDate: string | null
   storeName: string
   storeCode: string
-  businessNumber?: string | null
-  storeAddress?: string | null
-  storeAddressDetail?: string | null
-  ceoName?: string | null
-  ceoPhone?: string | null
-  storePhone?: string | null
+  businessNumber: string | null
+  storeAddress: string | null
+  storeAddressDetail: string | null
+  ceoName: string | null
+  ceoPhone: string | null
+  storePhone: string | null
 }
 
 // 운영시간
 export interface OperatingHour {
   dayType: string
   isOperating: boolean
-  openTime?: string | null
-  closeTime?: string | null
-  breakStartTime?: string | null
-  breakEndTime?: string | null
-  weekDayTypes?: string[] | null
+  openTime: string | null
+  closeTime: string | null
+  breakStartTime: string | null
+  breakEndTime: string | null
+  weekDayTypes: string[] | null
 }
 
 // 점포 파일
 export interface StoreFile {
   id: number
   originalFileName: string
-  storedFileName?: string | null
+  storedFileName: string | null
   uploadFileCategory: string
-  filePath?: string | null
-  fileSize?: number | null
-  contentType?: string | null
-  mimeType?: string | null
-  publicUrl?: string | null
+  filePath: string | null
+  fileSize: number | null
+  contentType: string | null
+  mimeType: string | null
+  publicUrl: string | null
 }
 
 // 점포 상세 응답
@@ -117,23 +117,23 @@ export interface StoreHeaderRequest {
   organizationId: number
   operationStatus: string
   storeName: string
-  businessNumber?: string | null
-  storeAddress?: string | null
-  storeAddressDetail?: string | null
-  ceoName?: string | null
-  ceoPhone?: string | null
-  storePhone?: string | null
+  businessNumber: string | null
+  storeAddress: string | null
+  storeAddressDetail: string | null
+  ceoName: string | null
+  ceoPhone: string | null
+  storePhone: string | null
   operatingHours?: OperatingHourRequest[]
 }
 
 export interface OperatingHourRequest {
   dayType: string
   isOperating: boolean
-  openTime?: string | null
-  closeTime?: string | null
+  openTime: string | null
+  closeTime: string | null
   breakTimeEnabled?: boolean
-  breakStartTime?: string | null
-  breakEndTime?: string | null
+  breakStartTime: string | null
+  breakEndTime: string | null
   selectWeekDayList?: string[]
 }
 

@@ -25,14 +25,17 @@ function formatPhoneNumber(value: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
 }
 
-export default function StoreForm02({ submitted = false }: { submitted?: boolean }) {
+export default function StoreContactForm({ submitted = false }: { submitted?: boolean }) {
   const openAddressSearch = usePopupControler(
     (state) => state.openAddressSearch
   );
-  const {
-    ceoName, businessNumber, storeAddress, storeAddressDetail, ceoPhone, storePhone,
-    setField,
-  } = useStoreFormStore();
+  const ceoName = useStoreFormStore((s) => s.ceoName);
+  const businessNumber = useStoreFormStore((s) => s.businessNumber);
+  const storeAddress = useStoreFormStore((s) => s.storeAddress);
+  const storeAddressDetail = useStoreFormStore((s) => s.storeAddressDetail);
+  const ceoPhone = useStoreFormStore((s) => s.ceoPhone);
+  const storePhone = useStoreFormStore((s) => s.storePhone);
+  const setField = useStoreFormStore((s) => s.setField);
 
   return (
     <div className="sub-cont-wrap">

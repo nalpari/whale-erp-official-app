@@ -9,6 +9,7 @@ import { useStoreStore } from "@/store/useStoreStore";
 import { useStoreInfiniteList } from "@/hooks/queries/use-store-queries";
 import { useStoreSearchStore } from "@/store/useStoreSearchStore";
 import { checkStoreSubscribe } from "@/lib/api/store";
+import { getErrorMessage } from "@/lib/api";
 import { EXTERNAL_URLS } from "@/lib/constants";
 import { STATUS_MAP, formatDate } from "@/lib/store-utils";
 
@@ -27,7 +28,10 @@ export default function StoreInfoList() {
   const headOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined;
   const storeId = selectedStore?.id ?? undefined;
 
-  const { status, from, to, hasSearched } = useStoreSearchStore();
+  const status = useStoreSearchStore((s) => s.status);
+  const from = useStoreSearchStore((s) => s.from);
+  const to = useStoreSearchStore((s) => s.to);
+  const hasSearched = useStoreSearchStore((s) => s.hasSearched);
 
   const params = {
     office: headOfficeId,
@@ -87,8 +91,9 @@ export default function StoreInfoList() {
           },
         });
       }
-    } catch {
-      openAlert({ message: "구독 정보를 확인할 수 없습니다." });
+    } catch (err) {
+      console.error('[StoreInfoList] 구독 조회 실패:', err);
+      openAlert({ message: getErrorMessage(err, "구독 정보를 확인할 수 없습니다.") });
     } finally {
       setIsChecking(false);
     }

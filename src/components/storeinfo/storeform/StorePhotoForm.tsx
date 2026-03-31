@@ -1,30 +1,29 @@
 "use client";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { usePopupControler } from "@/store/usePopupControler";
 import { getFileNameAndExt } from "@/lib/store-utils";
 
-export default function StoreForm03() {
-  const {
-    storeImages, existingImages,
-    removeStoreImage, markDeleteExistingImage,
-  } = useStoreFormStore();
+export default function StorePhotoForm() {
+  const storeImages = useStoreFormStore((s) => s.storeImages);
+  const existingImages = useStoreFormStore((s) => s.existingImages);
+  const removeStoreImage = useStoreFormStore((s) => s.removeStoreImage);
+  const markDeleteExistingImage = useStoreFormStore((s) => s.markDeleteExistingImage);
   const setPhotoUploadSheet = useBottomSheetControler(
     (state) => state.setPhotoUploadSheet
   );
   const openPhotoPopup = usePopupControler((state) => state.openPhotoPopup);
 
-  // 기존 이미지 + 새 이미지의 미리보기 URL 목록
+  // 새 이미지의 미리보기 URL 목록 — storeImages 변경 시 생성
   const newObjectUrls = useMemo(
     () => storeImages.map((file) => URL.createObjectURL(file)),
-    [storeImages],
+    [storeImages]
   );
-  const prevUrlsRef = useRef<string[]>([]);
+
+  // Object URL cleanup: newObjectUrls가 교체될 때 이전 URL 해제
   useEffect(() => {
-    const prev = prevUrlsRef.current;
-    prevUrlsRef.current = newObjectUrls;
-    return () => prev.forEach((url) => URL.revokeObjectURL(url));
+    return () => newObjectUrls.forEach((url) => URL.revokeObjectURL(url));
   }, [newObjectUrls]);
 
   const allPreviewUrls = [

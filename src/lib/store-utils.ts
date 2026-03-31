@@ -2,9 +2,14 @@ import type { OperatingHour, OperatingHourRequest } from '@/types/store'
 
 // ── 공통 상수 ──
 
+export const OPERATION_STATUS = {
+  OPERATING: 'STOPR_001',
+  NOT_OPERATING: 'STOPR_002',
+} as const
+
 export const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  STOPR_001: { label: '운영', className: 'badge blue' },
-  STOPR_002: { label: '미운영', className: 'badge red' },
+  [OPERATION_STATUS.OPERATING]: { label: '운영', className: 'badge blue' },
+  [OPERATION_STATUS.NOT_OPERATING]: { label: '미운영', className: 'badge red' },
 }
 
 export const WEEKDAY_LABEL: Record<string, string> = {

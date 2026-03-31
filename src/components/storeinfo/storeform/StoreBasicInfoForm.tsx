@@ -2,12 +2,16 @@
 import { useMemo } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBpTree } from "@/hooks/queries/use-bp-queries";
+import { OPERATION_STATUS } from "@/lib/store-utils";
 
-export default function StoreForm01({ submitted = false }: { submitted?: boolean }) {
-  const {
-    storeOwner, officeId, franchiseId, storeName, operationStatus, statusUpdatedDate,
-    setField,
-  } = useStoreFormStore();
+export default function StoreBasicInfoForm({ submitted = false }: { submitted?: boolean }) {
+  const storeOwner = useStoreFormStore((s) => s.storeOwner);
+  const officeId = useStoreFormStore((s) => s.officeId);
+  const franchiseId = useStoreFormStore((s) => s.franchiseId);
+  const storeName = useStoreFormStore((s) => s.storeName);
+  const operationStatus = useStoreFormStore((s) => s.operationStatus);
+  const statusUpdatedDate = useStoreFormStore((s) => s.statusUpdatedDate);
+  const setField = useStoreFormStore((s) => s.setField);
 
   const { data: bpTree = [] } = useBpTree();
 
@@ -115,19 +119,23 @@ export default function StoreForm01({ submitted = false }: { submitted?: boolean
             </div>
             <div className="flex g8">
               <button
-                className={`radio-btn block ${operationStatus === "STOPR_001" ? "act" : ""}`}
+                className={`radio-btn block ${operationStatus === OPERATION_STATUS.OPERATING ? "act" : ""}`}
                 onClick={() => {
-                  setField("operationStatus", "STOPR_001");
-                  setField("statusUpdatedDate", new Date().toISOString().slice(0, 10));
+                  const d = new Date();
+                  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  setField("operationStatus", OPERATION_STATUS.OPERATING);
+                  setField("statusUpdatedDate", today);
                 }}
               >
                 운영
               </button>
               <button
-                className={`radio-btn block ${operationStatus === "STOPR_002" ? "act" : ""}`}
+                className={`radio-btn block ${operationStatus === OPERATION_STATUS.NOT_OPERATING ? "act" : ""}`}
                 onClick={() => {
-                  setField("operationStatus", "STOPR_002");
-                  setField("statusUpdatedDate", new Date().toISOString().slice(0, 10));
+                  const d = new Date();
+                  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  setField("operationStatus", OPERATION_STATUS.NOT_OPERATING);
+                  setField("statusUpdatedDate", today);
                 }}
               >
                 미운영

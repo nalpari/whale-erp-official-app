@@ -49,8 +49,9 @@ function TimeInput({
   );
 }
 
-export default function StoreForm04() {
-  const { operating, setOperating } = useStoreFormStore();
+export default function StoreOperatingHourForm() {
+  const operating = useStoreFormStore((s) => s.operating);
+  const setOperating = useStoreFormStore((s) => s.setOperating);
 
   const updateHour = (dayType: string, field: string, value: string | null) => {
     setOperating(
