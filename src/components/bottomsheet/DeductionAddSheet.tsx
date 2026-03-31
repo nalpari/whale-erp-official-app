@@ -47,14 +47,14 @@ export default function DeductionAddSheet({
   const [localStartDate, setLocalStartDate] = useState(externalStartDate)
   const [localEndDate, setLocalEndDate] = useState(externalEndDate)
   const [localDeductionItems, setLocalDeductionItems] = useState<PartTimerDeductionItem[]>(
-    externalDeductionItems.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
+    externalDeductionItems?.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
   )
 
   const handleOpenStart = () => {
     setLocalStartDate(externalStartDate)
     setLocalEndDate(externalEndDate)
     setLocalDeductionItems(
-      externalDeductionItems.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
+      externalDeductionItems?.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
     )
   }
 
