@@ -30,7 +30,7 @@ export default function TodoCreate() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
 
-  const createMutation = useCreateTodo();
+  const { mutateAsync: createTodo, isPending: isCreating } = useCreateTodo();
 
   const { data: employees = [] } = useEmployeeOptions(
     {
@@ -55,12 +55,12 @@ export default function TodoCreate() {
   }, [employeeInfoId, content, startDate, hasPeriod, endDate]);
 
   const handleSubmit = useCallback(async () => {
-    if (createMutation.isPending) return;
+    if (isCreating) return;
     if (!validate()) return;
     setSubmitError("");
 
     try {
-      await createMutation.mutateAsync(
+      await createTodo(
         hasPeriod
           ? {
               headOfficeId: headOfficeId ?? undefined,
@@ -93,7 +93,8 @@ export default function TodoCreate() {
     endDate,
     headOfficeId,
     storeId,
-    createMutation,
+    isCreating,
+    createTodo,
     router,
   ]);
 

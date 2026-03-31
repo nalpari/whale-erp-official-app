@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
-type AlertOptions = {
+export type AlertOptions = {
   message: string;
   confirmText?: string;
   cancelText?: string;

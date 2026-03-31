@@ -30,9 +30,9 @@ export interface TodoItem {
 }
 
 type TodoCreateBase = {
-  headOfficeId?: number | null;
-  franchiseId?: number | null;
-  storeId?: number | null;
+  headOfficeId?: number;
+  franchiseId?: number;
+  storeId?: number;
   employeeInfoId: number;
   content: string;
 };

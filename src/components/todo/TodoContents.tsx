@@ -49,7 +49,7 @@ export default function TodoContents() {
   const storeId = selectedStore?.id ?? null;
 
   const openAlert = usePopupControler((state) => state.openAlert);
-  const deleteTodosMutation = useDeleteTodos();
+  const { mutateAsync: deleteTodos } = useDeleteTodos();
 
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -60,7 +60,7 @@ export default function TodoContents() {
   const month = selectedDate.getMonth() + 1;
 
   // React Query로 월별 데이터 조회
-  const { data: todoData = [] } = useCalendarData(year, month, headOfficeId, storeId);
+  const { data: todoData = [], isLoading, isError } = useCalendarData(year, month, headOfficeId, storeId);
 
   // 선택된 날짜의 organizations
   const selectedDayData = todoData.find((d) => d.day === selectedDate.getDate());
@@ -111,12 +111,10 @@ export default function TodoContents() {
         message: "해당 할 일을 삭제하시겠습니까?",
         confirmText: "삭제",
         cancelText: "취소",
-        onConfirm: async () => {
-          await deleteTodosMutation.mutateAsync([todoId]);
-        },
+        onConfirm: () => deleteTodos([todoId]),
       });
     },
-    [openAlert, deleteTodosMutation]
+    [openAlert, deleteTodos]
   );
 
   // 스와이프 핸들러
@@ -188,7 +186,15 @@ export default function TodoContents() {
                 )}
               </div>
             </div>
-            {organizations.length > 0 ? (
+            {isLoading ? (
+              <div className="todo-empty">
+                <p>불러오는 중...</p>
+              </div>
+            ) : isError ? (
+              <div className="todo-empty">
+                <p>데이터를 불러오지 못했습니다.</p>
+              </div>
+            ) : organizations.length > 0 ? (
               storeId
                 ? organizations.flatMap((org, orgIdx) =>
                     org.employees.map((emp) => (
