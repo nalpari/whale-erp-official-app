@@ -13,6 +13,7 @@ export default function Header() {
   const showDeleteButton = useHeaderStore((s) => s.showDeleteButton);
   const rightLabel = useHeaderStore((s) => s.rightLabel);
   const onBack = useHeaderStore((s) => s.onBack);
+  const onSave = useHeaderStore((s) => s.onSave);
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
@@ -36,7 +37,15 @@ export default function Header() {
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
             <h1>{title || "서브 페이지 헤더"}</h1>
-            {showDeleteButton ? (
+            {onSave ? (
+              <button
+                className="btn-s black"
+                style={{ marginLeft: "auto" }}
+                onClick={onSave}
+              >
+                저장
+              </button>
+            ) : showDeleteButton ? (
               <button className="btn-delete" onClick={() => onDelete?.()}></button>
             ) : rightLabel ? (
               <div className="header-right-label">{rightLabel}</div>

@@ -48,4 +48,4 @@ next-env.d.ts
 /docs
 
 # playwright
-.playwright-mcp/* 
+.playwright-mcp/*

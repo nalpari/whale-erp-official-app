@@ -92,6 +92,15 @@ export default function RnbMenu() {
                 근로계약관리
               </Link>
             </dd>
+            <dd className="rnb-menu-item">
+              <Link
+                href="/todo"
+                className="rnb-menu-link"
+                onClick={handleClick}
+              >
+                직원별 TODO 관리
+              </Link>
+            </dd>
           </dl>
           <dl className="rnb-menu-list">
             <dt className="rnb-menu-tit">급여 명세서</dt>

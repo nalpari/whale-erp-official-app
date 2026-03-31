@@ -12,6 +12,8 @@ type HeaderState = {
   setRightLabel: (label: string) => void;
   onBack: (() => void) | null;
   setOnBack: (handler: (() => void) | null) => void;
+  onSave: (() => void) | null;
+  setOnSave: (handler: (() => void) | null) => void;
 };
 
 export const useHeaderStore = create<HeaderState>()(
@@ -31,6 +33,9 @@ export const useHeaderStore = create<HeaderState>()(
       onBack: null,
       setOnBack: (handler) =>
         set({ onBack: handler }, false, "header/setOnBack"),
+      onSave: null,
+      setOnSave: (handler) =>
+        set({ onSave: handler }, false, "header/setOnSave"),
     }),
     { name: "HeaderStore" }
   )
