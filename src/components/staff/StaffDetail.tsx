@@ -105,11 +105,6 @@ export default function StaffDetail() {
 
   return (
     <div className="container sub">
-      <div className="sub-tit-wrap">
-        <div className="sub-tit">
-          <span className="sub-s-txt">직원정보 상세조회</span>
-        </div>
-      </div>
       <div className="sub-content-body">
         {/* 메모 */}
         {employee.memo && (

@@ -15,11 +15,6 @@ const AVATAR_IMAGES = [
   '/assets/images/layout/avatar03.svg',
 ]
 
-const formatDate = (date?: string | null) => {
-  if (!date) return '-'
-  return date.replace(/-/g, '.')
-}
-
 /** 건강진단 만료일이 오늘 기준으로 경과했는지 판별 */
 const isHealthCheckExpired = (expiryDate?: string) => {
   if (!expiryDate) return false
@@ -84,7 +79,8 @@ export default function StaffInfoList() {
           headOfficeId={effectiveHeadOfficeId}
           isLoading={isLoading}
           employeeList={employeeList}
-          onItemClick={(id) => router.push(`/staff/${id}`)}
+          onDetailClick={(id) => router.push(`/staff/${id}`)}
+          onContractClick={() => router.push('/contract')}
         />
       </div>
     </div>
@@ -106,13 +102,15 @@ function StaffListContent({
   headOfficeId,
   isLoading,
   employeeList,
-  onItemClick,
+  onDetailClick,
+  onContractClick,
 }: {
   mounted: boolean
   headOfficeId: number | null
   isLoading: boolean
   employeeList: EmployeeListItem[]
-  onItemClick: (id: number) => void
+  onDetailClick: (id: number) => void
+  onContractClick: () => void
 }) {
   if (!mounted) return null
   if (!headOfficeId) return <EmptyMessage text="상단에서 점포를 먼저 선택해주세요." />
@@ -122,7 +120,7 @@ function StaffListContent({
   return (
     <div className="staff-list-wrap">
       {employeeList.map((item, index) => (
-        <div className="staff-list-item" key={item.employeeInfoId}>
+        <div className="staff-list-item" key={item.employeeInfoId} onClick={() => onDetailClick(item.employeeInfoId)}>
           <div className="staff-item-header">
             <div className="head-staff-info">
               <div className="staff-icon">
@@ -136,7 +134,6 @@ function StaffListContent({
               <div className="staff-info-data">
                 <div className="staff-name">
                   <span>{item.employeeName}</span>
-                  {/* 정의서 #13: 메모값이 있는 경우에만 아이콘 표시 */}
                   {item.memo && <i className="memo"></i>}
                 </div>
                 <div className="staff-job">
@@ -151,7 +148,6 @@ function StaffListContent({
               </div>
             </div>
             <div className="sub-cont-btn-wrap">
-              {/* memberStatus에 따른 초대 상태 표시 */}
               {item.memberStatus === '가입완료' ? (
                 <div className="staff-invite-btn check">가입완료</div>
               ) : (
@@ -170,18 +166,17 @@ function StaffListContent({
               <tbody>
                 <tr>
                   <th>입사일</th>
-                  <td>{formatDate(item.hireDate)}</td>
+                  <td>{item.hireDate || '-'}</td>
                 </tr>
                 <tr>
                   <th>건강진단만료일</th>
                   <td>
-                    {/* 정의서 #13-1: 만료일 경과 시 아이콘/강조 표시 */}
                     {isHealthCheckExpired(item.healthCheckExpiryDate) ? (
                       <span className="imp">
-                        {formatDate(item.healthCheckExpiryDate)}
+                        {item.healthCheckExpiryDate || '-'}
                       </span>
                     ) : (
-                      formatDate(item.healthCheckExpiryDate)
+                      item.healthCheckExpiryDate || '-'
                     )}
                   </td>
                 </tr>
@@ -208,13 +203,14 @@ function StaffListContent({
               </tbody>
             </table>
           </div>
+          {/* 근로계약서 클릭 → 근로계약관리 페이지 (이벤트 버블링 차단) */}
           <button
             className="contract-link"
-            onClick={() => onItemClick(item.employeeInfoId)}
+            onClick={(e) => { e.stopPropagation(); onContractClick() }}
           >
             <div className="contract-inner">
               <div className="contract-tit">근로계약서</div>
-              {/* TODO: 근로계약 상태 API 연동 시 동적 배지 처리 */}
+              {/* TODO: 근로계약관리 PR에서 계약 상태 배지 연동 */}
               <div className="auto-right">
                 <i className="contract-arr"></i>
               </div>

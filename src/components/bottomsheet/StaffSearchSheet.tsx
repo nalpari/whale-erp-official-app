@@ -36,7 +36,7 @@ export default function StaffSearchSheet() {
   const setStaffSearchSheet = useBottomSheetControler(
     (state) => state.setStaffSearchSheet,
   )
-  const { setSearchParams, search, reset } = useEmployeeSearchStore()
+  const { searchParams, setSearchParams, search, reset } = useEmployeeSearchStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const effectiveHeadOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined
@@ -44,7 +44,7 @@ export default function StaffSearchSheet() {
   const { data: commonCode } = useEmployeeCommonCode(effectiveHeadOfficeId)
   const employeeClassifications = commonCode?.codeMemoContent?.EMPLOYEE ?? []
 
-  // 로컬 필터 상태
+  // 로컬 필터 상태 — 스토어 값을 초기값으로 사용
   const [workStatus, setWorkStatus] = useState<EmployeeWorkStatus | undefined>(undefined)
   const [employeeName, setEmployeeName] = useState('')
   const [employeeClassification, setEmployeeClassification] = useState('')
@@ -55,6 +55,20 @@ export default function StaffSearchSheet() {
   const [hireDateTo, setHireDateTo] = useState('')
   const [healthCheckExpiryFrom, setHealthCheckExpiryFrom] = useState('')
   const [healthCheckExpiryTo, setHealthCheckExpiryTo] = useState('')
+
+  // 바텀시트 열릴 때 스토어 값으로 동기화 (key 리마운트 방식)
+  const syncFromStore = () => {
+    setWorkStatus(searchParams.workStatus)
+    setEmployeeName(searchParams.employeeName ?? '')
+    setEmployeeClassification(searchParams.employeeClassification ?? '')
+    setContractClassification(searchParams.contractClassification ?? '')
+    setAdminAuthority(searchParams.adminAuthority ?? '')
+    setMemberStatus(searchParams.memberStatus ?? '')
+    setHireDateFrom(searchParams.hireDateFrom ?? '')
+    setHireDateTo(searchParams.hireDateTo ?? '')
+    setHealthCheckExpiryFrom(searchParams.healthCheckExpiryFrom ?? '')
+    setHealthCheckExpiryTo(searchParams.healthCheckExpiryTo ?? '')
+  }
 
   const handleClose = () => {
     setStaffSearchSheet(false)
@@ -78,16 +92,6 @@ export default function StaffSearchSheet() {
   }
 
   const handleReset = () => {
-    setWorkStatus(undefined)
-    setEmployeeName('')
-    setEmployeeClassification('')
-    setContractClassification('')
-    setAdminAuthority('')
-    setMemberStatus('')
-    setHireDateFrom('')
-    setHireDateTo('')
-    setHealthCheckExpiryFrom('')
-    setHealthCheckExpiryTo('')
     reset()
     handleClose()
   }
@@ -96,6 +100,7 @@ export default function StaffSearchSheet() {
     <Sheet
       isOpen={staffSearchSheet}
       onClose={handleClose}
+      onOpenEnd={syncFromStore}
       detent="content"
       disableScrollLocking={true}
     >
