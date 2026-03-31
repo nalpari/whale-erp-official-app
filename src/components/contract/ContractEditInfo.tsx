@@ -40,8 +40,8 @@ const SALARY_CYCLE_OPTIONS: { value: SalaryCycle; label: string }[] = [
 ];
 
 const SALARY_MONTH_OPTIONS: { value: SalaryMonth; label: string }[] = [
-  { value: "SLRMO_001", label: "당월" },
-  { value: "SLRMO_002", label: "익월" },
+  { value: "SLRCF_001", label: "당월" },
+  { value: "SLRCF_002", label: "익월" },
 ];
 
 const SALARY_DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -123,7 +123,7 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
     header?.salaryCycle ?? "SLRCC_001"
   );
   const [salaryMonth, setSalaryMonth] = useState<SalaryMonth>(
-    header?.salaryMonth ?? "SLRMO_001"
+    header?.salaryMonth ?? "SLRCF_001"
   );
   const [salaryDay, setSalaryDay] = useState<number>(header?.salaryDay ?? 15);
   const [contractDate] = useState(formatDateInput(header?.contractDate));
