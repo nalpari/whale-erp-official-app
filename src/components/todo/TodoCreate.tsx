@@ -23,9 +23,10 @@ export default function TodoCreate() {
   const [employeeInfoId, setEmployeeInfoId] = useState<number | "">("");
   const [content, setContent] = useState("");
   const [hasPeriod, setHasPeriod] = useState(false);
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
   const [endDate, setEndDate] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
