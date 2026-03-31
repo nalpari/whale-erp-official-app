@@ -6,6 +6,7 @@ import { usePayrollSearchStore } from '@/store/usePayrollSearchStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { usePayrollList, useSendPayrollEmail } from '@/hooks/queries/use-payroll-queries'
+import { useCodeToName } from '@/hooks/queries/use-common-code-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getErrorMessage } from '@/lib/api'
 import type { PayrollStatementListItem } from '@/types/payroll'
@@ -23,12 +24,10 @@ const formatYearMonth = (ym: string) => {
 
 const formatDate = (date: string) => {
   if (!date) return '-'
-  return date.replace(/-/g, '.')
+  return date.slice(0, 10).replace(/-/g, '.')
 }
 
-const formatAmount = (amount?: number | null) => {
-  return (amount ?? 0).toLocaleString('ko-KR')
-}
+
 
 export default function FullTimerPayList() {
   const router = useRouter()
@@ -47,11 +46,12 @@ export default function FullTimerPayList() {
   const params = {
     ...searchParams,
     ...(headOfficeId != null && { headOfficeId }),
-    storeId: mounted ? selectedStore?.id : undefined,
+    ...(mounted && selectedStore?.id && { storeId: selectedStore.id }),
   }
   const canSearch = mounted && hasSearched && !!effectiveHeadOfficeId
   const { data, isLoading } = usePayrollList(params, canSearch)
   const sendEmailMutation = useSendPayrollEmail()
+  const getWorkStatusName = useCodeToName('EMPWK')
 
   const payrollList = data?.content ?? []
   const totalElements = data?.totalElements ?? 0
@@ -59,7 +59,7 @@ export default function FullTimerPayList() {
   const handleSendEmail = async (e: React.MouseEvent, item: PayrollStatementListItem) => {
     e.stopPropagation()
     if (item.isEmailSend) return
-    if (!confirm(`${item.employeeName}님에게 급여명세서를 이메일로 전송하시겠습니까?`)) return
+    if (!confirm(`${item.memberName}님에게 급여명세서를 이메일로 전송하시겠습니까?`)) return
     try {
       await sendEmailMutation.mutateAsync(item.id)
       alert('이메일이 전송되었습니다.')
@@ -103,6 +103,7 @@ export default function FullTimerPayList() {
           payrollList={payrollList}
           onSendEmail={handleSendEmail}
           onItemClick={(id) => router.push(`/fulltimer/${id}`)}
+          getWorkStatusName={getWorkStatusName}
         />
       </div>
     </div>
@@ -127,6 +128,7 @@ function FullTimerPayListContent({
   payrollList,
   onSendEmail,
   onItemClick,
+  getWorkStatusName,
 }: {
   mounted: boolean
   hasSearched: boolean
@@ -135,6 +137,7 @@ function FullTimerPayListContent({
   payrollList: PayrollStatementListItem[]
   onSendEmail: (e: React.MouseEvent, item: PayrollStatementListItem) => void
   onItemClick: (id: number) => void
+  getWorkStatusName: (code: string | undefined | null) => string
 }) {
   if (!mounted || !hasSearched) return <EmptyMessage text="검색 조건을 설정해주세요." />
   if (!headOfficeId) return <EmptyMessage text="상단에서 점포를 먼저 선택해주세요." />
@@ -157,7 +160,7 @@ function FullTimerPayListContent({
               </div>
               <div className="staff-info-data">
                 <div className="staff-name">
-                  <span>{item.employeeName}</span>
+                  <span>{item.memberName}</span>
                   {item.isEmailSend ? (
                     <b className="badge org line">
                       <i className="email_icon"></i>전송완료
@@ -172,8 +175,8 @@ function FullTimerPayListContent({
                   )}
                 </div>
                 <div className="staff-job">
-                  {[item.employeeClassification, item.workStatus]
-                    .filter(Boolean)
+                  {[item.employeeClassificationName, getWorkStatusName(item.workStatus)]
+                    .filter((v) => v && v !== '-')
                     .join('/')}
                 </div>
               </div>
@@ -197,8 +200,8 @@ function FullTimerPayListContent({
                   <td>{formatDate(item.paymentDate)}</td>
                 </tr>
                 <tr>
-                  <th>실지급액</th>
-                  <td>{formatAmount(item.actualPaymentAmount)}원</td>
+                  <th>등록일</th>
+                  <td>{formatDate(item.createdAt)}</td>
                 </tr>
                 <tr>
                   <th>본사</th>
