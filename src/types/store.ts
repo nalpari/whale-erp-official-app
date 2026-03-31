@@ -133,17 +133,3 @@ export interface SubscribePlanCheck {
   planName: string
   organizationId: number
 }
-
-export interface AuthorityDetail {
-  id: number
-  is_bp_master: boolean
-  details: {
-    program_id: number
-    program_name: string
-    program_path: string
-    program_level: number
-    can_read: boolean
-    can_create_delete: boolean
-    can_update: boolean
-  }[]
-}

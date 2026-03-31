@@ -8,7 +8,6 @@ import type {
   StoreHeaderRequest,
   FileDeleteRequest,
   SubscribePlanCheck,
-  AuthorityDetail,
 } from '@/types/store'
 
 const BASE_URL = '/api/v1/stores'
@@ -102,11 +101,5 @@ export const deleteStore = async (id: number): Promise<void> => {
 // 구독 플랜 점포 등록 가능 여부 조회
 export const checkStoreSubscribe = async (): Promise<SubscribePlanCheck> => {
   const response = await api.get<{ data: SubscribePlanCheck }>(`${BASE_URL}/subscribe`)
-  return response.data.data
-}
-
-// 권한 상세 조회
-export const getAuthorityDetail = async (id: string | number): Promise<AuthorityDetail> => {
-  const response = await api.get<{ data: AuthorityDetail }>(`/api/v1/system/authorities/${id}`)
   return response.data.data
 }

@@ -6,7 +6,7 @@ import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
-import { useStoreInfiniteList, useAuthorityDetail } from "@/hooks/queries/use-store-queries";
+import { useStoreInfiniteList } from "@/hooks/queries/use-store-queries";
 import { useStoreSearchStore } from "@/store/useStoreSearchStore";
 import { checkStoreSubscribe } from "@/lib/api/store";
 import { EXTERNAL_URLS } from "@/lib/constants";
@@ -28,14 +28,10 @@ export default function StoreInfoList() {
   );
   const openAlert = usePopupControler((state) => state.openAlert);
 
-  const affiliationId = useAuthStore((state) => state.affiliationId);
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId);
   const authFranchiseId = useAuthStore((state) => state.franchiseId);
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice);
   const selectedStore = useStoreStore((state) => state.selectedStore);
-
-  const { data: authorityData } = useAuthorityDetail(affiliationId);
-  const isBpMaster = authorityData?.is_bp_master ?? false;
 
   const headOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined;
   const storeId = selectedStore?.id ?? undefined;
@@ -112,14 +108,12 @@ export default function StoreInfoList() {
       <div className="sub-tit-wrap">
         <div className="sub-tit">점포정보 관리</div>
         <div className="sub-btn-wrap">
-          {isBpMaster && (
-            <button
-              className="btn-s black"
-              onClick={handleRegister}
-            >
-              등록
-            </button>
-          )}
+          <button
+            className="btn-s black"
+            onClick={handleRegister}
+          >
+            등록
+          </button>
         </div>
       </div>
       <div className="sub-content-body">

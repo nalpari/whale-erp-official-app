@@ -7,7 +7,6 @@ import {
   createStore,
   updateStore,
   deleteStore,
-  getAuthorityDetail,
 } from '@/lib/api/store'
 import type { StoreSearchParams, StoreHeaderRequest } from '@/types/store'
 
@@ -17,7 +16,6 @@ export const storeKeys = {
   options: (officeId?: number, franchiseId?: number) => [...storeKeys.all, 'options', officeId, franchiseId] as const,
   list: (params: Omit<StoreSearchParams, 'page'>) => [...storeKeys.all, 'list', params] as const,
   detail: (id?: number) => [...storeKeys.all, 'detail', id] as const,
-  authority: (id?: string | number) => [...storeKeys.all, 'authority', id] as const,
 }
 
 // 운영중인 본사 목록
@@ -87,15 +85,6 @@ export const useUpdateStore = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: storeKeys.all })
     },
-  })
-}
-
-// 권한 상세 조회
-export const useAuthorityDetail = (id?: string | number | null) => {
-  return useQuery({
-    queryKey: storeKeys.authority(id ?? undefined),
-    queryFn: () => getAuthorityDetail(id!),
-    enabled: !!id,
   })
 }
 
