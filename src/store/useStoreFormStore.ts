@@ -29,6 +29,7 @@ interface StoreFormState {
   operating: OperatingHourRequest[]
 
   // Actions
+  setFields: (fields: Partial<StoreFormState>) => void
   setField: <K extends keyof StoreFormState>(key: K, value: StoreFormState[K]) => void
   setOperating: (operating: OperatingHourRequest[]) => void
   addStoreImage: (file: File) => void
@@ -39,12 +40,13 @@ interface StoreFormState {
 
 const DEFAULT_OPERATING: OperatingHourRequest[] = [
   { dayType: 'WEEKDAY', isOperating: true, openTime: null, closeTime: null, breakStartTime: null, breakEndTime: null, selectWeekDayList: [] },
-  { dayType: 'SATURDAY', isOperating: true, openTime: null, closeTime: null, breakStartTime: null, breakEndTime: null },
-  { dayType: 'SUNDAY', isOperating: true, openTime: null, closeTime: null, breakStartTime: null, breakEndTime: null },
+  { dayType: 'SATURDAY', isOperating: false, openTime: null, closeTime: null, breakStartTime: null, breakEndTime: null },
+  { dayType: 'SUNDAY', isOperating: false, openTime: null, closeTime: null, breakStartTime: null, breakEndTime: null },
 ]
 
 function getToday(): string {
-  return new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 const initialState = {
@@ -71,6 +73,8 @@ export const useStoreFormStore = create<StoreFormState>()(
   devtools(
     (set) => ({
       ...initialState,
+
+      setFields: (fields) => set(fields, false, 'storeForm/setFields'),
 
       setField: (key, value) => set({ [key]: value } as Partial<StoreFormState>, false, `storeForm/set-${String(key)}`),
 

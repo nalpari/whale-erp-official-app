@@ -2,13 +2,18 @@
 import { useRef } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
+import { usePopupControler } from "@/store/usePopupControler";
 import "./css/photo-upload-sheet.scss";
 import { Sheet } from "react-modal-sheet";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function PhotoUploadSheet() {
   const photoUploadSheet = useBottomSheetControler((state) => state.photoUploadSheet);
   const setPhotoUploadSheet = useBottomSheetControler((state) => state.setPhotoUploadSheet);
   const addStoreImage = useStoreFormStore((state) => state.addStoreImage);
+  const openAlert = usePopupControler((state) => state.openAlert);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const albumInputRef = useRef<HTMLInputElement>(null);
@@ -20,7 +25,21 @@ export default function PhotoUploadSheet() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    Array.from(files).forEach((file) => addStoreImage(file));
+    const rejected: string[] = [];
+    Array.from(files).forEach((file) => {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        rejected.push(`${file.name} (지원하지 않는 형식)`);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        rejected.push(`${file.name} (10MB 초과)`);
+        return;
+      }
+      addStoreImage(file);
+    });
+    if (rejected.length > 0) {
+      openAlert({ message: `업로드할 수 없는 파일:\n${rejected.join("\n")}` });
+    }
     e.target.value = "";
     handleClose();
   };

@@ -13,8 +13,8 @@ export default function StoreEditPhoto({ id }: { id: number }) {
   const router = useRouter();
   const openAlert = usePopupControler((state) => state.openAlert);
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
-  const setField = useStoreFormStore((state) => state.setField);
-  const { data } = useStoreDetail(id);
+  const setFields = useStoreFormStore((state) => state.setFields);
+  const { data, isLoading, isError } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
   const setRightLabel = useHeaderStore((state) => state.setRightLabel);
@@ -42,17 +42,27 @@ export default function StoreEditPhoto({ id }: { id: number }) {
   // 기존 이미지 데이터로 폼 초기화
   useEffect(() => {
     if (!data) return;
-    setField("existingImages",
-      data.files
+    setFields({
+      existingImages: data.files
         .filter((f) => f.uploadFileCategory === "STORE_IMAGE")
-        .map((f) => ({ id: f.id, originalFileName: f.originalFileName, publicUrl: f.publicUrl || "" }))
+        .map((f) => ({ id: f.id, originalFileName: f.originalFileName, publicUrl: f.publicUrl || "" })),
+      storeImages: [],
+      deleteImageIds: [],
+    });
+  }, [data, setFields]);
+
+  if (isLoading || !data) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+          {isError ? "점포 정보를 불러올 수 없습니다." : "불러오는 중..."}
+        </div>
+      </div>
     );
-    setField("storeImages", []);
-    setField("deleteImageIds", []);
-  }, [data, setField]);
+  }
 
   const handleSave = async () => {
-    if (isUpdating || !data) return;
+    if (isUpdating) return;
     const form = useStoreFormStore.getState();
 
     try {

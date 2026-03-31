@@ -15,8 +15,8 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const [step, setStep] = useState(1);
   const openAlert = usePopupControler((state) => state.openAlert);
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
-  const setField = useStoreFormStore((state) => state.setField);
-  const { data } = useStoreDetail(id);
+  const setFields = useStoreFormStore((state) => state.setFields);
+  const { data, isLoading, isError } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
   const setRightLabel = useHeaderStore((state) => state.setRightLabel);
@@ -49,19 +49,31 @@ export default function StoreEditInfo({ id }: { id: number }) {
   useEffect(() => {
     if (!data) return;
     const { storeInfo } = data;
-    setField("storeOwner", storeInfo.storeOwner);
-    setField("officeId", storeInfo.officeId);
-    setField("franchiseId", storeInfo.franchiseId ?? null);
-    setField("storeName", storeInfo.storeName);
-    setField("operationStatus", storeInfo.operationStatus);
-    setField("statusUpdatedDate", storeInfo.statusUpdatedDate ?? "");
-    setField("ceoName", storeInfo.ceoName ?? "");
-    setField("businessNumber", storeInfo.businessNumber ?? "");
-    setField("storeAddress", storeInfo.storeAddress ?? "");
-    setField("storeAddressDetail", storeInfo.storeAddressDetail ?? "");
-    setField("ceoPhone", storeInfo.ceoPhone ?? "");
-    setField("storePhone", storeInfo.storePhone ?? "");
-  }, [data, setField]);
+    setFields({
+      storeOwner: storeInfo.storeOwner,
+      officeId: storeInfo.officeId,
+      franchiseId: storeInfo.franchiseId ?? null,
+      storeName: storeInfo.storeName,
+      operationStatus: storeInfo.operationStatus,
+      statusUpdatedDate: storeInfo.statusUpdatedDate ?? "",
+      ceoName: storeInfo.ceoName ?? "",
+      businessNumber: storeInfo.businessNumber ?? "",
+      storeAddress: storeInfo.storeAddress ?? "",
+      storeAddressDetail: storeInfo.storeAddressDetail ?? "",
+      ceoPhone: storeInfo.ceoPhone ?? "",
+      storePhone: storeInfo.storePhone ?? "",
+    });
+  }, [data, setFields]);
+
+  if (isLoading || !data) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+          {isError ? "점포 정보를 불러올 수 없습니다." : "불러오는 중..."}
+        </div>
+      </div>
+    );
+  }
 
   const handleNext = () => { window.scrollTo({ top: 0 }); setStep(step + 1); };
   const handlePrev = () => { window.scrollTo({ top: 0 }); setStep(step - 1); };

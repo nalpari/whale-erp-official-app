@@ -52,7 +52,8 @@ export function getOrganizationId(
   franchiseId?: number | null,
 ): number {
   if (storeOwner === 'FRANCHISE' && franchiseId) return franchiseId
-  return officeId!
+  if (!officeId) throw new Error('본사가 선택되지 않았습니다.')
+  return officeId
 }
 
 /**
@@ -82,7 +83,7 @@ export function toFormOperating(serverOperating: OperatingHour[]): OperatingHour
 
   const saturdayForm: OperatingHourRequest = {
     dayType: 'SATURDAY',
-    isOperating: saturday?.isOperating ?? true,
+    isOperating: saturday?.isOperating ?? false,
     openTime: saturday?.openTime ?? null,
     closeTime: saturday?.closeTime ?? null,
     breakStartTime: saturday?.breakStartTime ?? null,
@@ -91,7 +92,7 @@ export function toFormOperating(serverOperating: OperatingHour[]): OperatingHour
 
   const sundayForm: OperatingHourRequest = {
     dayType: 'SUNDAY',
-    isOperating: sunday?.isOperating ?? true,
+    isOperating: sunday?.isOperating ?? false,
     openTime: sunday?.openTime ?? null,
     closeTime: sunday?.closeTime ?? null,
     breakStartTime: sunday?.breakStartTime ?? null,

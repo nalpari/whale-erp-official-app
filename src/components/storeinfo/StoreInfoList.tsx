@@ -46,6 +46,7 @@ export default function StoreInfoList() {
   const {
     data,
     isLoading,
+    isError,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -126,6 +127,10 @@ export default function StoreInfoList() {
           {isLoading ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
               불러오는 중...
+            </div>
+          ) : isError ? (
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+              점포 목록을 불러올 수 없습니다.
             </div>
           ) : allStores.length === 0 ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>

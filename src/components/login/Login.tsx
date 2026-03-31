@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { useLoginMutation, useAuthoritySelectMutation } from "@/hooks/queries/use-login-mutation"
 import { getErrorMessage } from "@/lib/api"
 import { getBpTree } from "@/lib/api/bp"
+import { usePopupControler } from "@/store/usePopupControler"
 import type { LoginResponse } from "@/types/auth"
 
 function getSafeReturnUrl(url: string | null): string {
@@ -28,6 +29,7 @@ function safeRemoveItem(key: string) {
 }
 
 export default function Login() {
+  const openAlert = usePopupControler((state) => state.openAlert)
   const [loginId, setLoginId] = useState(() => safeGetItem("savedLoginId") ?? "")
   const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
@@ -69,6 +71,9 @@ export default function Login() {
         }
       } catch (err) {
         console.error('[Login] bp-tree 조회 실패:', err)
+        openAlert({ message: '가맹점 정보를 불러오지 못했습니다. 다시 로그인해주세요.' })
+        store.clearAuth()
+        return
       }
     }
 
@@ -88,7 +93,7 @@ export default function Login() {
     }
 
     router.push(getSafeReturnUrl(returnUrl))
-  }, [saveId, loginId, returnUrl, router])
+  }, [saveId, loginId, returnUrl, router, openAlert])
 
   const handleLogin = async () => {
     if (!loginId.trim() || !password.trim()) {

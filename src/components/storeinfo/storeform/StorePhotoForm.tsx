@@ -15,13 +15,11 @@ export default function StorePhotoForm() {
   );
   const openPhotoPopup = usePopupControler((state) => state.openPhotoPopup);
 
-  // 새 이미지의 미리보기 URL 목록 — storeImages 변경 시 생성
+  // 새 이미지의 미리보기 URL — useMemo로 생성, useEffect cleanup에서 revoke
   const newObjectUrls = useMemo(
     () => storeImages.map((file) => URL.createObjectURL(file)),
-    [storeImages]
+    [storeImages],
   );
-
-  // Object URL cleanup: newObjectUrls가 교체될 때 이전 URL 해제
   useEffect(() => {
     return () => newObjectUrls.forEach((url) => URL.revokeObjectURL(url));
   }, [newObjectUrls]);

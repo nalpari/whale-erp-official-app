@@ -14,7 +14,7 @@ export default function StoreEditTime({ id }: { id: number }) {
   const openAlert = usePopupControler((state) => state.openAlert);
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
   const setOperating = useStoreFormStore((state) => state.setOperating);
-  const { data } = useStoreDetail(id);
+  const { data, isLoading, isError } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
   const setRightLabel = useHeaderStore((state) => state.setRightLabel);
@@ -45,8 +45,18 @@ export default function StoreEditTime({ id }: { id: number }) {
     setOperating(toFormOperating(data.operating));
   }, [data, setOperating]);
 
+  if (isLoading || !data) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+          {isError ? "점포 정보를 불러올 수 없습니다." : "불러오는 중..."}
+        </div>
+      </div>
+    );
+  }
+
   const handleSave = async () => {
-    if (isUpdating || !data) return;
+    if (isUpdating) return;
     const form = useStoreFormStore.getState();
 
     try {
