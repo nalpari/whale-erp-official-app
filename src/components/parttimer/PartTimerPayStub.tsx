@@ -61,7 +61,8 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
   )
 
   const totalPayment = (initialData.paymentItems ?? []).reduce((sum, i) => sum + i.totalAmount, 0)
-  const weeklyHolidayTotal = (initialData.weeklyPaidHolidayAllowances ?? []).reduce((sum, w) => sum + w.totalAmount, 0)
+  const weeklyHolidayNet = (initialData.weeklyPaidHolidayAllowances ?? []).reduce((sum, w) => sum + (w.netAmount || 0), 0)
+  const weeklyHolidayDeduction = (initialData.weeklyPaidHolidayAllowances ?? []).reduce((sum, w) => sum + (w.deductionAmount || 0), 0)
   const insuranceDeduction = (initialData.deductionItems ?? []).reduce((sum, i) => sum + i.amount, 0)
 
   return (
@@ -194,10 +195,16 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
                     <div className="pay-stub-item-head-val">-{formatAmount(insuranceDeduction)}원</div>
                   </div>
                 )}
-                {weeklyHolidayTotal > 0 && (
+                {weeklyHolidayNet > 0 && (
                   <div className="pay-stub-item-head">
                     <div className="pay-stub-item-head-tit">주휴수당 합계</div>
-                    <div className="pay-stub-item-head-val">+{formatAmount(weeklyHolidayTotal)}원</div>
+                    <div className="pay-stub-item-head-val">+{formatAmount(weeklyHolidayNet)}원</div>
+                  </div>
+                )}
+                {weeklyHolidayDeduction > 0 && (
+                  <div className="pay-stub-item-head">
+                    <div className="pay-stub-item-head-tit">주휴수당 공제</div>
+                    <div className="pay-stub-item-head-val">-{formatAmount(weeklyHolidayDeduction)}원</div>
                   </div>
                 )}
               </div>
