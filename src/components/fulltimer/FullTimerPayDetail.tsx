@@ -387,12 +387,15 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
 
   // Header btn-delete에 삭제 핸들러 등록
   const setOnDelete = useHeaderStore((s) => s.setOnDelete)
+  const setShowDeleteButton = useHeaderStore((s) => s.setShowDeleteButton)
+  const deleteAsync = deleteMutation.mutateAsync
   useEffect(() => {
     if (!isNew && id) {
+      setShowDeleteButton(true)
       setOnDelete(async () => {
         if (!confirm('급여명세서를 삭제하시겠습니까?')) return
         try {
-          await deleteMutation.mutateAsync(id)
+          await deleteAsync(id)
           alert('삭제되었습니다.')
           router.push('/fulltimer')
         } catch (error) {
@@ -400,9 +403,11 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
         }
       })
     }
-    return () => setOnDelete(null)
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- deleteMutation은 매 렌더마다 새 참조, mutateAsync만 사용
-  }, [isNew, id, setOnDelete, router])
+    return () => {
+      setOnDelete(null)
+      setShowDeleteButton(false)
+    }
+  }, [isNew, id, setOnDelete, setShowDeleteButton, router, deleteAsync])
 
   // 이메일 전송
   const handleSendEmail = async () => {

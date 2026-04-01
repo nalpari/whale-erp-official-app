@@ -19,6 +19,7 @@ export default function StoreSelectSheet() {
     setSelection,
   } = useStoreStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
+  const authFranchiseId = useAuthStore((state) => state.franchiseId)
   const hasAuthOffice = !!authHeadOfficeId
 
   // 본사 ID: auth > storeStore 순으로 fallback
@@ -36,7 +37,7 @@ export default function StoreSelectSheet() {
   // API
   const { data: headOffices = [], isError: isHeadOfficesError } = useHeadOffices()
   const { data: storeOptions = [], isLoading: isStoresLoading, isError: isStoresError } =
-    useStoreOptions(localOfficeId)
+    useStoreOptions(localOfficeId, authFranchiseId ?? undefined)
 
   // 본사 이름 찾기
   const selectedOfficeName = headOffices.find((o) => o.id === localOfficeId)

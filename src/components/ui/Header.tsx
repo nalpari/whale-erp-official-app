@@ -3,17 +3,27 @@
 import { usePathname, useRouter } from "next/navigation";
 import StoreSelect from "./StoreSelect";
 import { useHeaderStore } from "@/store/useHeaderStore";
+import "./css/header-right-label.scss";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const title = useHeaderStore((s) => s.title);
   const onDelete = useHeaderStore((s) => s.onDelete);
+  const showDeleteButton = useHeaderStore((s) => s.showDeleteButton);
+  const rightLabel = useHeaderStore((s) => s.rightLabel);
+  const onBack = useHeaderStore((s) => s.onBack);
+  const onSave = useHeaderStore((s) => s.onSave);
 
   const segments = pathname.split("/").filter(Boolean);
   const isSubPage = segments.length >= 2;
 
   const handleBack = () => {
-    router.back();
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
   };
 
   const getPageTitle = () => {
@@ -33,8 +43,22 @@ export default function Header() {
         <div className="header-container">
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
-            <h1>{getPageTitle()}</h1>
-            {onDelete && <button className="btn-delete" onClick={onDelete}></button>}
+            <h1>{title || getPageTitle()}</h1>
+            {onSave ? (
+              <button
+                className="btn-s black"
+                style={{ marginLeft: "auto" }}
+                onClick={onSave}
+              >
+                저장
+              </button>
+            ) : showDeleteButton ? (
+              <button className="btn-delete" onClick={() => onDelete?.()}></button>
+            ) : rightLabel ? (
+              <div className="header-right-label">{rightLabel}</div>
+            ) : (
+              <div style={{ width: 24 }} />
+            )}
           </div>
         </div>
       </header>
