@@ -651,12 +651,12 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
                     <div className="pay-data-item-tit">지급총액</div>
                     <div className="pay-data-item-value">{formatAmount(totalPayment)}원</div>
                   </div>
-                  {weeklyHolidayTotal > 0 && (
-                    <div className="pay-data-item">
-                      <div className="pay-data-item-tit">주휴수당</div>
-                      <div className="pay-data-item-value">{formatAmount(weeklyHolidayTotal)}원</div>
+                  <div className="pay-data-item">
+                    <div className="pay-data-item-tit">주휴수당</div>
+                    <div className="pay-data-item-value">
+                      {weeklyHolidayTotal > 0 ? `${formatAmount(weeklyHolidayTotal)}원` : isNew ? '저장 시 자동 계산' : '0원'}
                     </div>
-                  )}
+                  </div>
                   <div className="pay-data-item">
                     <div className="pay-data-item-tit">공제총액</div>
                     <div className="pay-data-item-value">{formatAmount(totalDeduction)}원</div>
