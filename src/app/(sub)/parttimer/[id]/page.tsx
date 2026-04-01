@@ -29,5 +29,10 @@ export default function PartTimerPayDetailPage() {
     )
   }
 
-  return <PartTimerPayDetail key={detail?.id} initialData={detail} />
+  if (!detail) {
+    router.replace('/parttimer')
+    return null
+  }
+
+  return <PartTimerPayDetail key={detail.id} initialData={detail} />
 }
