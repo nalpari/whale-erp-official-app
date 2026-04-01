@@ -16,10 +16,15 @@ export default function PartTimerTimePage() {
 
   const handleLocalSave = useCallback((items: PartTimerPaymentItem[]) => {
     if (!id) return
-    // 기존 draft에서 deductionItems 유지
+    // 기존 draft에서 deductionItems 유지 (같은 ID인 경우만)
     const existingRaw = sessionStorage.getItem(EDIT_DRAFT_KEY)
-    let existing = {}
-    try { if (existingRaw) existing = JSON.parse(existingRaw) } catch { /* ignore */ }
+    let existing: { id?: number; deductionItems?: unknown[] } = {}
+    try {
+      if (existingRaw) {
+        const parsed = JSON.parse(existingRaw) as { id?: number }
+        if (parsed.id === id) existing = parsed
+      }
+    } catch { /* ignore */ }
     sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ ...existing, id, paymentItems: items }))
   }, [id])
 
