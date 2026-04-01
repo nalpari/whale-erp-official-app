@@ -13,7 +13,7 @@ export const getEmployeeListByType = async (
     queryParams.franchiseId = params.franchiseId
   }
   const response = await api.get<{ data: EmployeeSimpleListItem[] }>(
-    '/api/employee/info/by-type',
+    '/api/v1/employee/info/by-type',
     { params: queryParams },
   )
   return response.data.data

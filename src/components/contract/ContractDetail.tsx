@@ -82,7 +82,7 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
   if (header?.workersCompensationEnrolled) insuranceList.push('산재보험')
 
   // 급여지급일 텍스트
-  const salaryMonthLabel = header?.salaryMonth === 'SLRMO_001' ? '당월' : header?.salaryMonth === 'SLRMO_002' ? '익월' : ''
+  const salaryMonthLabel = header?.salaryMonth === 'SLRCF_001' ? '당월' : header?.salaryMonth === 'SLRCF_002' ? '익월' : ''
   const salaryCycleLabel = header?.salaryCycle === 'SLRCC_001' ? '월급' : header?.salaryCycle === 'SLRCC_002' ? '시급' : ''
 
   const handleDelete = async () => {

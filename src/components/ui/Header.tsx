@@ -26,6 +26,13 @@ export default function Header() {
     }
   };
 
+  const getPageTitle = () => {
+    if (pathname.startsWith("/fulltimer")) return "정직원 급여명세서 정보";
+    if (pathname.startsWith("/parttimer")) return "파트타이머 급여명세서 정보";
+    if (pathname.startsWith("/contract")) return "근로계약 관리";
+    return "서브 페이지 헤더";
+  };
+
   if (pathname.includes("/list") || pathname === "/login") {
     return null;
   }
@@ -36,7 +43,7 @@ export default function Header() {
         <div className="header-container">
           <div className="header-inner">
             <button className="btn-back" onClick={handleBack}></button>
-            <h1>{title || "서브 페이지 헤더"}</h1>
+            <h1>{title || getPageTitle()}</h1>
             {onSave ? (
               <button
                 className="btn-s black"

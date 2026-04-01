@@ -12,7 +12,7 @@ import type {
   MinimumWageResponse,
 } from '@/types/contract'
 
-const BASE_URL = '/api/employee/contract'
+const BASE_URL = '/api/v1/employee/contract'
 
 // undefined/null/빈 문자열 제거
 const cleanParams = (params: object) => {

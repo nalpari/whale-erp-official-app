@@ -42,7 +42,7 @@ export default function ContractNewForm() {
   const [memberId, setMemberId] = useState<number | undefined>()
   const [contractClassification, setContractClassification] = useState<ContractClassificationType>('CNTCFWK_001')
   const [salaryCycle, setSalaryCycle] = useState<SalaryCycle>('SLRCC_001')
-  const [salaryMonth, setSalaryMonth] = useState<SalaryMonth>('SLRMO_002')
+  const [salaryMonth, setSalaryMonth] = useState<SalaryMonth>('SLRCF_002')
   const [salaryDay, setSalaryDay] = useState(10)
   const [contractStartDate, setContractStartDate] = useState('')
   const [contractEndDate, setContractEndDate] = useState('')
@@ -245,8 +245,8 @@ export default function ContractNewForm() {
                           <option value="SLRCC_002">시급</option>
                         </select>
                         <select className="select-form" value={salaryMonth} onChange={(e) => setSalaryMonth(e.target.value as SalaryMonth)}>
-                          <option value="SLRMO_001">당월</option>
-                          <option value="SLRMO_002">익월</option>
+                          <option value="SLRCF_001">당월</option>
+                          <option value="SLRCF_002">익월</option>
                         </select>
                         <select className="select-form" value={salaryDay} onChange={(e) => setSalaryDay(Number(e.target.value))}>
                           {[10, 15, 20, 25].map((d) => (
