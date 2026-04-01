@@ -13,6 +13,7 @@ export default function PartTimerNewStubPage() {
     try {
       const raw = sessionStorage.getItem(PREVIEW_KEY)
       if (!raw) return null
+      sessionStorage.removeItem(PREVIEW_KEY)
       return JSON.parse(raw) as PartTimerPayrollDetail
     } catch {
       sessionStorage.removeItem(PREVIEW_KEY)

@@ -29,6 +29,7 @@ export default function PartTimerNewTimePage() {
     if (typeof window === 'undefined') return null
     const raw = sessionStorage.getItem(PREVIEW_KEY)
     if (!raw) return null
+    sessionStorage.removeItem(PREVIEW_KEY)
     return safeJsonParse<PartTimerPayrollDetail>(raw)
   })
 
