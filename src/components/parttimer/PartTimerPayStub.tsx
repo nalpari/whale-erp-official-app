@@ -4,6 +4,7 @@ import type { PartTimerPayrollDetail, PartTimerPaymentItem } from '@/types/partt
 
 interface PartTimerPayStubProps {
   initialData?: PartTimerPayrollDetail
+  isPreview?: boolean
 }
 
 const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
@@ -18,7 +19,7 @@ const formatDateShort = (dateStr: string) => {
 // 주차별로 그룹핑
 const groupByWeek = (items: PartTimerPaymentItem[]) => {
   const weeks: { weekStart: string; weekEnd: string; items: PartTimerPaymentItem[] }[] = []
-  const sorted = [...items].sort((a, b) => a.workDay.localeCompare(b.workDay))
+  const sorted = [...items].filter((i) => i.workDay).sort((a, b) => a.workDay.localeCompare(b.workDay))
 
   for (const item of sorted) {
     const d = new Date(item.workDay)
@@ -39,7 +40,7 @@ const groupByWeek = (items: PartTimerPaymentItem[]) => {
   return weeks
 }
 
-export default function PartTimerPayStub({ initialData }: PartTimerPayStubProps) {
+export default function PartTimerPayStub({ initialData, isPreview = false }: PartTimerPayStubProps) {
   const router = useRouter()
   const params = useParams()
   const id = params?.id
@@ -68,7 +69,13 @@ export default function PartTimerPayStub({ initialData }: PartTimerPayStubProps)
       <div className="sub-content-body">
         <button
           className="work-time-edit"
-          onClick={() => router.push(`/parttimer/${id}/time`)}
+          onClick={() => {
+            if (isPreview) {
+              router.push('/parttimer/new/time')
+            } else {
+              router.push(`/parttimer/${id}/time`)
+            }
+          }}
         >
           <div className="work-time-edit-tit">
             <i className="time-edit-icon"></i>

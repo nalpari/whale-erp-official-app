@@ -4,10 +4,16 @@ import { useRouter } from 'next/navigation'
 import { useUpdatePartTimerPayroll } from '@/hooks/queries/use-parttime-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
 import type { PartTimerPayrollDetail, PartTimerPaymentItem } from '@/types/parttime-payroll'
+import type { ContractWorkHour, ContractSalaryInfo, DayType } from '@/types/contract'
 
 interface PartTimerTimeEditProps {
-  payrollId: number
+  payrollId?: number
   initialData?: PartTimerPayrollDetail
+  isPreview?: boolean
+  onPreviewSave?: (items: PartTimerPaymentItem[]) => void
+  contractWage?: number
+  contractWorkHours?: ContractWorkHour[]
+  contractSalaryInfo?: ContractSalaryInfo
 }
 
 const DEDUCTION_RATE = 0.033
@@ -29,6 +35,24 @@ const formatDateLabel = (dateStr: string) => {
   return `${d.getFullYear()}.${mm}.${dd} (${dayName})`
 }
 
+// JS Date.getDay() → DayType 매핑 (0=일, 1=월, ...)
+const JS_DAY_TO_DAY_TYPE: DayType[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
+
+// "HH:mm" 형식 시간을 시간 단위(소수)로 변환
+const parseTimeToHours = (time?: string): number => {
+  if (!time) return 0
+  const [h, m] = time.split(':').map(Number)
+  return h + (m || 0) / 60
+}
+
+// 요일에 해당하는 ContractWorkHour 찾기 (개별 요일 → WEEKDAY/WEEKEND fallback)
+const findWorkHourForDay = (dayType: DayType, workHours: ContractWorkHour[]): ContractWorkHour | undefined => {
+  const exact = workHours.find((w) => w.dayType === dayType)
+  if (exact) return exact
+  const isWeekend = dayType === 'SATURDAY' || dayType === 'SUNDAY'
+  return workHours.find((w) => w.dayType === (isWeekend ? 'WEEKEND' : 'WEEKDAY'))
+}
+
 // 정산기간 내 날짜 목록 생성
 const generateDates = (startDate: string, endDate: string): string[] => {
   const dates: string[] = []
@@ -42,11 +66,15 @@ const generateDates = (startDate: string, endDate: string): string[] => {
   return dates
 }
 
-export default function PartTimerTimeEdit({ payrollId, initialData }: PartTimerTimeEditProps) {
+export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = false, onPreviewSave, contractWage, contractWorkHours, contractSalaryInfo }: PartTimerTimeEditProps) {
   const router = useRouter()
   const updateMutation = useUpdatePartTimerPayroll()
 
-  const contractTimelyAmount = initialData?.paymentItems?.[0]?.contractTimelyAmount ?? 0
+  // 등록: 근로계약서 시급(contractWage) 또는 API 응답 시급 사용, 수정: 기존 저장된 시급 사용
+  const contractTimelyAmount = contractWage
+    ?? initialData?.paymentItems?.[0]?.contractTimelyAmount
+    ?? initialData?.paymentItems?.[0]?.applyTimelyAmount
+    ?? 0
 
   // 정산기간 내 모든 날짜를 기반으로 편집 상태 초기화
   const allDates = initialData
@@ -85,12 +113,55 @@ export default function PartTimerTimeEdit({ payrollId, initialData }: PartTimerT
   }
 
   const handleApplyContractWage = () => {
+    // 등록 모드: workHours 기반으로 요일별 근무시간/시급 자동 채움
+    if (contractWorkHours && contractWorkHours.length > 0) {
+      const salary = contractSalaryInfo
+      setItems((prev) =>
+        prev.map((item) => {
+          const d = new Date(item.workDay)
+          const dayType = JS_DAY_TO_DAY_TYPE[d.getDay()]
+          const wh = findWorkHourForDay(dayType, contractWorkHours)
+
+          if (!wh || !wh.isWork) {
+            // 비근무일: 0으로 초기화
+            return { ...item, workHour: 0, breakTimeHour: 0, applyTimelyAmount: contractTimelyAmount, contractTimelyAmount, totalAmount: 0, deductionAmount: 0 }
+          }
+
+          const workHour = parseTimeToHours(wh.workEndTime) - parseTimeToHours(wh.workStartTime)
+          const breakTimeHour = wh.isBreak ? parseTimeToHours(wh.breakEndTime) - parseTimeToHours(wh.breakStartTime) : 0
+          const netWorkHour = Math.max(workHour - breakTimeHour, 0)
+
+          // 시급 결정: 주말이면 휴일시급, 평일이면 계약시급
+          const isWeekend = dayType === 'SATURDAY' || dayType === 'SUNDAY'
+          const applyAmount = isWeekend
+            ? (salary?.holidayAllowanceTimeAmount ?? salary?.timelySalary ?? contractTimelyAmount)
+            : (salary?.timelySalary ?? contractTimelyAmount)
+
+          const totalAmount = Math.round(netWorkHour * applyAmount)
+          const deductionAmount = Math.round(totalAmount * DEDUCTION_RATE)
+
+          return {
+            ...item,
+            workHour: netWorkHour,
+            breakTimeHour,
+            contractTimelyAmount: salary?.timelySalary ?? contractTimelyAmount,
+            applyTimelyAmount: applyAmount,
+            totalAmount,
+            deductionAmount,
+          }
+        }),
+      )
+      return
+    }
+
+    // 수정 모드: 불러온 원본 데이터로 초기화
+    const existingMap = new Map(
+      (initialData?.paymentItems ?? []).map((item) => [item.workDay, item]),
+    )
     setItems((prev) =>
       prev.map((item) => {
-        const updated = { ...item, applyTimelyAmount: contractTimelyAmount }
-        updated.totalAmount = Math.round(updated.workHour * updated.applyTimelyAmount)
-        updated.deductionAmount = Math.round(updated.totalAmount * DEDUCTION_RATE)
-        return updated
+        const original = existingMap.get(item.workDay)
+        return original ?? { ...item, workHour: 0, breakTimeHour: 0, totalAmount: 0, deductionAmount: 0 }
       }),
     )
   }
@@ -100,6 +171,14 @@ export default function PartTimerTimeEdit({ payrollId, initialData }: PartTimerT
 
     // 근무시간이 0보다 큰 항목만 전송
     const paymentItems = items.filter((item) => item.workHour > 0)
+
+    if (isPreview && onPreviewSave) {
+      onPreviewSave(paymentItems)
+      router.back()
+      return
+    }
+
+    if (!payrollId) return
 
     try {
       await updateMutation.mutateAsync({
@@ -144,7 +223,7 @@ export default function PartTimerTimeEdit({ payrollId, initialData }: PartTimerT
                   </div>
                   <div className="block">
                     <button className="btn-form block grey" onClick={handleApplyContractWage}>
-                      계약 시간 적용 ({formatAmount(contractTimelyAmount)}원)
+                      계약 시간 적용
                     </button>
                   </div>
                 </div>

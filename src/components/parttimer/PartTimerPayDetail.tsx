@@ -25,6 +25,7 @@ import type {
   PartTimerPayrollCreateRequest,
   PartTimerPayrollUpdateRequest,
 } from '@/types/parttime-payroll'
+import type { ContractWorkHour, ContractSalaryInfo } from '@/types/contract'
 
 interface PartTimerPayDetailProps {
   isNew?: boolean
@@ -68,6 +69,50 @@ const computeSettlementRange = (ym: string): { start: string; end: string } | nu
 
 const payrollMonthOptions = getPayrollMonthOptions()
 
+const FORM_DRAFT_KEY = 'partTimerFormDraft'
+const EDIT_DRAFT_KEY = 'partTimerEditDraft'
+
+interface EditDraft {
+  id: number
+  paymentItems: PartTimerPaymentItem[]
+  deductionItems?: PartTimerDeductionItem[]
+}
+
+const loadEditDraft = (id?: number): EditDraft | null => {
+  if (typeof window === 'undefined' || !id) return null
+  const raw = sessionStorage.getItem(EDIT_DRAFT_KEY)
+  if (!raw) return null
+  sessionStorage.removeItem(EDIT_DRAFT_KEY)
+  const draft = JSON.parse(raw) as EditDraft
+  if (draft.id !== id) return null
+  return draft
+}
+
+interface FormDraft {
+  selectedOfficeId?: number
+  selectedFranchiseId?: number
+  selectedStoreId?: number
+  selectedEmployeeInfoId?: number
+  contractWage?: number
+  contractWorkHours?: ContractWorkHour[]
+  contractSalaryInfo?: ContractSalaryInfo
+  payrollYearMonth: string
+  settlementStartDate: string
+  settlementEndDate: string
+  paymentDate: string
+  remarks: string
+  paymentItems: PartTimerPaymentItem[]
+  deductionItems: PartTimerDeductionItem[]
+}
+
+const loadDraft = (): FormDraft | null => {
+  if (typeof window === 'undefined') return null
+  const raw = sessionStorage.getItem(FORM_DRAFT_KEY)
+  if (!raw) return null
+  sessionStorage.removeItem(FORM_DRAFT_KEY)
+  return JSON.parse(raw) as FormDraft
+}
+
 const DEDUCTION_LABELS: Record<string, string> = {
   NATIONAL_PENSION: '국민연금',
   HEALTH_INSURANCE: '건강보험',
@@ -78,6 +123,8 @@ const DEDUCTION_LABELS: Record<string, string> = {
 export default function PartTimerPayDetail({ isNew = false, initialData }: PartTimerPayDetailProps) {
   const router = useRouter()
   const id = initialData?.id
+  const [draft] = useState(() => isNew ? loadDraft() : null)
+  const [editDraft] = useState(() => !isNew ? loadEditDraft(id) : null)
 
   const setDeductionAddSheet = useBottomSheetControler(
     (state) => state.setDeductionAddSheet,
@@ -108,15 +155,15 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           const dailyItems: PartTimerPaymentItem[] = result.items
             .filter((item) => item.type === 'DAILY' && item.dailyRecord)
             .map((item) => {
-              const r = item.dailyRecord!
+              const r = item.dailyRecord as Record<string, unknown>
               return {
-                workDay: r.workDay,
-                workHour: r.workHour,
-                breakTimeHour: r.breakTimeHour,
-                contractTimelyAmount: r.contractTimelyAmount,
-                applyTimelyAmount: r.applyTimelyAmount,
-                totalAmount: r.totalAmount,
-                deductionAmount: r.deductionAmount,
+                workDay: (r.date ?? r.workDay) as string,
+                workHour: (r.workHours ?? r.workHour ?? 0) as number,
+                breakTimeHour: (r.breakTimeHour ?? 0) as number,
+                contractTimelyAmount: (r.contractTimelyAmount ?? r.applyTimelyAmount ?? 0) as number,
+                applyTimelyAmount: (r.applyTimelyAmount ?? 0) as number,
+                totalAmount: (r.paymentAmount ?? r.totalAmount ?? 0) as number,
+                deductionAmount: (r.deductionAmount ?? 0) as number,
               }
             })
           setPaymentItems(dailyItems)
@@ -138,10 +185,10 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   const globalHeadOffice = useStoreStore((s) => s.selectedHeadOffice)
   const { data: headOfficeTree = [] } = useHeadOfficeTree()
   const [selectedOfficeId, setSelectedOfficeId] = useState<number | undefined>(
-    initialData?.headOfficeName ? undefined : (globalHeadOffice?.id ?? authHeadOfficeId ?? undefined),
+    draft?.selectedOfficeId ?? (initialData?.headOfficeName ? undefined : (globalHeadOffice?.id ?? authHeadOfficeId ?? undefined)),
   )
-  const [selectedFranchiseId, setSelectedFranchiseId] = useState<number | undefined>()
-  const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>()
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState<number | undefined>(draft?.selectedFranchiseId)
+  const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>(draft?.selectedStoreId)
 
   const selectedOffice = headOfficeTree.find((o) => o.id === selectedOfficeId)
   const franchises = selectedOffice?.franchises ?? []
@@ -153,7 +200,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     isNew && !!selectedOfficeId,
   )
 
-  const [selectedEmployeeInfoId, setSelectedEmployeeInfoId] = useState<number | undefined>()
+  const [selectedEmployeeInfoId, setSelectedEmployeeInfoId] = useState<number | undefined>(draft?.selectedEmployeeInfoId)
 
   // 직원 선택 시 계약 정보 자동 조회
   const { data: employeeContracts = [] } = useContractsByEmployee(
@@ -166,7 +213,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
 
   // 폼 상태
   const [payrollYearMonth, setPayrollYearMonth] = useState(
-    initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '',
+    draft?.payrollYearMonth ?? initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '',
   )
   // 초기 근무기간: initialData가 있으면 그 값, 없으면 paymentDate 기반, 그래도 없으면 지급월 기반
   const initialPeriod = (() => {
@@ -186,12 +233,12 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     const range = computeSettlementRange(initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '')
     return range ?? { start: '', end: '' }
   })()
-  const [settlementStartDate, setSettlementStartDate] = useState(initialPeriod.start)
-  const [settlementEndDate, setSettlementEndDate] = useState(initialPeriod.end)
-  const [paymentDate, setPaymentDate] = useState(initialData?.paymentDate ?? '')
-  const [remarks, setRemarks] = useState(initialData?.remarks ?? '')
-  const [paymentItems, setPaymentItems] = useState<PartTimerPaymentItem[]>(initialData?.paymentItems ?? [])
-  const [deductionItems, setDeductionItems] = useState<PartTimerDeductionItem[]>(initialData?.deductionItems ?? [])
+  const [settlementStartDate, setSettlementStartDate] = useState(draft?.settlementStartDate ?? initialPeriod.start)
+  const [settlementEndDate, setSettlementEndDate] = useState(draft?.settlementEndDate ?? initialPeriod.end)
+  const [paymentDate, setPaymentDate] = useState(draft?.paymentDate ?? initialData?.paymentDate ?? '')
+  const [remarks, setRemarks] = useState(draft?.remarks ?? initialData?.remarks ?? '')
+  const [paymentItems, setPaymentItems] = useState<PartTimerPaymentItem[]>(editDraft?.paymentItems ?? draft?.paymentItems ?? initialData?.paymentItems ?? [])
+  const [deductionItems, setDeductionItems] = useState<PartTimerDeductionItem[]>(editDraft?.deductionItems ?? draft?.deductionItems ?? initialData?.deductionItems ?? [])
 
   // 지급일 기준 근무기간 계산 (지급일 한달전 ~ 지급일 하루전)
   const computeWorkPeriodFromPaymentDate = (pd: string) => {
@@ -206,7 +253,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     return { start: fmt(start), end: fmt(end) }
   }
 
-  // 급여지급월 변경 시 지급일/정산기간을 함께 계산
+  // 급여지급월 변경 시 지급일/정산기간/근무내역/공제항목 초기화
   const handlePayrollYearMonthChange = (ym: string) => {
     setPayrollYearMonth(ym)
     const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
@@ -218,6 +265,9 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
         setSettlementEndDate(period.end)
       }
     }
+    // 기간이 바뀌면 기존 근무내역/공제항목은 유효하지 않으므로 초기화
+    setPaymentItems([])
+    setDeductionItems([])
   }
 
   // 직원 선택 시 계약 정보 기반으로 급여지급월/지급일 자동 설정
@@ -279,6 +329,11 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     }
     if (paymentItems.length === 0) {
       alert('근무시간을 입력해주세요.')
+      return
+    }
+    const totalAmount = paymentItems.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
+    if (totalAmount === 0) {
+      alert('급여내역이 0원입니다. 근무시간을 확인해주세요.')
       return
     }
 
@@ -557,18 +612,6 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
             <div className="sub-cont-item-wrap">
               <div className="sub-cont-tit-wrap">
                 <div className="sub-cont-tit">급여 요약</div>
-                <div className="auto-right">
-                  <button
-                    className="flex g8"
-                    onClick={() => {
-                      if (id) router.push(`/parttimer/${id}/time`)
-                      else alert('근무시간을 입력하려면 먼저 명세서를 저장해주세요.')
-                    }}
-                  >
-                    <span className="sub-btn-txt">근무시간 편집</span>
-                    <i className="sub-arr-btn"></i>
-                  </button>
-                </div>
               </div>
               <div className="sub-item-bx">
                 <div className="pay-data-list">
@@ -592,13 +635,6 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
                   </div>
                 </div>
               </div>
-              {paymentItems.length > 0 && (
-                <div className="sub-item-bx">
-                  <div style={{ fontSize: '13px', color: '#666' }}>
-                    근무일수: {paymentItems.length}일 / 총 근무시간: {paymentItems.reduce((sum, i) => sum + i.workHour, 0)}시간
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -643,14 +679,69 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
         </div>
       </div>
       <div className="content-pagination flex g8">
-        {!isNew && id && (
-          <button
-            className="btn-form block sky brd"
-            onClick={() => router.push(`/parttimer/${id}/stub`)}
-          >
-            급여내역 미리보기
-          </button>
-        )}
+        <button
+          className="btn-form block sky brd"
+          disabled={paymentItems.length === 0}
+          onClick={() => {
+            if (isNew) {
+              const selectedEmployee = employeeList.find((emp) => emp.employeeInfoId === selectedEmployeeInfoId)
+              const previewData: Omit<PartTimerPayrollDetail, 'id' | 'isEmailSend'> & { id?: number; isEmailSend?: boolean } = {
+                memberId: selectedEmployee?.employeeInfoId ?? 0,
+                memberName: selectedEmployee ? `${selectedEmployee.employeeName} (${selectedEmployee.employeeNumber})` : '',
+                payrollYearMonth,
+                settlementStartDate,
+                settlementEndDate,
+                paymentDate,
+                totalAmount: totalPayment,
+                totalDeductionAmount: totalDeduction,
+                actualPaymentAmount: actualPayment,
+                remarks,
+                paymentItems,
+                deductionItems,
+                weeklyPaidHolidayAllowances: [],
+              }
+              // 폼 상태 저장 (뒤로가기 시 복원용)
+              const formDraft: FormDraft = {
+                selectedOfficeId,
+                selectedFranchiseId,
+                selectedStoreId,
+                selectedEmployeeInfoId,
+                contractWage: employeeContract?.salaryInfo?.timelySalary,
+                contractWorkHours: employeeContract?.workHours,
+                contractSalaryInfo: employeeContract?.salaryInfo,
+                payrollYearMonth,
+                settlementStartDate,
+                settlementEndDate,
+                paymentDate,
+                remarks,
+                paymentItems,
+                deductionItems,
+              }
+              sessionStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formDraft))
+              sessionStorage.setItem('partTimerStubPreview', JSON.stringify(previewData))
+              router.push('/parttimer/new/stub')
+            } else {
+              const previewData: Partial<PartTimerPayrollDetail> = {
+                ...initialData,
+                payrollYearMonth,
+                settlementStartDate,
+                settlementEndDate,
+                paymentDate,
+                totalAmount: totalPayment,
+                totalDeductionAmount: totalDeduction,
+                actualPaymentAmount: actualPayment,
+                remarks,
+                paymentItems,
+                deductionItems,
+              }
+              sessionStorage.setItem('partTimerStubPreview', JSON.stringify(previewData))
+              sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ id, paymentItems, deductionItems }))
+              router.push(`/parttimer/${id}/stub`)
+            }
+          }}
+        >
+          급여내역 미리보기
+        </button>
         <button
           className="btn-form block blue"
           onClick={handleSave}

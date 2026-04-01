@@ -1,8 +1,11 @@
 'use client'
-import { useEffect } from 'react'
+import { useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePartTimerPayrollDetail } from '@/hooks/queries/use-parttime-payroll-queries'
 import PartTimerTimeEdit from '@/components/parttimer/PartTimerTimeEdit'
+import type { PartTimerPaymentItem } from '@/types/parttime-payroll'
+
+const EDIT_DRAFT_KEY = 'partTimerEditDraft'
 
 export default function PartTimerTimePage() {
   const params = useParams()
@@ -11,13 +14,18 @@ export default function PartTimerTimePage() {
   const id = isNaN(rawId) || rawId <= 0 ? undefined : rawId
   const { data: detail, isLoading } = usePartTimerPayrollDetail(id)
 
-  useEffect(() => {
-    if (!id) {
-      router.replace('/parttimer')
-    }
-  }, [id, router])
+  const handleLocalSave = useCallback((items: PartTimerPaymentItem[]) => {
+    if (!id) return
+    // 기존 draft에서 deductionItems 유지
+    const existingRaw = sessionStorage.getItem(EDIT_DRAFT_KEY)
+    const existing = existingRaw ? JSON.parse(existingRaw) : {}
+    sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ ...existing, id, paymentItems: items }))
+  }, [id])
 
-  if (!id) return null
+  if (!id) {
+    router.replace('/parttimer')
+    return null
+  }
 
   if (isLoading) {
     return (
@@ -29,5 +37,12 @@ export default function PartTimerTimePage() {
     )
   }
 
-  return <PartTimerTimeEdit payrollId={id} initialData={detail} />
+  return (
+    <PartTimerTimeEdit
+      payrollId={id}
+      initialData={detail}
+      isPreview
+      onPreviewSave={handleLocalSave}
+    />
+  )
 }

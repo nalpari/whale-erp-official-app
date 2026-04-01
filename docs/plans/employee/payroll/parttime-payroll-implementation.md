@@ -116,13 +116,71 @@ interface WeeklyPaidHolidayAllowance {
 }
 ```
 
+## Phase 6: 신규/수정 흐름 개선
+
+### 6-1. 급여내역 미리보기 — 신규/수정 모두 지원
+
+| 순서 | 작업 | 파일 | 상태 |
+|------|------|------|------|
+| 6-1-1 | 신규 모드에서 미리보기 버튼 활성화 | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 6-1-2 | 신규 미리보기 페이지 생성 (sessionStorage 기반) | `parttimer/new/stub/page.tsx` (신규) | ✅ 완료 |
+| 6-1-3 | 수정 모드 미리보기도 현재 폼 데이터 반영 (API 원본 → sessionStorage) | `[id]/stub/page.tsx` | ✅ 완료 |
+| 6-1-4 | PartTimerPayStub에 isPreview prop 추가 (미리보기 모드 분기) | `PartTimerPayStub.tsx` | ✅ 완료 |
+
+### 6-2. 근무시간 편집 — 로컬 저장 방식으로 통일
+
+| 순서 | 작업 | 파일 | 상태 |
+|------|------|------|------|
+| 6-2-1 | 신규 모드 근무시간 편집 페이지 생성 | `parttimer/new/time/page.tsx` (신규) | ✅ 완료 |
+| 6-2-2 | 수정 모드 근무시간 편집 — API 직접 저장 → 로컬 저장으로 변경 | `[id]/time/page.tsx` | ✅ 완료 |
+| 6-2-3 | PartTimerTimeEdit에 isPreview/onPreviewSave prop 추가 | `PartTimerTimeEdit.tsx` | ✅ 완료 |
+| 6-2-4 | 메인 폼에서 "근무시간 편집" 버튼 제거 (미리보기 경유로 접근) | `PartTimerPayDetail.tsx` | ✅ 완료 |
+
+### 6-3. 계약시간적용 — 등록/수정 분기 처리
+
+| 순서 | 작업 | 파일 | 상태 |
+|------|------|------|------|
+| 6-3-1 | 등록 시: 근로계약 workHours 기반 요일별 근무시간/시급 자동 채움 | `PartTimerTimeEdit.tsx` | ✅ 완료 |
+| 6-3-2 | 수정 시: 서버 원본 데이터(initialData.paymentItems)로 초기화 | `PartTimerTimeEdit.tsx` | ✅ 완료 |
+| 6-3-3 | contractWorkHours/contractSalaryInfo를 sessionStorage 경유 전달 | `PartTimerPayDetail.tsx`, `new/time/page.tsx` | ✅ 완료 |
+| 6-3-4 | 버튼 금액 표시 제거 | `PartTimerTimeEdit.tsx` | ✅ 완료 |
+
+### 6-4. 폼 상태 보존 (sessionStorage 기반)
+
+| 순서 | 작업 | 파일 | 상태 |
+|------|------|------|------|
+| 6-4-1 | 신규: 미리보기 이동/복귀 시 폼 데이터 보존 (FormDraft) | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 6-4-2 | 수정: 미리보기/근무시간 편집 복귀 시 paymentItems + deductionItems 보존 (EditDraft) | `PartTimerPayDetail.tsx` | ✅ 완료 |
+
+### 6-5. 기타 개선
+
+| 순서 | 작업 | 파일 | 상태 |
+|------|------|------|------|
+| 6-5-1 | 급여지급월 변경 시 paymentItems/deductionItems 초기화 | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 6-5-2 | 총 지급액 0원이면 저장 차단 | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 6-5-3 | 근무일수 표시 제거 | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 6-5-4 | daily-work-hours API 필드명 매핑 수정 (date→workDay, workHours→workHour 등) | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 6-5-5 | PartTimerPayStub workDay undefined 방어 코드 | `PartTimerPayStub.tsx` | ✅ 완료 |
+
 ## 설계 결정 사항
 
-| 구분 | whale-erp-front 방식 | official-app 방식 (예정) |
-|------|----------------------|--------------------------|
-| 근무시간 편집 데이터 전달 | localStorage 경유 | Zustand store 또는 route state |
-| 주휴수당 계산 | 프론트 + 백엔드 양쪽 | 백엔드 위임 (API 응답에 포함) |
+| 구분 | whale-erp-front 방식 | official-app 방식 |
+|------|----------------------|-------------------|
+| 근무시간 편집 데이터 전달 | localStorage 경유 | sessionStorage 경유 (EditDraft/FormDraft) |
+| 미리보기 데이터 전달 | API 조회 (ID 기반) | sessionStorage 우선 → API fallback |
+| 주휴수당 계산 | 프론트 + 백엔드 양쪽 | 백엔드 위임 (API 저장 시 자동 계산) |
 | 공제 3.3% 계산 | 프론트에서 계산 | 프론트에서 계산 (0이면 백엔드 자동) |
+| 계약시간적용 (등록) | 시급 일괄 변경 | workHours 기반 요일별 근무시간/시급 자동 채움 |
+| 계약시간적용 (수정) | 시급 일괄 변경 | 서버 원본 데이터로 초기화 |
+| 근무시간 저장 (수정) | API 직접 호출 | 로컬 저장 → 메인 폼에서 최종 API 호출 |
+
+## sessionStorage 키 목록
+
+| 키 | 용도 | 저장 시점 | 삭제 시점 |
+|----|------|-----------|-----------|
+| `partTimerStubPreview` | 미리보기 데이터 (paymentItems, deductionItems 포함) | 미리보기 클릭 시 | stub 페이지 로드 후 (new는 유지) |
+| `partTimerFormDraft` | 신규 폼 상태 복원용 (조직, 직원, 기간, 계약 정보 포함) | 미리보기 클릭 시 | 로드 후 삭제 |
+| `partTimerEditDraft` | 수정 폼 상태 복원용 (paymentItems + deductionItems) | 미리보기/근무시간편집 클릭 시 | 로드 후 삭제 |
 
 ## 생성/수정 파일 목록
 
@@ -131,9 +189,12 @@ interface WeeklyPaidHolidayAllowance {
 | 생성 | `src/types/parttime-payroll.ts` | 파트타이머 급여 타입 |
 | 생성 | `src/lib/api/parttime-payroll.ts` | 파트타이머 급여 API |
 | 생성 | `src/hooks/queries/use-parttime-payroll-queries.ts` | React Query 훅 |
+| 생성 | `src/app/(sub)/parttimer/new/stub/page.tsx` | 신규 미리보기 페이지 |
+| 생성 | `src/app/(sub)/parttimer/new/time/page.tsx` | 신규 근무시간 편집 페이지 |
 | 수정 | `src/components/parttimer/PartTimerPayList.tsx` | 목록 API 연동 |
-| 수정 | `src/components/parttimer/PartTimerPayDetail.tsx` | 상세/등록/수정 API 연동 |
-| 수정 | `src/components/parttimer/PartTimerTimeEdit.tsx` | 근무시간 편집 연동 |
-| 수정 | `src/components/parttimer/PartTimerPayStub.tsx` | 미리보기 API 연동 |
-| 수정 | `src/components/bottomsheet/PartTimerSearchSheet.tsx` | 검색 파라미터 연동 |
-| 수정 | `src/app/(sub)/parttimer/` 하위 page.tsx | 라우트 연동 |
+| 수정 | `src/components/parttimer/PartTimerPayDetail.tsx` | 상세/등록/수정 + sessionStorage 기반 폼 보존 |
+| 수정 | `src/components/parttimer/PartTimerTimeEdit.tsx` | 근무시간 편집 + 계약시간적용 분기 |
+| 수정 | `src/components/parttimer/PartTimerPayStub.tsx` | 미리보기 + isPreview 모드 |
+| 수정 | `src/components/bottomsheet/DeductionAddSheet.tsx` | 4대보험 공제 바텀시트 |
+| 수정 | `src/app/(sub)/parttimer/[id]/stub/page.tsx` | sessionStorage 우선 → API fallback |
+| 수정 | `src/app/(sub)/parttimer/[id]/time/page.tsx` | API 직접 저장 → 로컬 저장 |
