@@ -183,7 +183,11 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
     // 근무시간이 0보다 큰 항목만 전송
     const paymentItems = items.filter((item) => item.workHour > 0)
 
-    if (isPreview && onPreviewSave) {
+    if (isPreview) {
+      if (!onPreviewSave) {
+        console.warn('isPreview=true이지만 onPreviewSave가 전달되지 않았습니다.')
+        return
+      }
       onPreviewSave(paymentItems)
       router.back()
       return
