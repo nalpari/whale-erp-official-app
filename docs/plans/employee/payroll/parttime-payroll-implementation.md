@@ -84,35 +84,42 @@
 interface PartTimerPaymentItem {
   id?: number
   workDay: string              // YYYY-MM-DD
-  workHour: number             // 근무시간
+  workHour: number             // 총근무시간 (출근~퇴근)
   breakTimeHour: number        // 휴게시간
   contractTimelyAmount: number // 계약 시급
-  applyTimelyAmount: number    // 적용 시급 (휴일/야간 가산 가능)
-  totalAmount: number          // 지급액 = workHour * applyTimelyAmount
-  deductionAmount: number      // 공제액 = totalAmount * 0.033
+  applyTimelyAmount: number    // 적용 시급 (평일/주말 시급 다를 수 있음)
+  totalAmount: number          // 지급액 = (workHour - breakTimeHour) * applyTimelyAmount
+  deductionAmount: number      // 공제액 = totalAmount * 0.033 (3.3% 원천징수)
+  remarks?: string
 }
+// netWorkHour = workHour - breakTimeHour (실근무시간)
 ```
 
 ### PartTimerDeductionItem (공제항목)
 ```typescript
 interface PartTimerDeductionItem {
   id?: number
-  itemCode: string   // NATIONAL_PENSION, HEALTH_INSURANCE 등
+  itemCode: string     // NATIONAL_PENSION, HEALTH_INSURANCE 등
   itemOrder: number
   amount: number
+  remarks?: string
+  displayName?: string
 }
 ```
 
 ### WeeklyPaidHolidayAllowance (주휴수당)
 ```typescript
 interface WeeklyPaidHolidayAllowance {
-  id?: number
-  weekStartDate: string          // 주 시작일
-  weekEndDate: string            // 주 종료일
-  totalWeeklyWorkHours: number   // 주 총 근무시간
-  previousMonthWorkHours: number // 이전월 근무시간 (월 경계)
-  hourlyWage: number             // 시급
-  amount: number                 // 주휴수당 = (totalWeeklyWorkHours / 5) * hourlyWage
+  id: number
+  workWeek: number              // 주 차수
+  workTime: number              // 주휴수당 인정 시간
+  applyTimelyAmount: number     // 적용 시급
+  totalAmount: number           // 주휴수당 금액
+  deductionAmount: number       // 공제액 = totalAmount * 0.033
+  netAmount: number             // 차인금액 = totalAmount - deductionAmount
+  weekStartDate?: string        // 주 시작일 (주차 매핑 키)
+  weekEndDate?: string          // 주 종료일
+  isCrossMonth: boolean         // 월 경계 여부
 }
 ```
 

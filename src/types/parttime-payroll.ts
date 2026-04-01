@@ -8,7 +8,7 @@ export interface PartTimerPaymentItem {
   breakTimeHour: number        // 휴게시간
   contractTimelyAmount: number // 계약 시급
   applyTimelyAmount: number    // 적용 시급
-  totalAmount: number          // 지급액 = workHour * applyTimelyAmount
+  totalAmount: number          // 지급액 = (workHour - breakTimeHour) * applyTimelyAmount
   deductionAmount: number      // 공제액 = totalAmount * 0.033
   remarks?: string
 }
