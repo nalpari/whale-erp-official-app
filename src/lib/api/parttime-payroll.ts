@@ -66,6 +66,10 @@ export const downloadPartTimerPayrollExcel = async (id: number): Promise<void> =
   const response = await api.get(`${BASE_URL}/${id}/download-excel`, {
     responseType: 'blob',
   })
+  const contentType = response.headers['content-type'] ?? ''
+  if (!contentType.includes('spreadsheet') && !contentType.includes('octet-stream')) {
+    throw new Error('엑셀 파일이 아닌 응답입니다.')
+  }
   const blob = new Blob([response.data], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   })
@@ -74,9 +78,12 @@ export const downloadPartTimerPayrollExcel = async (id: number): Promise<void> =
   a.href = url
   a.download = `parttime-payroll-${id}.xlsx`
   document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+  try {
+    a.click()
+  } finally {
+    document.body.removeChild(a)
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+  }
 }
 
 // 일별 근무시간 조회
