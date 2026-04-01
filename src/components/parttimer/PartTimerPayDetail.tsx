@@ -404,7 +404,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   }
 
   const handleSendEmail = async () => {
-    if (!id) return
+    if (!id || sendEmailMutation.isPending) return
     if (!confirm('급여명세서를 이메일로 전송하시겠습니까?')) return
     try {
       await sendEmailMutation.mutateAsync(id)
@@ -428,8 +428,8 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
       <div className="container sub">
         {!isNew && (
           <div className="pay-head-btn-wrap">
-            <button className="pay-head-btn" onClick={handleSendEmail}>
-              <i className="email-icon"></i>이메일 전송
+            <button className="pay-head-btn" onClick={handleSendEmail} disabled={sendEmailMutation.isPending}>
+              <i className="email-icon"></i>{sendEmailMutation.isPending ? '전송 중...' : '이메일 전송'}
             </button>
             <button className="pay-head-btn" onClick={handleDownload} disabled={downloadExcelMutation.isPending}>
               <i className="download-icon"></i>{downloadExcelMutation.isPending ? '다운로드 중...' : '급여명세서 다운로드'}
