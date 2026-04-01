@@ -139,15 +139,30 @@ Login supports multi-authority (조직) selection:
 - **이유**: 캐시, 리페치, 에러/로딩 상태, stale 관리를 React Query에 위임
 - **예외**: 캘린더 스와이프 등 일회성 직접 호출은 API 함수 직접 호출 허용 (단 try/catch 필수)
 - **isLoading/isError 활용 필수**: `useQuery` 반환값의 `isLoading`, `isError` 상태를 UI에 반영하여 로딩 중/에러/빈 상태를 명확히 구분할 것
+- **에러·로딩 분기 분리**: `isError`와 `isLoading`을 같은 조건문 안에서 혼합 처리 금지. 에러는 별도 분기로 먼저 체크하고, 로딩과 시각적으로 구분할 것 (에러 색상 ≠ 로딩 색상)
+  ```tsx
+  // ❌ 혼합 분기
+  if (isLoading || !data) {
+    return <div>{isError ? "에러" : "로딩 중..."}</div>
+  }
+
+  // ✅ 별도 분기
+  if (isError) {
+    return <div style={{ color: "#e74c3c" }}>불러올 수 없습니다.</div>
+  }
+  if (isLoading || !data) {
+    return <div>불러오는 중...</div>
+  }
+  ```
 
 ## 3. 에러 처리: 빈 catch 블록 금지
 
-- **금지**: `catch { }` 또는 `catch { // 빈 주석 }`
-- **필수**: 최소 `console.error('[컴포넌트명] 동작 실패:', err)` 로깅
-- **뮤테이션 훅**: `onError` 콜백에 `console.error` 로깅 추가
+- **금지**: `catch { }`, `catch { /* noop */ }`, `catch { // 주석 }` — 어떤 형태든 err 바인딩 없는 catch 금지
+- **필수**: 최소 `console.error('[컴포넌트명] 동작 실패:', err)` 로깅. 유틸 함수(localStorage 래퍼 등)도 예외 없이 최소 `console.warn` 필수
+- **뮤테이션 훅**: `onError` 콜백에 `console.error` 로깅 추가. mutation은 `mutateAsync` + `try/catch` 전용 사용 (`mutate()` 단독 사용 금지 — onError만으로는 UI 에러 처리 불가)
 - **Promise 체인**: `.then()` 사용 시 반드시 `.catch()` 추가
 - **Alert onConfirm 등 async 콜백**: `await` + `try/catch` 패턴 적용. `finally`에서 무조건 팝업을 닫으면 실패가 성공으로 위장됨 — 성공 시에만 닫을 것
-- **onCancel 콜백**: 사용자 제공 콜백이므로 `try/catch`로 감싸서 에러 전파 방지
+- **외부 제공 콜백 일반 규칙**: 외부에서 주입된 콜백(onTimeSelect, onConfirm, onCancel 등)은 모두 `try/catch`로 감싸서 에러 전파 방지. 콜백 예외가 후속 동작(팝업 닫기, 시트 닫기 등)을 차단하지 않도록 `try/catch/finally` 패턴 사용
 
 ## 4. 타입 안전성
 
@@ -234,6 +249,7 @@ Login supports multi-authority (조직) selection:
 - **`console.error`만으로 부족한 경우**: 해당 실패가 사용자 세션·데이터 정합성에 영향을 주면 반드시 Alert로 사용자에게 알리거나, 안전한 폴백 동작을 명시할 것
 - **예시**: 로그인 후 franchiseId 조회 실패 → 사용자에게 재시도 안내 + 인증 초기화
 - **이유**: `console.error`는 개발자만 보는 로그. 사용자에게 영향을 주는 실패는 UI에 반영해야 함
+- **에러 UI에 행동 경로 제공**: 에러 메시지만 표시하고 끝내지 않을 것. 사용자가 다음에 무엇을 할 수 있는지 안내 (뒤로가기 버튼, 재시도 버튼, 또는 자동 리다이렉트 등)
 
 ## 12. 브라우저 리소스 생명주기 관리
 

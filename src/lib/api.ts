@@ -47,7 +47,9 @@ api.interceptors.request.use((config) => {
       }
     } catch (e) {
       console.warn('[api] localStorage 인증 정보 읽기 실패:', e)
-      try { localStorage.removeItem('auth-storage') } catch { /* noop */ }
+      try { localStorage.removeItem('auth-storage') } catch (removeErr) {
+        console.warn('[api] localStorage auth-storage 삭제 실패:', removeErr)
+      }
     }
   }
 

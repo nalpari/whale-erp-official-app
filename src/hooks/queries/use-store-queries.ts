@@ -72,7 +72,7 @@ export const useStoreDetail = (id?: number) => {
   })
 }
 
-// 점포 생성
+// 점포 생성 (mutateAsync + try/catch 전용 — mutate() 단독 사용 금지)
 export const useCreateStore = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -90,7 +90,7 @@ export const useCreateStore = () => {
   })
 }
 
-// 점포 수정
+// 점포 수정 (mutateAsync + try/catch 전용 — mutate() 단독 사용 금지)
 export const useUpdateStore = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -110,7 +110,7 @@ export const useUpdateStore = () => {
   })
 }
 
-// 점포 삭제
+// 점포 삭제 (mutateAsync + try/catch 전용 — mutate() 단독 사용 금지)
 export const useDeleteStore = () => {
   const queryClient = useQueryClient()
   return useMutation({
