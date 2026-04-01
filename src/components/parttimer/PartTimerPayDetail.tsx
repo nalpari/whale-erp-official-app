@@ -351,6 +351,10 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
       alert('급여 지급월을 선택해주세요.')
       return
     }
+    if (!paymentDate || !settlementStartDate || !settlementEndDate) {
+      alert('지급일과 근무기간을 먼저 설정해주세요.')
+      return
+    }
     if (paymentItems.length === 0) {
       alert('근무시간을 입력해주세요.')
       return
