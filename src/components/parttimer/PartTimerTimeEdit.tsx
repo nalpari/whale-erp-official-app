@@ -143,7 +143,7 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
 
           return {
             ...item,
-            workHour: netWorkHour,
+            workHour: workHour,
             breakTimeHour,
             contractTimelyAmount: salary?.timelySalary ?? contractTimelyAmount,
             applyTimelyAmount: applyAmount,
