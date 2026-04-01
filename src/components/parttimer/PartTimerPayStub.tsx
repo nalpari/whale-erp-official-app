@@ -57,7 +57,7 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
 
   const weeks = groupByWeek(initialData.paymentItems ?? [])
   const weeklyAllowanceMap = new Map(
-    (initialData.weeklyPaidHolidayAllowances ?? []).map((w) => [w.workWeek, w]),
+    (initialData.weeklyPaidHolidayAllowances ?? []).map((w) => [w.weekStartDate ?? String(w.workWeek), w]),
   )
 
   const totalPayment = (initialData.paymentItems ?? []).reduce((sum, i) => sum + i.totalAmount, 0)
@@ -94,11 +94,11 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
               </div>
             </div>
             <div className="pay-stub-wrap">
-              {weeks.map((week, weekIndex) => {
+              {weeks.map((week) => {
                 const weekTotal = week.items.reduce((sum, i) => sum + i.totalAmount, 0)
                 const weekDeduction = week.items.reduce((sum, i) => sum + i.deductionAmount, 0)
                 const weekHours = week.items.reduce((sum, i) => sum + i.workHour, 0)
-                const holiday = weeklyAllowanceMap.get(weekIndex + 1)
+                const holiday = weeklyAllowanceMap.get(week.weekStart)
 
                 return (
                   <div key={week.weekStart}>
