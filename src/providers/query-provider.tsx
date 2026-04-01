@@ -13,14 +13,14 @@ function makeQueryClient() {
         retry: 1,
       },
       mutations: {
-        onError: (err) => {
-          console.error('[mutation] 실패:', err)
+        onError: (err, variables) => {
+          console.error('[mutation] 실패:', err, variables)
         },
       },
     },
     queryCache: new QueryCache({
       onError: (err, query) => {
-        console.error(`[query] ${query.queryKey.join('/')} 실패:`, err)
+        console.error(`[query] 실패 — key: ${JSON.stringify(query.queryKey)}, error:`, err)
       },
     }),
   })
