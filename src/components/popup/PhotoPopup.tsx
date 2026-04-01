@@ -9,26 +9,29 @@ import "swiper/css/pagination";
 
 // import required modules
 import { Pagination } from "swiper/modules";
-import Image from "next/image";
 
 export default function PhotoPopup() {
   const [active, setActive] = useState(false);
-  const popupControler = usePopupControler();
+  const photoPopup = usePopupControler((state) => state.photoPopup);
+  const photoPopupImages = usePopupControler((state) => state.photoPopupImages);
+  const photoPopupIndex = usePopupControler((state) => state.photoPopupIndex);
+  const setPhotoPopup = usePopupControler((state) => state.setPhotoPopup);
 
   useEffect(() => {
-    // 팝업 열기 시간 필요
     setTimeout(() => {
-      setActive(popupControler.photoPopup);
+      setActive(photoPopup);
     }, 100);
-  }, [popupControler.photoPopup]);
+  }, [photoPopup]);
 
-  // 팝업 닫기 시간 필요
   const handleClose = () => {
     setActive(false);
     setTimeout(() => {
-      popupControler.setPhotoPopup(false);
+      setPhotoPopup(false);
     }, 250);
   };
+
+  const images = photoPopupImages.filter(Boolean);
+
   return (
     <div className={`modal-popup photo ${active ? "act" : ""}`}>
       <div className="modal-dialog">
@@ -38,34 +41,34 @@ export default function PhotoPopup() {
           </div>
           <div className="modal-body">
             <div className="photo-frame">
-              <Swiper
-                slidesPerView={1}
-                loop={true}
-                pagination={{
-                  type: "fraction",
-                }}
-                modules={[Pagination]}
-                className="mySwiper"
-              >
-                <SwiperSlide>
-                  <div className="photo-img">
-                    <Image
-                      src="/assets/images/popup/dummy02.jpg"
-                      alt="review-img"
-                      fill
-                    />
-                  </div>
-                </SwiperSlide>
-                <SwiperSlide>
-                  <div className="photo-img">
-                    <Image
-                      src="/assets/images/popup/dummy03.jpg"
-                      alt="review-img"
-                      fill
-                    />
-                  </div>
-                </SwiperSlide>
-              </Swiper>
+              {images.length > 0 ? (
+                <Swiper
+                  slidesPerView={1}
+                  loop={images.length > 1}
+                  initialSlide={photoPopupIndex}
+                  pagination={{
+                    type: "fraction",
+                  }}
+                  modules={[Pagination]}
+                  className="mySwiper"
+                >
+                  {images.map((url, i) => (
+                    <SwiperSlide key={i}>
+                      <div className="photo-img">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`store-image-${i + 1}`}
+                        />
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              ) : (
+                <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+                  이미지를 불러올 수 없습니다.
+                </div>
+              )}
             </div>
           </div>
         </div>

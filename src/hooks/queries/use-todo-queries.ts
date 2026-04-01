@@ -17,17 +17,20 @@ export function useCalendarData(
 ) {
   return useQuery({
     queryKey: todoKeys.calendar({ year, month, headOfficeId, storeId }),
-    queryFn: () =>
-      getCalendarData({
+    queryFn: () => {
+      if (!headOfficeId) throw new Error('headOfficeId가 없습니다.')
+      return getCalendarData({
         year,
         month,
-        headOfficeId: headOfficeId!,
+        headOfficeId,
         ...(storeId ? { storeId } : {}),
-      }),
+      })
+    },
     enabled: !!headOfficeId,
   })
 }
 
+// 할 일 삭제 (mutateAsync + try/catch 전용 — mutate() 단독 사용 금지)
 export function useDeleteTodos() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -35,21 +38,16 @@ export function useDeleteTodos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: todoKeys.all })
     },
-    onError: (err) => {
-      console.error('[useDeleteTodos] 할 일 삭제 실패:', err)
-    },
   })
 }
 
+// 할 일 등록 (mutateAsync + try/catch 전용 — mutate() 단독 사용 금지)
 export function useCreateTodo() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: TodoCreateRequest) => createTodo(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: todoKeys.all })
-    },
-    onError: (err) => {
-      console.error('[useCreateTodo] 할 일 등록 실패:', err)
     },
   })
 }

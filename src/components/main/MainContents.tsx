@@ -1,8 +1,10 @@
 "use client";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function MainContents() {
+  const router = useRouter();
   const setGoToOptionSheet = useBottomSheetControler(
     (state) => state.setGoToOptionSheet
   );
@@ -64,7 +66,7 @@ export default function MainContents() {
               ></button>
             </div>
             <div className="go-to-content">
-              <button className="go-to-item">
+              <button className="go-to-item" onClick={() => router.push("/storeinfo")}>
                 <div className="go-to-logo">
                   <Image
                     src="/assets/images/main/go_to_icon01.svg"

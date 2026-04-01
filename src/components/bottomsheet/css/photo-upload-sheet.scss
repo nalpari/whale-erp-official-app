@@ -1,0 +1,17 @@
+.bottom-sheet-option-list {
+  padding: 16px 0;
+  .bottom-sheet-option-btn {
+    display: block;
+    width: 100%;
+    padding: 14px 0;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 140%;
+    color: #333;
+    border-bottom: 1px solid #f4f5f6;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}

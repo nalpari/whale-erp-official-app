@@ -46,6 +46,14 @@ type BottomSheetControlerState = {
   setWorkerSearchSheet: (isOpen: boolean) => void
   deductionAddSheet: boolean
   setDeductionAddSheet: (isOpen: boolean) => void
+  photoUploadSheet: boolean
+  setPhotoUploadSheet: (isOpen: boolean) => void
+  timePickerSheet: boolean
+  setTimePickerSheet: (isOpen: boolean) => void
+  timePickerTitle: string
+  timePickerValue: string
+  onTimeSelect: ((time: string | null) => void) | null
+  openTimePicker: (title: string, currentValue: string, onSelect: (time: string | null) => void) => void
 }
 
 export const useBottomSheetControler = create<BottomSheetControlerState>()(
@@ -168,6 +176,29 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           { deductionAddSheet: isOpen },
           false,
           'bottomSheet/setDeductionAdd',
+        ),
+      photoUploadSheet: false,
+      setPhotoUploadSheet: (isOpen: boolean) =>
+        set(
+          { photoUploadSheet: isOpen },
+          false,
+          'bottomSheet/setPhotoUpload',
+        ),
+      timePickerSheet: false,
+      setTimePickerSheet: (isOpen: boolean) =>
+        set(
+          { timePickerSheet: isOpen },
+          false,
+          'bottomSheet/setTimePicker',
+        ),
+      timePickerTitle: '',
+      timePickerValue: '',
+      onTimeSelect: null,
+      openTimePicker: (title: string, currentValue: string, onSelect: (time: string | null) => void) =>
+        set(
+          { timePickerSheet: true, timePickerTitle: title, timePickerValue: currentValue, onTimeSelect: onSelect },
+          false,
+          'bottomSheet/openTimePicker',
         ),
     }),
     { name: 'BottomSheetControlerStore' },
