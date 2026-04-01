@@ -34,7 +34,7 @@ export default function TimePickerSheet() {
     setTimePickerSheet(false);
   };
 
-  const handleSelect = (time: string) => {
+  const handleSelect = (time: string | null) => {
     onTimeSelect?.(time);
     handleClose();
   };
@@ -54,6 +54,12 @@ export default function TimePickerSheet() {
               <h3>{timePickerTitle || "시간설정"}</h3>
             </div>
             <div className="time-picker-list">
+              <button
+                className="time-picker-item"
+                onClick={() => handleSelect(null)}
+              >
+                --:--
+              </button>
               {TIME_OPTIONS.map((time) => (
                 <button
                   key={time}

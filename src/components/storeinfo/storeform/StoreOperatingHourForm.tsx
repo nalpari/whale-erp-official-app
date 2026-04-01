@@ -34,7 +34,7 @@ function TimeInput({
 }: {
   label: string;
   value: string | null | undefined;
-  onSelect: (time: string) => void;
+  onSelect: (time: string | null) => void;
 }) {
   const openTimePicker = useBottomSheetControler((state) => state.openTimePicker);
 
@@ -55,9 +55,13 @@ export default function StoreOperatingHourForm() {
 
   const updateHour = (dayType: string, field: string, value: string | null) => {
     setOperating(
-      operating.map((o) =>
-        o.dayType === dayType ? { ...o, [field]: value } : o
-      )
+      operating.map((o) => {
+        if (o.dayType !== dayType) return o;
+        const updated = { ...o, [field]: value };
+        // openTime + closeTime 둘 다 있어야 운영 (buildOperatingHoursRequest와 동일 기준)
+        const hasOperatingTime = !!(updated.openTime && updated.closeTime);
+        return { ...updated, isOperating: hasOperatingTime };
+      })
     );
   };
 

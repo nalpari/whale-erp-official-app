@@ -52,8 +52,8 @@ type BottomSheetControlerState = {
   setTimePickerSheet: (isOpen: boolean) => void
   timePickerTitle: string
   timePickerValue: string
-  onTimeSelect: ((time: string) => void) | null
-  openTimePicker: (title: string, currentValue: string, onSelect: (time: string) => void) => void
+  onTimeSelect: ((time: string | null) => void) | null
+  openTimePicker: (title: string, currentValue: string, onSelect: (time: string | null) => void) => void
 }
 
 export const useBottomSheetControler = create<BottomSheetControlerState>()(
@@ -194,7 +194,7 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
       timePickerTitle: '',
       timePickerValue: '',
       onTimeSelect: null,
-      openTimePicker: (title: string, currentValue: string, onSelect: (time: string) => void) =>
+      openTimePicker: (title: string, currentValue: string, onSelect: (time: string | null) => void) =>
         set(
           { timePickerSheet: true, timePickerTitle: title, timePickerValue: currentValue, onTimeSelect: onSelect },
           false,

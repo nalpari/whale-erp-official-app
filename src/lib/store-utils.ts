@@ -114,10 +114,11 @@ export function toFormOperating(serverOperating: OperatingHour[]): OperatingHour
  * 평일:
  * - 전체 요일(월~금) 선택 → dayType: "WEEKDAY" 1건
  * - 부분 선택 → 선택한 요일별 개별 dayType 각 1건
+ * - 시간 미입력(null) → isOperating: false로 전송 (휴무 전환)
  *
  * 토/일:
- * - openTime + closeTime 모두 입력된 경우에만 포함
- * - 미입력 시 요청에서 제외
+ * - openTime + closeTime 모두 입력 → isOperating: true
+ * - 시간 미입력(null) → isOperating: false로 전송 (휴무 전환)
  */
 export function buildOperatingHoursRequest(
   operating: OperatingHourRequest[]
@@ -125,59 +126,68 @@ export function buildOperatingHoursRequest(
   const result: OperatingHourRequest[] = []
 
   const weekday = operating.find((o) => o.dayType === 'WEEKDAY')
-  if (weekday && weekday.openTime && weekday.closeTime) {
+  if (weekday) {
     const selected = weekday.selectWeekDayList ?? []
+    const hasTime = !!(weekday.openTime && weekday.closeTime)
     const hasBreak = !!(weekday.breakStartTime && weekday.breakEndTime)
 
-    const baseHour = {
-      isOperating: true,
-      openTime: weekday.openTime,
-      closeTime: weekday.closeTime,
-      breakTimeEnabled: hasBreak,
-      breakStartTime: hasBreak ? weekday.breakStartTime : null,
-      breakEndTime: hasBreak ? weekday.breakEndTime : null,
-    }
+    const hourData = hasTime
+      ? {
+          isOperating: true,
+          openTime: weekday.openTime,
+          closeTime: weekday.closeTime,
+          breakTimeEnabled: hasBreak,
+          breakStartTime: hasBreak ? weekday.breakStartTime : null,
+          breakEndTime: hasBreak ? weekday.breakEndTime : null,
+        }
+      : {
+          isOperating: false,
+          openTime: null,
+          closeTime: null,
+          breakTimeEnabled: false,
+          breakStartTime: null,
+          breakEndTime: null,
+        }
 
-    // 전체 선택 → WEEKDAY
     if (selected.length === 5 && ALL_WEEKDAYS.every((d) => selected.includes(d))) {
-      result.push({ ...baseHour, dayType: 'WEEKDAY' })
+      result.push({ ...hourData, dayType: 'WEEKDAY' })
     } else if (selected.length > 0) {
-      // 부분 선택 → 개별 요일
       for (const day of selected) {
-        result.push({ ...baseHour, dayType: day })
+        result.push({ ...hourData, dayType: day })
       }
     }
   }
 
-  // 토요일
-  // TODO: 서버가 isOperating: false를 명시적으로 요구하는지 확인 필요 (현재는 미입력 시 미전송)
-  const saturday = operating.find((o) => o.dayType === 'SATURDAY')
-  if (saturday && saturday.openTime && saturday.closeTime) {
-    const hasBreak = !!(saturday.breakStartTime && saturday.breakEndTime)
-    result.push({
-      dayType: 'SATURDAY',
-      isOperating: true,
-      openTime: saturday.openTime,
-      closeTime: saturday.closeTime,
-      breakTimeEnabled: hasBreak,
-      breakStartTime: hasBreak ? saturday.breakStartTime : null,
-      breakEndTime: hasBreak ? saturday.breakEndTime : null,
-    })
-  }
+  // 토요일 / 일요일
+  for (const dayType of ['SATURDAY', 'SUNDAY'] as const) {
+    const day = operating.find((o) => o.dayType === dayType)
+    if (!day) continue
 
-  // 일요일
-  const sunday = operating.find((o) => o.dayType === 'SUNDAY')
-  if (sunday && sunday.openTime && sunday.closeTime) {
-    const hasBreak = !!(sunday.breakStartTime && sunday.breakEndTime)
-    result.push({
-      dayType: 'SUNDAY',
-      isOperating: true,
-      openTime: sunday.openTime,
-      closeTime: sunday.closeTime,
-      breakTimeEnabled: hasBreak,
-      breakStartTime: hasBreak ? sunday.breakStartTime : null,
-      breakEndTime: hasBreak ? sunday.breakEndTime : null,
-    })
+    const hasTime = !!(day.openTime && day.closeTime)
+    const hasBreak = !!(day.breakStartTime && day.breakEndTime)
+
+    if (hasTime) {
+      result.push({
+        dayType,
+        isOperating: true,
+        openTime: day.openTime,
+        closeTime: day.closeTime,
+        breakTimeEnabled: hasBreak,
+        breakStartTime: hasBreak ? day.breakStartTime : null,
+        breakEndTime: hasBreak ? day.breakEndTime : null,
+      })
+    } else {
+      // 운영시간·휴게시간 모두 null → 휴무
+      result.push({
+        dayType,
+        isOperating: false,
+        openTime: null,
+        closeTime: null,
+        breakTimeEnabled: false,
+        breakStartTime: null,
+        breakEndTime: null,
+      })
+    }
   }
 
   return result
