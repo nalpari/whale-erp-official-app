@@ -4,6 +4,8 @@ import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import type { OperatingHourRequest } from "@/types/store";
 import { WEEKDAY_ORDER, WEEKDAY_LABEL } from "@/lib/store-utils";
 
+type TimeField = 'openTime' | 'closeTime' | 'breakStartTime' | 'breakEndTime'
+
 const WEEKDAYS = WEEKDAY_ORDER.map((key) => ({ key, label: WEEKDAY_LABEL[key] }));
 
 function isEndBeforeStart(start?: string | null, end?: string | null): boolean {
@@ -53,7 +55,6 @@ export default function StoreOperatingHourForm() {
   const operating = useStoreFormStore((s) => s.operating);
   const setOperating = useStoreFormStore((s) => s.setOperating);
 
-  type TimeField = 'openTime' | 'closeTime' | 'breakStartTime' | 'breakEndTime'
   const updateHour = (dayType: string, field: TimeField, value: string | null) => {
     setOperating(
       operating.map((o) => {

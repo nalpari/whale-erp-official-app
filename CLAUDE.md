@@ -161,8 +161,28 @@ Login supports multi-authority (조직) selection:
 - **필수**: 최소 `console.error('[컴포넌트명] 동작 실패:', err)` 로깅. 유틸 함수(localStorage 래퍼 등)도 예외 없이 최소 `console.warn` 필수
 - **뮤테이션 훅**: `onError` 콜백에 `console.error` 로깅 추가. mutation은 `mutateAsync` + `try/catch` 전용 사용 (`mutate()` 단독 사용 금지 — onError만으로는 UI 에러 처리 불가)
 - **Promise 체인**: `.then()` 사용 시 반드시 `.catch()` 추가
-- **Alert onConfirm 등 async 콜백**: `await` + `try/catch` 패턴 적용. `finally`에서 무조건 팝업을 닫으면 실패가 성공으로 위장됨 — 성공 시에만 닫을 것
-- **외부 제공 콜백 일반 규칙**: 외부에서 주입된 콜백(onTimeSelect, onConfirm, onCancel 등)은 모두 `try/catch`로 감싸서 에러 전파 방지. 콜백 예외가 후속 동작(팝업 닫기, 시트 닫기 등)을 차단하지 않도록 `try/catch/finally` 패턴 사용
+- **외부 제공 콜백**: 외부에서 주입된 콜백은 모두 `try/catch`로 감싸서 에러 전파 방지. 닫기 타이밍은 용도에 따라 구분:
+  - **결과 확인형** (Alert onConfirm — 저장/삭제 등 비동기 작업): `await` + `try/catch`, 성공 시에만 닫기. 실패 시 팝업 유지하여 사용자가 재시도 가능
+  - **UI 입력형** (바텀시트 onSelect — 시간 선택, 검색 등): `try/catch/finally`, finally에서 항상 닫기. 시트가 고착되면 앱이 멈춘 것으로 인식됨
+  ```tsx
+  // ✅ 결과 확인형 (Alert)
+  try {
+    await onConfirm?.();
+    closeAlert();
+  } catch (err) {
+    console.error('[Alert] 실패:', err);
+    // 팝업 유지 — 사용자가 재시도 가능
+  }
+
+  // ✅ UI 입력형 (바텀시트)
+  try {
+    onTimeSelect?.(time);
+  } catch (err) {
+    console.error('[TimePickerSheet] 실패:', err);
+  } finally {
+    handleClose(); // 항상 닫기
+  }
+  ```
 
 ## 4. 타입 안전성
 

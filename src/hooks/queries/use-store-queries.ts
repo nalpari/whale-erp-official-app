@@ -84,9 +84,6 @@ export const useCreateStore = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: storeKeys.all })
     },
-    onError: (err) => {
-      console.error('[useCreateStore] 점포 생성 실패:', err)
-    },
   })
 }
 
@@ -104,9 +101,6 @@ export const useUpdateStore = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: storeKeys.all })
     },
-    onError: (err) => {
-      console.error('[useUpdateStore] 점포 수정 실패:', err)
-    },
   })
 }
 
@@ -117,9 +111,6 @@ export const useDeleteStore = () => {
     mutationFn: (id: number) => deleteStore(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: storeKeys.all })
-    },
-    onError: (err) => {
-      console.error('[useDeleteStore] 점포 삭제 실패:', err)
     },
   })
 }
