@@ -20,25 +20,7 @@ type PlanSearchFields = Pick<
   'officeId' | 'franchiseId' | 'storeId' | 'employeeName' | 'dayType' | 'from' | 'to'
 >
 
-function getMonday(date: Date): string {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  return d.toISOString().slice(0, 10)
-}
-
-function getSunday(date: Date): string {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? 0 : 7)
-  d.setDate(diff)
-  return d.toISOString().slice(0, 10)
-}
-
-const now = new Date()
-const defaultFrom = getMonday(now)
-const defaultTo = getSunday(now)
+import { getMonday, getSunday } from '@/lib/schedule-utils'
 
 export const usePlanSearchStore = create<PlanSearchState>()(
   devtools(
@@ -48,8 +30,8 @@ export const usePlanSearchStore = create<PlanSearchState>()(
       storeId: null,
       employeeName: '',
       dayType: null,
-      from: defaultFrom,
-      to: defaultTo,
+      from: getMonday(),
+      to: getSunday(),
       hasSearched: false,
       setField: (key, value) => set({ [key]: value }, false, `planSearch/set-${key}`),
       search: () => set({ hasSearched: true }, false, 'planSearch/search'),
@@ -61,8 +43,8 @@ export const usePlanSearchStore = create<PlanSearchState>()(
             storeId: null,
             employeeName: '',
             dayType: null,
-            from: defaultFrom,
-            to: defaultTo,
+            from: getMonday(),
+            to: getSunday(),
             hasSearched: false,
           },
           false,

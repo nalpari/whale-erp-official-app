@@ -1,66 +1,23 @@
 'use client'
+import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useScheduleList } from '@/hooks/queries/use-schedule-queries'
 import { useMounted } from '@/hooks/use-mounted'
+import { getContractStyle, calcWorkHours, sortWorkers } from '@/lib/schedule-utils'
 import TimelineBar from './TimelineBar'
-import { useRouter } from 'next/navigation'
-import type { ScheduleSearchParams, WorkerResponse } from '@/types/schedule'
-
-// 계약유형 → CSS 클래스/배지 매핑
-function getContractStyle(contractType: string) {
-  switch (contractType) {
-    case '파트타이머':
-      return { boxClass: 'part', badgeClass: 'badge green', label: '파트' }
-    case '임시근무':
-      return { boxClass: 'temporary', badgeClass: 'badge brown', label: '임시' }
-    default:
-      // 정직원, 계약직, 수습 등
-      return { boxClass: 'full', badgeClass: 'badge blue', label: contractType }
-  }
-}
-
-function calcWorkHours(worker: WorkerResponse): string {
-  if (!worker.hasWork || !worker.workStartTime || !worker.workEndTime) return '0h'
-  const [sh, sm] = worker.workStartTime.split(':').map(Number)
-  const [eh, em] = worker.workEndTime.split(':').map(Number)
-  let totalMin = (eh * 60 + em) - (sh * 60 + sm)
-  if (totalMin < 0) totalMin += 24 * 60 // 야간근무
-  // 휴게시간 차감
-  if (worker.hasBreak && worker.breakStartTime && worker.breakEndTime) {
-    const [bsh, bsm] = worker.breakStartTime.split(':').map(Number)
-    const [beh, bem] = worker.breakEndTime.split(':').map(Number)
-    let breakMin = (beh * 60 + bem) - (bsh * 60 + bsm)
-    if (breakMin < 0) breakMin += 24 * 60
-    totalMin -= breakMin
-  }
-  const hours = Math.floor(totalMin / 60)
-  const mins = totalMin % 60
-  return mins > 0 ? `${hours}h${mins}m` : `${hours}h`
-}
-
-// 정렬: 근무 시작시간 빠른 순 → 계약유형 순서
-const CONTRACT_ORDER: Record<string, number> = {
-  '정직원': 1, '계약직': 2, '수습': 3, '파트타이머': 4, '임시근무': 5,
-}
-
-function sortWorkers(workers: WorkerResponse[]): WorkerResponse[] {
-  return [...workers]
-    .filter((w) => !w.isDeleted)
-    .sort((a, b) => {
-      const timeA = a.workStartTime ?? '99:99'
-      const timeB = b.workStartTime ?? '99:99'
-      if (timeA !== timeB) return timeA.localeCompare(timeB)
-      return (CONTRACT_ORDER[a.contractType] ?? 99) - (CONTRACT_ORDER[b.contractType] ?? 99)
-    })
-}
+import type { ScheduleSearchParams } from '@/types/schedule'
 
 export default function PlanTable() {
   const router = useRouter()
   const setPlanSearchSheet = useBottomSheetControler((state) => state.setPlanSearchSheet)
-  const searchStore = usePlanSearchStore()
+  const searchEmployeeName = usePlanSearchStore((s) => s.employeeName)
+  const searchDayType = usePlanSearchStore((s) => s.dayType)
+  const searchFrom = usePlanSearchStore((s) => s.from)
+  const searchTo = usePlanSearchStore((s) => s.to)
+  const setSearchField = usePlanSearchStore((s) => s.setField)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
@@ -74,14 +31,14 @@ export default function PlanTable() {
   const searchParams: ScheduleSearchParams = {
     officeId: headOfficeId ?? 0,
     storeId,
-    employeeName: searchStore.employeeName || undefined,
-    dayType: searchStore.dayType ?? undefined,
-    from: searchStore.from,
-    to: searchStore.to,
+    employeeName: searchEmployeeName || undefined,
+    dayType: searchDayType ?? undefined,
+    from: searchFrom,
+    to: searchTo,
   }
 
   // 본사/점포 선택 없으면 요청 보내지 않음
-  const { data: scheduleList = [], isLoading } = useScheduleList(
+  const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(
     searchParams,
     !!headOfficeId,
   )
@@ -94,6 +51,19 @@ export default function PlanTable() {
     if (targetStoreId) {
       router.push(`/plan/${targetStoreId}`)
     }
+  }
+
+  if (isError) {
+    return (
+      <div className="container">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ color: "#e74c3c", marginBottom: "16px" }}>근무 계획 정보를 불러올 수 없습니다.</div>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+            <button className="btn-form outline min" onClick={() => refetch()}>다시 시도</button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -139,8 +109,8 @@ export default function PlanTable() {
                     <button
                       className="sub-edit-btn"
                       onClick={() => {
-                        searchStore.setField('from', schedule.date)
-                        searchStore.setField('to', schedule.date)
+                        setSearchField('from', schedule.date)
+                        setSearchField('to', schedule.date)
                         handleGoToEdit(schedule.storeId)
                       }}
                     />

@@ -8,58 +8,13 @@ import { useStoreStore } from '@/store/useStoreStore'
 import { usePopupControler } from '@/store/usePopupControler'
 import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule-queries'
 import { useMounted } from '@/hooks/use-mounted'
+import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS } from '@/lib/schedule-utils'
 import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest } from '@/types/schedule'
-
-// 계약유형 → CSS 매핑
-function getContractStyle(contractType: string) {
-  switch (contractType) {
-    case '파트타이머':
-      return { boxClass: 'part', badgeClass: 'badge green', label: '파트' }
-    case '임시근무':
-      return { boxClass: 'temporary', badgeClass: 'badge brown', label: '임시' }
-    default:
-      return { boxClass: 'full', badgeClass: 'badge blue', label: contractType }
-  }
-}
-
-// 근무시간 계산
-function calcWorkHours(worker: WorkerEditItem): string {
-  if (!worker.hasWork || !worker.workStartTime || !worker.workEndTime) return '0h'
-  const [sh, sm] = worker.workStartTime.split(':').map(Number)
-  const [eh, em] = worker.workEndTime.split(':').map(Number)
-  let totalMin = (eh * 60 + em) - (sh * 60 + sm)
-  if (totalMin < 0) totalMin += 24 * 60
-  if (worker.hasBreak && worker.breakStartTime && worker.breakEndTime) {
-    const [bsh, bsm] = worker.breakStartTime.split(':').map(Number)
-    const [beh, bem] = worker.breakEndTime.split(':').map(Number)
-    let breakMin = (beh * 60 + bem) - (bsh * 60 + bsm)
-    if (breakMin < 0) breakMin += 24 * 60
-    totalMin -= breakMin
-  }
-  const hours = Math.floor(totalMin / 60)
-  const mins = totalMin % 60
-  return mins > 0 ? `${hours}h${mins}m` : `${hours}h`
-}
-
-// 정렬순서
-const CONTRACT_ORDER: Record<string, number> = {
-  '정직원': 1, '계약직': 2, '수습': 3, '파트타이머': 4, '임시근무': 5,
-}
-
-function sortWorkers(workers: WorkerEditItem[]): WorkerEditItem[] {
-  return [...workers]
-    .filter((w) => !w.isDeleted)
-    .sort((a, b) => {
-      const timeA = a.workStartTime ?? '99:99'
-      const timeB = b.workStartTime ?? '99:99'
-      if (timeA !== timeB) return timeA.localeCompare(timeB)
-      return (CONTRACT_ORDER[a.contractType] ?? 99) - (CONTRACT_ORDER[b.contractType] ?? 99)
-    })
-}
 
 export default function PlanTableEdit({ storeId }: { storeId: number }) {
   const router = useRouter()
-  const searchStore = usePlanSearchStore()
+  const searchFrom = usePlanSearchStore((s) => s.from)
+  const searchTo = usePlanSearchStore((s) => s.to)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const mounted = useMounted()
@@ -81,19 +36,15 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
   const params: ScheduleSearchParams = useMemo(() => ({
     officeId: headOfficeId ?? 0,
     storeId,
-    from: searchStore.from,
-    to: searchStore.to,
-  }), [headOfficeId, storeId, searchStore.from, searchStore.to])
+    from: searchFrom,
+    to: searchTo,
+  }), [headOfficeId, storeId, searchFrom, searchTo])
 
-  const { data: scheduleList = [] } = useScheduleList(params, !!headOfficeId)
+  const { data: scheduleList = [], isError, refetch } = useScheduleList(params, !!headOfficeId)
 
-  // EditState: Map<date, WorkerEditItem[]>
-  const [editState, setEditState] = useState<Map<string, WorkerEditItem[]>>(new Map())
-  const [initialized, setInitialized] = useState(false)
-
-  // API 데이터 → EditState 초기화 (한 번만)
-  if (scheduleList.length > 0 && !initialized) {
-    const newState = new Map<string, WorkerEditItem[]>()
+  // API 데이터 → 초기 EditState 파생 (scheduleList 변경 시 재계산)
+  const initialEditState = useMemo(() => {
+    const state = new Map<string, WorkerEditItem[]>()
     for (const schedule of scheduleList) {
       const workers: WorkerEditItem[] = schedule.workerList.map((w) => ({
         shiftId: w.shiftId,
@@ -109,11 +60,17 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
         isDeleted: w.isDeleted,
         isNew: false,
       }))
-      newState.set(schedule.date, workers)
+      state.set(schedule.date, workers)
     }
-    setEditState(newState)
-    setInitialized(true)
-  }
+    return state
+  }, [scheduleList])
+
+  // EditState: 사용자 편집 상태 (초기값은 API 데이터 기반)
+  const [editState, setEditState] = useState<Map<string, WorkerEditItem[]>>(new Map())
+  const [initialized, setInitialized] = useState(false)
+
+  // initialEditState가 비어있지 않고 아직 초기화되지 않았으면 editState 동기화
+  const effectiveEditState = (!initialized && initialEditState.size > 0) ? initialEditState : editState
 
   // 수립 페이지 필터
   const [filterEmployeeName, setFilterEmployeeName] = useState('')
@@ -121,13 +78,15 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
 
   // 날짜별 근무자 업데이트 헬퍼
   const updateWorkers = useCallback((date: string, updater: (workers: WorkerEditItem[]) => WorkerEditItem[]) => {
+    if (!initialized) setInitialized(true)
     setEditState((prev) => {
-      const next = new Map(prev)
+      const base = prev.size > 0 ? prev : initialEditState
+      const next = new Map(base)
       const current = next.get(date) ?? []
       next.set(date, updater(current))
       return next
     })
-  }, [setEditState])
+  }, [initialized, initialEditState])
 
   // 근무자 필드 업데이트
   const updateWorkerField = useCallback(
@@ -142,16 +101,17 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
   // 근무자 추가
   const handleAddWorker = useCallback(
     (worker: WorkerEditItem) => {
-      // 모든 날짜에 추가
+      if (!initialized) setInitialized(true)
       setEditState((prev) => {
-        const next = new Map(prev)
+        const base = prev.size > 0 ? prev : initialEditState
+        const next = new Map(base)
         for (const [date, workers] of next) {
           next.set(date, [...workers, { ...worker }])
         }
         return next
       })
     },
-    [setEditState],
+    [initialized, initialEditState],
   )
 
   // 근무자 교체
@@ -179,7 +139,7 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
   // EditState → ScheduleRequest[] 변환
   const buildRequests = (): ScheduleRequest[] => {
     const requests: ScheduleRequest[] = []
-    for (const [date, workers] of editState) {
+    for (const [date, workers] of effectiveEditState) {
       const workerRequests: WorkerRequest[] = workers.map((w) => ({
         shiftId: w.shiftId,
         workerId: w.workerId,
@@ -197,38 +157,38 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
     return requests
   }
 
-  // 저장
-  const handleSave = () => {
+  // 저장 (mutateAsync + try/catch 전용)
+  const handleSave = async () => {
+    if (upsertMutation.isPending) return
     const requests = buildRequests()
-    upsertMutation.mutate(
-      { storeId, data: requests },
-      {
-        onSuccess: () => {
-          openAlert({
-            message: '근무 계획이 저장되었습니다.',
-          })
-          router.push('/plan')
-        },
-        onError: () => {
-          openAlert({
-            message: '근무 계획 저장에 실패했습니다. 다시 시도해주세요.',
-          })
-        },
-      },
-    )
+    try {
+      await upsertMutation.mutateAsync({ storeId, data: requests })
+      openAlert({
+        message: '근무 계획이 저장되었습니다.',
+        onConfirm: () => router.push('/plan'),
+      })
+    } catch (err) {
+      console.error('[PlanTableEdit] 근무 계획 저장 실패:', err)
+      openAlert({
+        message: '근무 계획 저장에 실패했습니다. 다시 시도해주세요.',
+      })
+    }
   }
 
-  // 취소 (초기화 확인)
+  // 취소 (openAlert 결과 확인형)
   const handleCancel = () => {
-    if (confirm('입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?')) {
-      router.push('/plan')
-    }
+    openAlert({
+      message: '입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?',
+      confirmText: '이동',
+      cancelText: '취소',
+      onConfirm: () => router.push('/plan'),
+    })
   }
 
   // 날짜 정렬된 EditState entries
   const sortedEntries = useMemo(
-    () => [...editState.entries()].sort(([a], [b]) => a.localeCompare(b)),
-    [editState],
+    () => [...effectiveEditState.entries()].sort(([a], [b]) => a.localeCompare(b)),
+    [effectiveEditState],
   )
 
   // 검색 필터
@@ -253,13 +213,26 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
     if (sortedEntries.length === 0) return ''
     const first = sortedEntries[0][0]
     const last = sortedEntries[sortedEntries.length - 1][0]
-    const formatDate = (d: string) => {
+    const fmtDate = (d: string) => {
       const date = new Date(d)
-      const days = ['일', '월', '화', '수', '목', '금', '토']
-      return `${d.replace(/-/g, '.')}(${days[date.getDay()]})`
+      return `${d.replace(/-/g, '.')}(${DAY_LABELS[date.getDay()]})`
     }
-    return `${formatDate(first)}~${formatDate(last)}`
+    return `${fmtDate(first)}~${fmtDate(last)}`
   }, [sortedEntries])
+
+  if (isError) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ color: "#e74c3c", marginBottom: "16px" }}>근무 계획 정보를 불러올 수 없습니다.</div>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+            <button className="btn-form outline min" onClick={() => refetch()}>다시 시도</button>
+            <button className="btn-form outline min" onClick={() => router.back()}>돌아가기</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -296,7 +269,7 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
             <div className="plan-table-wrap">
               {sortedEntries.map(([date, workers]) => {
                 const displayDate = new Date(date)
-                const days = ['일', '월', '화', '수', '목', '금', '토']
+                const days = DAY_LABELS
                 const dayLabel = days[displayDate.getDay()]
                 const filtered = filterWorkers(workers)
 

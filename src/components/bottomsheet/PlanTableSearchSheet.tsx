@@ -3,32 +3,29 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { Sheet } from 'react-modal-sheet'
-
-const DAY_OPTIONS = [
-  { value: 'MONDAY', label: '월' },
-  { value: 'TUESDAY', label: '화' },
-  { value: 'WEDNESDAY', label: '수' },
-  { value: 'THURSDAY', label: '목' },
-  { value: 'FRIDAY', label: '금' },
-  { value: 'SATURDAY', label: '토' },
-  { value: 'SUNDAY', label: '일' },
-]
+import { DAY_OPTIONS } from '@/lib/schedule-utils'
 
 export default function PlanTableSearchSheet() {
   const planSearchSheet = useBottomSheetControler((state) => state.planSearchSheet)
   const setPlanSearchSheet = useBottomSheetControler((state) => state.setPlanSearchSheet)
-  const store = usePlanSearchStore()
+  const employeeName = usePlanSearchStore((s) => s.employeeName)
+  const dayType = usePlanSearchStore((s) => s.dayType)
+  const storeFrom = usePlanSearchStore((s) => s.from)
+  const storeTo = usePlanSearchStore((s) => s.to)
+  const setField = usePlanSearchStore((s) => s.setField)
+  const search = usePlanSearchStore((s) => s.search)
+  const reset = usePlanSearchStore((s) => s.reset)
 
-  const [localEmployeeName, setLocalEmployeeName] = useState(store.employeeName)
-  const [localDayType, setLocalDayType] = useState<string | null>(store.dayType)
-  const [localFrom, setLocalFrom] = useState(store.from)
-  const [localTo, setLocalTo] = useState(store.to)
+  const [localEmployeeName, setLocalEmployeeName] = useState(employeeName)
+  const [localDayType, setLocalDayType] = useState<string | null>(dayType)
+  const [localFrom, setLocalFrom] = useState(storeFrom)
+  const [localTo, setLocalTo] = useState(storeTo)
 
   const handleOpenStart = () => {
-    setLocalEmployeeName(store.employeeName)
-    setLocalDayType(store.dayType)
-    setLocalFrom(store.from)
-    setLocalTo(store.to)
+    setLocalEmployeeName(employeeName)
+    setLocalDayType(dayType)
+    setLocalFrom(storeFrom)
+    setLocalTo(storeTo)
   }
 
   const handleClose = () => {
@@ -37,11 +34,11 @@ export default function PlanTableSearchSheet() {
 
   const handleSearch = () => {
     if (!localFrom || !localTo) return
-    store.setField('employeeName', localEmployeeName)
-    store.setField('dayType', localDayType)
-    store.setField('from', localFrom)
-    store.setField('to', localTo)
-    store.search()
+    setField('employeeName', localEmployeeName)
+    setField('dayType', localDayType)
+    setField('from', localFrom)
+    setField('to', localTo)
+    search()
     handleClose()
   }
 
@@ -49,9 +46,10 @@ export default function PlanTableSearchSheet() {
     setLocalEmployeeName('')
     setLocalDayType(null)
     // 기간은 디폴트값(이번 주)으로 복원
-    store.reset()
-    setLocalFrom(store.from)
-    setLocalTo(store.to)
+    reset()
+    const s = usePlanSearchStore.getState()
+    setLocalFrom(s.from)
+    setLocalTo(s.to)
   }
 
   const isSearchDisabled = !localFrom || !localTo
