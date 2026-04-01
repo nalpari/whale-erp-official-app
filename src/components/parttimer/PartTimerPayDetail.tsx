@@ -52,7 +52,9 @@ const computePaymentDate = (ym: string, salaryDay?: number, nextMonth?: boolean)
   const year = Number(ym.slice(0, 4))
   const month = Number(ym.slice(4)) - 1
   const offset = nextMonth ? 1 : 0
-  const d = new Date(year, month + offset, salaryDay)
+  const lastDay = new Date(year, month + offset + 1, 0).getDate()
+  const clampedDay = Math.min(salaryDay, lastDay)
+  const d = new Date(year, month + offset, clampedDay)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
