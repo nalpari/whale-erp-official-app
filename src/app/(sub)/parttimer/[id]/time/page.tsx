@@ -24,7 +24,7 @@ export default function PartTimerTimePage() {
         const parsed = JSON.parse(existingRaw) as { id?: number }
         if (parsed.id === id) existing = parsed
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('EditDraft 파싱 실패:', e) }
     sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ ...existing, id, paymentItems: items }))
   }, [id])
 
