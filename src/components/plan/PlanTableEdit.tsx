@@ -14,6 +14,24 @@ import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS } from '@/lib/
 import '@/components/storeinfo/css/store-search-btn.scss'
 import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest } from '@/types/schedule'
 
+function createDateRange(from: string, to: string) {
+  if (!from || !to || from > to) return []
+
+  const dates: string[] = []
+  const current = new Date(`${from}T00:00:00`)
+  const end = new Date(`${to}T00:00:00`)
+
+  while (current <= end) {
+    const year = current.getFullYear()
+    const month = String(current.getMonth() + 1).padStart(2, '0')
+    const day = String(current.getDate()).padStart(2, '0')
+    dates.push(`${year}-${month}-${day}`)
+    current.setDate(current.getDate() + 1)
+  }
+
+  return dates
+}
+
 export default function PlanTableEdit() {
   const router = useRouter()
   const queryParams = useSearchParams()
@@ -95,6 +113,11 @@ export default function PlanTableEdit() {
   // API 데이터 → 초기 EditState 파생 (scheduleList 변경 시 재계산)
   const initialEditState = useMemo(() => {
     const state = new Map<string, WorkerEditItem[]>()
+
+    for (const date of createDateRange(params.from, params.to)) {
+      state.set(date, [])
+    }
+
     for (const schedule of scheduleList) {
       const workers: WorkerEditItem[] = schedule.workerList.map((w) => ({
         shiftId: w.shiftId,
@@ -114,7 +137,7 @@ export default function PlanTableEdit() {
       state.set(schedule.date, workers)
     }
     return state
-  }, [scheduleList])
+  }, [scheduleList, params.from, params.to])
 
   // EditState: 사용자 편집 상태 (초기값은 API 데이터 기반)
   const [editState, setEditState] = useState<Map<string, WorkerEditItem[]>>(new Map())

@@ -36,8 +36,8 @@ export default function WorkerChangeSheet() {
   const handleReplace = () => {
     if (selectedId === null) return
     const emp = employees.find((e) => e.id === selectedId)
-    if (!emp) return
-    onWorkerReplace?.(emp.memberId ?? emp.id, emp.name, emp.contractType)
+    if (!emp || emp.memberId === null) return
+    onWorkerReplace?.(emp.memberId, emp.name, emp.contractType)
     handleClose()
   }
 
@@ -92,7 +92,7 @@ export default function WorkerChangeSheet() {
                     >
                       <option value="">선택</option>
                       {employees
-                        .filter((e) => e.id !== worker?.workerId)
+                        .filter((e) => e.memberId !== null && e.memberId !== worker?.workerId)
                         .map((emp) => (
                           <option key={emp.id} value={emp.id}>
                             {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}

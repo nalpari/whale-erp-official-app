@@ -36,7 +36,7 @@ export default function WorkerAddSheet() {
 
   const handleAdd = () => {
     const emp = employees.find((e) => e.id === selectedEmployeeId)
-    if (!emp || !fromDate || !toDate || !workStart || !workEnd) return
+    if (!emp || emp.memberId === null || !fromDate || !toDate || !workStart || !workEnd) return
 
     const newWorker: WorkerEditItem = {
       shiftId: null,
@@ -57,8 +57,9 @@ export default function WorkerAddSheet() {
     handleClose()
   }
 
+  const selectedEmployee = employees.find((employee) => employee.id === selectedEmployeeId)
   const isDateMissing = !fromDate || !toDate
-  const isValid = selectedEmployeeId !== null && !isDateMissing && workStart && workEnd
+  const isValid = selectedEmployee?.memberId !== null && !isDateMissing && workStart && workEnd
 
   return (
     <Sheet
@@ -86,7 +87,7 @@ export default function WorkerAddSheet() {
                       onChange={(e) => setSelectedEmployeeId(e.target.value ? Number(e.target.value) : null)}
                     >
                       <option value="">선택</option>
-                      {employees.map((emp) => (
+                      {employees.filter((emp) => emp.memberId !== null).map((emp) => (
                         <option key={emp.id} value={emp.id}>
                           {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}
                         </option>
