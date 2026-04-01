@@ -103,8 +103,9 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
     setItems((prev) => {
       const updated = [...prev]
       const item = { ...updated[index], ...updates }
-      // 지급액 자동 계산
-      item.totalAmount = Math.round(item.workHour * item.applyTimelyAmount)
+      // 지급액 자동 계산 (총근무시간 - 휴게시간)
+      const netWorkHour = Math.max(item.workHour - item.breakTimeHour, 0)
+      item.totalAmount = Math.round(netWorkHour * item.applyTimelyAmount)
       // 3.3% 공제 자동 계산
       item.deductionAmount = Math.round(item.totalAmount * DEDUCTION_RATE)
       updated[index] = item
