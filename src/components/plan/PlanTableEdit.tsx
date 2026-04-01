@@ -1,6 +1,6 @@
 'use client'
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -11,10 +11,14 @@ import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule
 import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS } from '@/lib/schedule-utils'
+import '@/components/storeinfo/css/store-search-btn.scss'
 import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest } from '@/types/schedule'
 
-export default function PlanTableEdit({ storeId }: { storeId: number }) {
+export default function PlanTableEdit() {
   const router = useRouter()
+  const queryParams = useSearchParams()
+  const storeId = Number(queryParams.get('storeId')) || 0
+  const editDate = queryParams.get('date')
   const searchFrom = usePlanSearchStore((s) => s.from)
   const searchTo = usePlanSearchStore((s) => s.to)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
@@ -40,7 +44,7 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
 
   // 헤더 제목 설정
   useEffect(() => {
-    setTitle('근무계획표 수정')
+    setTitle(editDate ? '근무계획표 수정' : '근무계획표 등록')
     setOnBack(() => {
       openAlert({
         message: '입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?',
@@ -53,7 +57,7 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
       setTitle('')
       setOnBack(null)
     }
-  }, [setTitle, setOnBack, openAlert, router])
+  }, [setTitle, setOnBack, openAlert, router, editDate])
 
   // 직원 목록 API 연동
   const { data: employeeList = [] } = useEmployeeOptions({
@@ -70,17 +74,18 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
         id: e.employeeInfoId,
         name: e.employeeName,
         contractType: '정직원',
+        orgName: e.storeName ?? e.franchiseName ?? e.headOfficeName,
       })))
     }
   }, [employeeList, setWorkerSheetEmployees])
 
-  // 검색 조건 (목록 페이지에서 상속)
+  // 검색 조건: date 쿼리 파라미터가 있으면 해당 날짜만, 없으면 목록 검색 조건 상속
   const params: ScheduleSearchParams = useMemo(() => ({
     officeId: headOfficeId ?? 0,
     storeId,
-    from: searchFrom,
-    to: searchTo,
-  }), [headOfficeId, storeId, searchFrom, searchTo])
+    from: editDate ?? searchFrom,
+    to: editDate ?? searchTo,
+  }), [headOfficeId, storeId, editDate, searchFrom, searchTo])
 
   const { data: scheduleList = [], isError, refetch } = useScheduleList(params, !!headOfficeId)
 
@@ -101,6 +106,7 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
         breakEndTime: w.breakEndTime,
         isDeleted: w.isDeleted,
         isNew: false,
+        iconType: w.iconType ?? 0,
       }))
       state.set(schedule.date, workers)
     }
@@ -140,15 +146,17 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
     [updateWorkers],
   )
 
-  // 근무자 추가
+  // 근무자 추가 (기간 내 날짜에만 추가)
   const handleAddWorker = useCallback(
-    (worker: WorkerEditItem) => {
+    (worker: WorkerEditItem, fromDate: string, toDate: string) => {
       if (!initialized) setInitialized(true)
       setEditState((prev) => {
         const base = prev.size > 0 ? prev : initialEditState
         const next = new Map(base)
         for (const [date, workers] of next) {
-          next.set(date, [...workers, { ...worker }])
+          if (date >= fromDate && date <= toDate) {
+            next.set(date, [...workers, { ...worker }])
+          }
         }
         return next
       })
@@ -233,12 +241,30 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
     [effectiveEditState],
   )
 
+  // 검색 필터 적용 여부
+  const hasWorkerFilter = !!(filterEmployeeName || filterTempName)
+
   // 검색 필터
   const filterWorkers = useCallback(
     (workers: WorkerEditItem[]) => {
-      return sortWorkers(workers).filter((w) => {
-        if (filterEmployeeName && !w.workerName.includes(filterEmployeeName)) return false
-        if (filterTempName && w.contractType === '임시근무' && !w.workerName.includes(filterTempName)) return false
+      const sorted = sortWorkers(workers)
+      if (!filterEmployeeName && !filterTempName) return sorted
+
+      return sorted.filter((w) => {
+        const isEmployee = !!w.workerId
+        const isTemp = !w.workerId
+
+        // 직원명 필터: 정규직만 대상
+        if (filterEmployeeName && isEmployee) {
+          return w.workerName === filterEmployeeName
+        }
+        // 임시근무자명 필터: 임시근무만 대상
+        if (filterTempName && isTemp) {
+          return w.workerName.includes(filterTempName)
+        }
+        // 필터 대상이 아닌 유형은 필터가 해당 유형만 걸렸을 때 숨김
+        if (filterEmployeeName && isTemp) return !filterTempName // 임시 필터 없으면 표시
+        if (filterTempName && isEmployee) return !filterEmployeeName // 직원 필터 없으면 표시
         return true
       })
     },
@@ -297,11 +323,14 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
               검색결과 <span>{totalCount}건</span>
             </div>
             <button
-              className="search-btn"
-              onClick={() => openWorkerSearchSheet(({ employeeName, tempWorkerName }) => {
-                setFilterEmployeeName(employeeName)
-                setFilterTempName(tempWorkerName)
-              })}
+              className={`search-btn${hasWorkerFilter ? ' filtered' : ''}`}
+              onClick={() => openWorkerSearchSheet(
+                ({ employeeName, tempWorkerName }) => {
+                  setFilterEmployeeName(employeeName)
+                  setFilterTempName(tempWorkerName)
+                },
+                { employeeName: filterEmployeeName, tempWorkerName: filterTempName },
+              )}
             >
               <i className="icon-search"></i>
               <span>검색</span>

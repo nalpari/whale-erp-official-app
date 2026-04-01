@@ -12,6 +12,8 @@ export default function WorkerAddSheet() {
   const openTimePicker = useBottomSheetControler((state) => state.openTimePicker)
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [workStart, setWorkStart] = useState('')
   const [workEnd, setWorkEnd] = useState('')
   const [breakStart, setBreakStart] = useState('')
@@ -23,6 +25,8 @@ export default function WorkerAddSheet() {
 
   const handleOpenStart = () => {
     setSelectedEmployeeId(null)
+    setFromDate('')
+    setToDate('')
     setWorkStart('')
     setWorkEnd('')
     setBreakStart('')
@@ -31,7 +35,7 @@ export default function WorkerAddSheet() {
 
   const handleAdd = () => {
     const emp = employees.find((e) => e.id === selectedEmployeeId)
-    if (!emp || !workStart || !workEnd) return
+    if (!emp || !fromDate || !toDate || !workStart || !workEnd) return
 
     const newWorker: WorkerEditItem = {
       shiftId: null,
@@ -46,12 +50,14 @@ export default function WorkerAddSheet() {
       breakEndTime: breakEnd || null,
       isDeleted: false,
       isNew: true,
+      iconType: 0,
     }
-    onWorkerAdd?.(newWorker)
+    onWorkerAdd?.(newWorker, fromDate, toDate)
     handleClose()
   }
 
-  const isValid = selectedEmployeeId !== null && workStart && workEnd
+  const isDateMissing = !fromDate || !toDate
+  const isValid = selectedEmployeeId !== null && !isDateMissing && workStart && workEnd
 
   return (
     <Sheet
@@ -81,10 +87,34 @@ export default function WorkerAddSheet() {
                       <option value="">선택</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name}
+                          {emp.name}{emp.orgName ? ` (${emp.orgName})` : ''}
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+                <div className="sheet-data-filed">
+                  <div className="filed-tit">
+                    기간 선택<span className="imp">*</span>
+                  </div>
+                  <div className="flex g8">
+                    <div className="date-picker-custom">
+                      <input
+                        type="date"
+                        className="date-picker-input"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                      />
+                    </div>
+                    <span>~</span>
+                    <div className="date-picker-custom">
+                      <input
+                        type="date"
+                        className="date-picker-input"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="sheet-data-filed">
@@ -95,7 +125,7 @@ export default function WorkerAddSheet() {
                     <div className="block">
                       <button
                         className="select-form al-l"
-                        onClick={() => openTimePicker('근무 시작시간', workStart || '09:00', setWorkStart)}
+                        onClick={() => openTimePicker('근무 시작시간', workStart || '09:00', (t) => setWorkStart(t ?? ''))}
                       >
                         {workStart || '시작시간'}
                       </button>
@@ -103,7 +133,7 @@ export default function WorkerAddSheet() {
                     <div className="block">
                       <button
                         className="select-form al-l"
-                        onClick={() => openTimePicker('근무 종료시간', workEnd || '18:00', setWorkEnd)}
+                        onClick={() => openTimePicker('근무 종료시간', workEnd || '18:00', (t) => setWorkEnd(t ?? ''))}
                       >
                         {workEnd || '종료시간'}
                       </button>
@@ -116,7 +146,7 @@ export default function WorkerAddSheet() {
                     <div className="block">
                       <button
                         className="select-form al-l"
-                        onClick={() => openTimePicker('휴게 시작시간', breakStart || '12:00', setBreakStart)}
+                        onClick={() => openTimePicker('휴게 시작시간', breakStart || '12:00', (t) => setBreakStart(t ?? ''))}
                       >
                         {breakStart || '시작시간'}
                       </button>
@@ -124,7 +154,7 @@ export default function WorkerAddSheet() {
                     <div className="block">
                       <button
                         className="select-form al-l"
-                        onClick={() => openTimePicker('휴게 종료시간', breakEnd || '13:00', setBreakEnd)}
+                        onClick={() => openTimePicker('휴게 종료시간', breakEnd || '13:00', (t) => setBreakEnd(t ?? ''))}
                       >
                         {breakEnd || '종료시간'}
                       </button>

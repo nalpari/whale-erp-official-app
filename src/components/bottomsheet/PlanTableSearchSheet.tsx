@@ -119,11 +119,6 @@ export default function PlanTableSearchSheet() {
                       />
                     </div>
                   </div>
-                  {isSearchDisabled && (
-                    <div className="warning mt5" style={{ color: '#e74c3c' }}>
-                      * 필수 입력값입니다.
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

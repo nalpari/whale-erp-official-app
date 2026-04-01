@@ -20,6 +20,7 @@ export interface WorkerResponse {
   hasWork: boolean
   hasBreak: boolean
   isDeleted: boolean
+  iconType: number // 0: 기본, 1~3: 아이콘
 }
 
 // 생성/수정 요청
@@ -82,4 +83,5 @@ export interface WorkerEditItem {
   breakEndTime: string | null
   isDeleted: boolean
   isNew: boolean
+  iconType: number
 }

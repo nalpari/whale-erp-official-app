@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import Image from 'next/image'
 import { Sheet } from 'react-modal-sheet'
+import { getWorkerAvatar } from '@/lib/schedule-utils'
 
 function getContractBadge(contractType: string) {
   switch (contractType) {
@@ -64,7 +65,7 @@ export default function WorkerChangeSheet() {
                   <div className={`worker-info-wrap ${badge.wrapClass}`}>
                     <div className="worker-img">
                       <Image
-                        src="/assets/images/layout/avatar02.svg"
+                        src={getWorkerAvatar(worker.iconType)}
                         alt="근무자 이미지"
                         width={46}
                         height={46}
@@ -94,7 +95,7 @@ export default function WorkerChangeSheet() {
                         .filter((e) => e.id !== worker?.workerId)
                         .map((emp) => (
                           <option key={emp.id} value={emp.id}>
-                            {emp.name}
+                            {emp.name}{emp.orgName ? ` (${emp.orgName})` : ''}
                           </option>
                         ))}
                     </select>

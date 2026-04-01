@@ -8,6 +8,7 @@ export default function WorkerSearchSheet() {
   const setWorkerSearchSheet = useBottomSheetControler((state) => state.setWorkerSearchSheet)
   const onWorkerSearch = useBottomSheetControler((state) => state.onWorkerSearch)
   const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
+  const initial = useBottomSheetControler((state) => state.workerSearchInitial)
 
   const [selectedEmployeeName, setSelectedEmployeeName] = useState('')
   const [tempWorkerName, setTempWorkerName] = useState('')
@@ -16,9 +17,10 @@ export default function WorkerSearchSheet() {
     setWorkerSearchSheet(false)
   }
 
+  // 바텀시트 열릴 때 기존 검색 조건 복원
   const handleOpenStart = () => {
-    setSelectedEmployeeName('')
-    setTempWorkerName('')
+    setSelectedEmployeeName(initial.employeeName)
+    setTempWorkerName(initial.tempWorkerName)
   }
 
   const handleSearch = () => {
@@ -59,7 +61,7 @@ export default function WorkerSearchSheet() {
                       <option value="">전체</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.name}>
-                          {emp.name}
+                          {emp.name}{emp.orgName ? ` (${emp.orgName})` : ''}
                         </option>
                       ))}
                     </select>

@@ -13,11 +13,11 @@ type BottomSheetControlerState = {
   workerSheetContext: WorkerSheetContext
   setWorkerSheetContext: (ctx: WorkerSheetContext) => void
   // 근무자 추가 콜백
-  onWorkerAdd: ((worker: WorkerEditItem) => void) | null
-  openWorkerAddSheet: (onAdd: (worker: WorkerEditItem) => void) => void
+  onWorkerAdd: ((worker: WorkerEditItem, fromDate: string, toDate: string) => void) | null
+  openWorkerAddSheet: (onAdd: (worker: WorkerEditItem, fromDate: string, toDate: string) => void) => void
   // 임시 근무자 추가 콜백
-  onTempWorkerAdd: ((worker: WorkerEditItem) => void) | null
-  openTempWorkerAddSheet: (onAdd: (worker: WorkerEditItem) => void) => void
+  onTempWorkerAdd: ((worker: WorkerEditItem, fromDate: string, toDate: string) => void) | null
+  openTempWorkerAddSheet: (onAdd: (worker: WorkerEditItem, fromDate: string, toDate: string) => void) => void
   // 근무자 교체 콜백
   onWorkerReplace: ((newWorkerId: number, newWorkerName: string, newContractType: string) => void) | null
   openWorkerChangeSheet: (worker: WorkerEditItem, date: string, onReplace: (newWorkerId: number, newWorkerName: string, newContractType: string) => void) => void
@@ -26,10 +26,11 @@ type BottomSheetControlerState = {
   openWorkerDeleteSheet: (worker: WorkerEditItem, date: string, onDelete: () => void) => void
   // 근무자 검색 콜백
   onWorkerSearch: ((filters: { employeeName: string; tempWorkerName: string }) => void) | null
-  openWorkerSearchSheet: (onSearch: (filters: { employeeName: string; tempWorkerName: string }) => void) => void
+  workerSearchInitial: { employeeName: string; tempWorkerName: string }
+  openWorkerSearchSheet: (onSearch: (filters: { employeeName: string; tempWorkerName: string }) => void, initial?: { employeeName: string; tempWorkerName: string }) => void
   // 직원 목록 (근무자 추가/교체 시 사용)
-  workerSheetEmployees: { id: number; name: string; contractType: string }[]
-  setWorkerSheetEmployees: (employees: { id: number; name: string; contractType: string }[]) => void
+  workerSheetEmployees: { id: number; name: string; contractType: string; orgName?: string }[]
+  setWorkerSheetEmployees: (employees: { id: number; name: string; contractType: string; orgName?: string }[]) => void
   storeSelectSheet: boolean
   setStoreSelectSheet: (isOpen: boolean) => void
   goToOptionSheet: boolean
@@ -103,8 +104,13 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
       openWorkerDeleteSheet: (worker, date, onDelete) =>
         set({ workerDeleteSheet: true, workerSheetContext: { worker, date }, onWorkerDelete: onDelete }, false, 'bottomSheet/openWorkerDelete'),
       onWorkerSearch: null,
-      openWorkerSearchSheet: (onSearch) =>
-        set({ workerSearchSheet: true, onWorkerSearch: onSearch }, false, 'bottomSheet/openWorkerSearch'),
+      workerSearchInitial: { employeeName: '', tempWorkerName: '' },
+      openWorkerSearchSheet: (onSearch, initial) =>
+        set({
+          workerSearchSheet: true,
+          onWorkerSearch: onSearch,
+          workerSearchInitial: initial ?? { employeeName: '', tempWorkerName: '' },
+        }, false, 'bottomSheet/openWorkerSearch'),
       workerSheetEmployees: [],
       setWorkerSheetEmployees: (employees) =>
         set({ workerSheetEmployees: employees }, false, 'bottomSheet/setWorkerSheetEmployees'),

@@ -18,7 +18,8 @@ export default function PlanTable() {
   const searchDayType = usePlanSearchStore((s) => s.dayType)
   const searchFrom = usePlanSearchStore((s) => s.from)
   const searchTo = usePlanSearchStore((s) => s.to)
-  const hasSearched = usePlanSearchStore((s) => s.hasSearched)
+  // 기간/직원명/요일 등 검색 조건이 하나라도 있으면 하이라이트
+  const hasFilter = !!(searchFrom || searchTo || searchEmployeeName || searchDayType)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
@@ -46,11 +47,13 @@ export default function PlanTable() {
 
   const totalCount = scheduleList.reduce((acc, s) => acc + s.workerList.filter((w) => !w.isDeleted).length, 0)
 
-  // 계획 수립 이동: 인자로 받은 storeId → 선택된 점포 → 순서로 fallback
-  const handleGoToEdit = (editStoreId?: number | null) => {
+  // 계획 수립 이동
+  const handleGoToEdit = (editStoreId?: number | null, date?: string) => {
     const targetStoreId = editStoreId ?? selectedStore?.id
     if (targetStoreId) {
-      router.push(`/plan/${targetStoreId}`)
+      const params = new URLSearchParams({ storeId: String(targetStoreId) })
+      if (date) params.set('date', date)
+      router.push(`/plan/edit?${params.toString()}`)
     }
   }
 
@@ -83,7 +86,7 @@ export default function PlanTable() {
           <div className="search-count">
             검색결과 <span>{totalCount}건</span>
           </div>
-          <button className={`search-btn${hasSearched ? ' filtered' : ''}`} onClick={() => setPlanSearchSheet(true)}>
+          <button className={`search-btn${hasFilter ? ' filtered' : ''}`} onClick={() => setPlanSearchSheet(true)}>
             <i className="icon-search"></i>
             <span>검색</span>
           </button>
@@ -109,7 +112,7 @@ export default function PlanTable() {
                   <div className="auto-right">
                     <button
                       className="sub-edit-btn"
-                      onClick={() => handleGoToEdit(schedule.storeId)}
+                      onClick={() => handleGoToEdit(schedule.storeId, schedule.date)}
                     />
                   </div>
                 </div>

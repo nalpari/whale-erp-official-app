@@ -1,5 +1,19 @@
 import type { WorkerResponse } from '@/types/schedule'
 
+// ── 아바타 아이콘 매핑 ──
+
+const AVATAR_IMAGES = [
+  '/assets/images/layout/avatar01.svg',
+  '/assets/images/layout/avatar01.svg',
+  '/assets/images/layout/avatar02.svg',
+  '/assets/images/layout/avatar03.svg',
+] as const
+
+/** iconType(0~3) → 아바타 이미지 경로 */
+export function getWorkerAvatar(iconType: number): string {
+  return AVATAR_IMAGES[iconType] ?? AVATAR_IMAGES[0]
+}
+
 // ── 계약유형 스타일 매핑 ──
 
 export function getContractStyle(contractType: string) {
