@@ -18,7 +18,10 @@ export default function PartTimerPayDetailStub() {
     try {
       const raw = sessionStorage.getItem(PREVIEW_KEY)
       if (!raw) return null
-      return JSON.parse(raw) as PartTimerPayrollDetail
+      const parsed = JSON.parse(raw) as PartTimerPayrollDetail
+      // 현재 ID와 일치하는 경우에만 사용
+      if (parsed.id !== undefined && parsed.id !== id) return null
+      return parsed
     } catch {
       sessionStorage.removeItem(PREVIEW_KEY)
       return null
