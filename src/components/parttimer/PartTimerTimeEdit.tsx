@@ -27,8 +27,18 @@ const HOUR_OPTIONS = Array.from({ length: 49 }, (_, i) => i * 0.5)
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
 
+// YYYY-MM-DD 문자열을 로컬 Date로 파싱 (UTC 타임존 이슈 방지)
+const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+const formatDate = (d: Date): string => {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const formatDateLabel = (dateStr: string) => {
-  const d = new Date(dateStr)
+  const d = parseLocalDate(dateStr)
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
   const dayName = DAY_NAMES[d.getDay()]
@@ -56,11 +66,11 @@ const findWorkHourForDay = (dayType: DayType, workHours: ContractWorkHour[]): Co
 // 정산기간 내 날짜 목록 생성
 const generateDates = (startDate: string, endDate: string): string[] => {
   const dates: string[] = []
-  const start = new Date(startDate)
-  const end = new Date(endDate)
+  const start = parseLocalDate(startDate)
+  const end = parseLocalDate(endDate)
   const current = new Date(start)
   while (current <= end) {
-    dates.push(current.toISOString().slice(0, 10))
+    dates.push(formatDate(current))
     current.setDate(current.getDate() + 1)
   }
   return dates
@@ -119,7 +129,7 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
       const salary = contractSalaryInfo
       setItems((prev) =>
         prev.map((item) => {
-          const d = new Date(item.workDay)
+          const d = parseLocalDate(item.workDay)
           const dayType = JS_DAY_TO_DAY_TYPE[d.getDay()]
           const wh = findWorkHourForDay(dayType, contractWorkHours)
 
