@@ -4,6 +4,8 @@ import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useHeadOffices, useStoreOptions } from '@/hooks/queries/use-store-queries'
+import { useQueryClient } from '@tanstack/react-query'
+import { todoKeys } from '@/hooks/queries/use-todo-queries'
 import { Sheet } from 'react-modal-sheet'
 
 export default function StoreSelectSheet() {
@@ -20,6 +22,7 @@ export default function StoreSelectSheet() {
   } = useStoreStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const authFranchiseId = useAuthStore((state) => state.franchiseId)
+  const queryClient = useQueryClient()
   const hasAuthOffice = !!authHeadOfficeId
 
   // 본사 ID: auth > storeStore 순으로 fallback
@@ -56,6 +59,8 @@ export default function StoreSelectSheet() {
     const office = headOffices.find((o) => o.id === localOfficeId) ?? null
     const store = storeOptions.find((s) => s.id === localStoreId) ?? null
     setSelection(office, store)
+    // 본사/점포 변경 시 직원 목록 캐시 무효화 → 즉시 재조회
+    queryClient.removeQueries({ queryKey: [...todoKeys.all, 'employees'] })
     handleClose()
   }
 

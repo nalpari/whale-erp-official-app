@@ -35,7 +35,7 @@ export default function TodoCreate() {
 
   const { data: employees = [] } = useEmployeeOptions(
     {
-      purpose: "SEARCH",
+      purpose: "BROAD",
       headOfficeId,
       storeId,
     },
@@ -127,7 +127,7 @@ export default function TodoCreate() {
                 <option value="">직원을 선택해주세요</option>
                 {employees.map((emp) => (
                   <option key={emp.employeeInfoId} value={emp.employeeInfoId}>
-                    {emp.employeeName} ({emp.storeName ?? emp.franchiseName ?? emp.headOfficeName})
+                    {emp.employeeName} ({emp.employeeNumber})
                   </option>
                 ))}
               </select>

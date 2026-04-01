@@ -9,6 +9,7 @@ export default function TemporaryWorkerAddSheet() {
   const setTemporaryWorkerAddSheet = useBottomSheetControler((state) => state.setTemporaryWorkerAddSheet)
   const onTempWorkerAdd = useBottomSheetControler((state) => state.onTempWorkerAdd)
   const openTimePicker = useBottomSheetControler((state) => state.openTimePicker)
+  const defaultDates = useBottomSheetControler((state) => state.workerAddDefaultDates)
 
   const [tempName, setTempName] = useState('')
   const [fromDate, setFromDate] = useState('')
@@ -24,8 +25,8 @@ export default function TemporaryWorkerAddSheet() {
 
   const handleOpenStart = () => {
     setTempName('')
-    setFromDate('')
-    setToDate('')
+    setFromDate(defaultDates.from)
+    setToDate(defaultDates.to)
     setWorkStart('')
     setWorkEnd('')
     setBreakStart('')
@@ -98,6 +99,8 @@ export default function TemporaryWorkerAddSheet() {
                         type="date"
                         className="date-picker-input"
                         value={fromDate}
+                        min={defaultDates.from || undefined}
+                        max={toDate || defaultDates.to || undefined}
                         onChange={(e) => setFromDate(e.target.value)}
                       />
                     </div>
@@ -107,6 +110,8 @@ export default function TemporaryWorkerAddSheet() {
                         type="date"
                         className="date-picker-input"
                         value={toDate}
+                        min={fromDate || defaultDates.from || undefined}
+                        max={defaultDates.to || undefined}
                         onChange={(e) => setToDate(e.target.value)}
                       />
                     </div>

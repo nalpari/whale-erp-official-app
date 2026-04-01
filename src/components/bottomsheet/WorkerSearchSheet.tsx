@@ -61,7 +61,7 @@ export default function WorkerSearchSheet() {
                       <option value="">전체</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.name}>
-                          {emp.name}{emp.orgName ? ` (${emp.orgName})` : ''}
+                          {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}
                         </option>
                       ))}
                     </select>

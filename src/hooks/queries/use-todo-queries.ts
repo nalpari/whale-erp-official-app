@@ -53,7 +53,7 @@ export function useCreateTodo() {
 }
 
 export function useEmployeeOptions(params: {
-  purpose: 'SEARCH' | 'REGISTER'
+  purpose: 'BROAD' | 'STRICT'
   headOfficeId?: number
   franchiseId?: number
   storeId?: number

@@ -10,6 +10,7 @@ export default function WorkerAddSheet() {
   const onWorkerAdd = useBottomSheetControler((state) => state.onWorkerAdd)
   const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
   const openTimePicker = useBottomSheetControler((state) => state.openTimePicker)
+  const defaultDates = useBottomSheetControler((state) => state.workerAddDefaultDates)
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null)
   const [fromDate, setFromDate] = useState('')
@@ -25,8 +26,8 @@ export default function WorkerAddSheet() {
 
   const handleOpenStart = () => {
     setSelectedEmployeeId(null)
-    setFromDate('')
-    setToDate('')
+    setFromDate(defaultDates.from)
+    setToDate(defaultDates.to)
     setWorkStart('')
     setWorkEnd('')
     setBreakStart('')
@@ -39,7 +40,7 @@ export default function WorkerAddSheet() {
 
     const newWorker: WorkerEditItem = {
       shiftId: null,
-      workerId: emp.id,
+      workerId: emp.memberId,
       workerName: emp.name,
       contractType: emp.contractType,
       hasWork: true,
@@ -77,7 +78,7 @@ export default function WorkerAddSheet() {
             <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
                 <div className="sheet-data-filed">
-                  <div className="filed-tit">직원명</div>
+                  <div className="filed-tit">직원명<span className="imp">*</span></div>
                   <div className="block">
                     <select
                       className="select-form"
@@ -87,7 +88,7 @@ export default function WorkerAddSheet() {
                       <option value="">선택</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name}{emp.orgName ? ` (${emp.orgName})` : ''}
+                          {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}
                         </option>
                       ))}
                     </select>
@@ -103,6 +104,8 @@ export default function WorkerAddSheet() {
                         type="date"
                         className="date-picker-input"
                         value={fromDate}
+                        min={defaultDates.from || undefined}
+                        max={toDate || defaultDates.to || undefined}
                         onChange={(e) => setFromDate(e.target.value)}
                       />
                     </div>
@@ -112,6 +115,8 @@ export default function WorkerAddSheet() {
                         type="date"
                         className="date-picker-input"
                         value={toDate}
+                        min={fromDate || defaultDates.from || undefined}
+                        max={defaultDates.to || undefined}
                         onChange={(e) => setToDate(e.target.value)}
                       />
                     </div>

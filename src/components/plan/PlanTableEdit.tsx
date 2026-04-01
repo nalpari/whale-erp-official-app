@@ -17,12 +17,13 @@ import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerReque
 export default function PlanTableEdit() {
   const router = useRouter()
   const queryParams = useSearchParams()
-  const storeId = Number(queryParams.get('storeId')) || 0
+  const urlStoreId = Number(queryParams.get('storeId')) || 0
   const editDate = queryParams.get('date')
   const searchFrom = usePlanSearchStore((s) => s.from)
   const searchTo = usePlanSearchStore((s) => s.to)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
+  const selectedStore = useStoreStore((state) => state.selectedStore)
   const mounted = useMounted()
   const openWorkerAddSheet = useBottomSheetControler((state) => state.openWorkerAddSheet)
   const openTempWorkerAddSheet = useBottomSheetControler((state) => state.openTempWorkerAddSheet)
@@ -40,6 +41,7 @@ export default function PlanTableEdit() {
   // 본사 ID: 점포 선택 바텀시트 > authStore 순 fallback
   const effectiveHeadOfficeId = selectedHeadOffice?.id ?? authHeadOfficeId ?? null
   const headOfficeId = mounted ? effectiveHeadOfficeId : null
+  const storeId = mounted ? (selectedStore?.id ?? urlStoreId) : urlStoreId
   const authFranchiseId = useAuthStore((state) => state.franchiseId)
 
   // 헤더 제목 설정
@@ -61,7 +63,7 @@ export default function PlanTableEdit() {
 
   // 직원 목록 API 연동
   const { data: employeeList = [] } = useEmployeeOptions({
-    purpose: 'SEARCH',
+    purpose: 'BROAD',
     headOfficeId: headOfficeId ?? undefined,
     franchiseId: authFranchiseId ?? undefined,
     storeId: storeId ?? undefined,
@@ -72,9 +74,10 @@ export default function PlanTableEdit() {
     if (employeeList.length > 0) {
       setWorkerSheetEmployees(employeeList.map((e) => ({
         id: e.employeeInfoId,
+        memberId: e.memberId,
         name: e.employeeName,
         contractType: '정직원',
-        orgName: e.storeName ?? e.franchiseName ?? e.headOfficeName,
+        employeeNumber: e.employeeNumber,
       })))
     }
   }, [employeeList, setWorkerSheetEmployees])
@@ -310,10 +313,10 @@ export default function PlanTableEdit() {
           <span><b>{dateRangeText}</b></span>
         </div>
         <div className="pay-head-btn-wrap">
-          <button className="pay-head-btn" onClick={() => openWorkerAddSheet(handleAddWorker)}>
+          <button className="pay-head-btn" onClick={() => openWorkerAddSheet(handleAddWorker, { from: editDate ?? searchFrom, to: editDate ?? searchTo })}>
             <i className="invite"></i>직원추가
           </button>
-          <button className="pay-head-btn" onClick={() => openTempWorkerAddSheet(handleAddWorker)}>
+          <button className="pay-head-btn" onClick={() => openTempWorkerAddSheet(handleAddWorker, { from: editDate ?? searchFrom, to: editDate ?? searchTo })}>
             <i className="add_team"></i>임시 근무자 추가
           </button>
         </div>
