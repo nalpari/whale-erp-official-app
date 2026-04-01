@@ -19,7 +19,7 @@ function TimeError({ show, message }: { show: boolean; message: string }) {
 function findHour(operating: OperatingHourRequest[], dayType: string): OperatingHourRequest {
   return operating.find((o) => o.dayType === dayType) ?? {
     dayType: dayType as OperatingHourRequest["dayType"],
-    isOperating: true,
+    isOperating: false,
     openTime: null,
     closeTime: null,
     breakStartTime: null,

@@ -35,8 +35,13 @@ export default function TimePickerSheet() {
   };
 
   const handleSelect = (time: string | null) => {
-    onTimeSelect?.(time);
-    handleClose();
+    try {
+      onTimeSelect?.(time);
+    } catch (err) {
+      console.error('[TimePickerSheet] onTimeSelect 콜백 실행 실패:', err);
+    } finally {
+      handleClose();
+    }
   };
 
   return (
@@ -55,6 +60,7 @@ export default function TimePickerSheet() {
             </div>
             <div className="time-picker-list">
               <button
+                type="button"
                 className="time-picker-item"
                 onClick={() => handleSelect(null)}
               >

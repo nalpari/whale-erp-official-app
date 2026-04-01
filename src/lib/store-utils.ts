@@ -25,7 +25,6 @@ export const WEEKDAY_LABEL: Record<string, string> = {
 export const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] as const
 export const ALL_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const
 
-const ALL_WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
 
 /** 오늘 날짜를 YYYY-MM-DD 로컬 타임존 문자열로 반환 */
 export function getToday(): string {
@@ -70,7 +69,7 @@ export function getOrganizationId(
  */
 export function toFormOperating(serverOperating: OperatingHour[]): OperatingHourRequest[] {
   const weekdayEntries = serverOperating.filter((o) =>
-    ALL_WEEKDAYS.includes(o.dayType) && o.isOperating
+    (WEEKDAY_ORDER as readonly string[]).includes(o.dayType) && o.isOperating
   )
   const saturday = serverOperating.find((o) => o.dayType === 'SATURDAY')
   const sunday = serverOperating.find((o) => o.dayType === 'SUNDAY')
@@ -149,9 +148,13 @@ export function buildOperatingHoursRequest(
           breakEndTime: null,
         }
 
-    if (selected.length === 5 && ALL_WEEKDAYS.every((d) => selected.includes(d))) {
+    if (selected.length === 0) {
+      if (hasTime) {
+        console.warn('[store-utils] buildOperatingHoursRequest: 평일 요일이 선택되지 않아 영업시간이 요청에서 제외됩니다.')
+      }
+    } else if (selected.length === 5 && WEEKDAY_ORDER.every((d) => selected.includes(d))) {
       result.push({ ...hourData, dayType: 'WEEKDAY' })
-    } else if (selected.length > 0) {
+    } else {
       for (const day of selected) {
         result.push({ ...hourData, dayType: day })
       }
