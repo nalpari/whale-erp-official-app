@@ -316,12 +316,13 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
 
   // 삭제 핸들러 등록
   const setOnDelete = useHeaderStore((s) => s.setOnDelete)
+  const deleteAsync = deleteMutation.mutateAsync
   useEffect(() => {
     if (!isNew && id) {
       setOnDelete(async () => {
         if (!confirm('급여명세서를 삭제하시겠습니까?')) return
         try {
-          await deleteMutation.mutateAsync(id)
+          await deleteAsync(id)
           alert('삭제되었습니다.')
           router.push('/parttimer')
         } catch (error) {
@@ -330,7 +331,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
       })
     }
     return () => setOnDelete(null)
-  }, [isNew, id, setOnDelete, router, deleteMutation])
+  }, [isNew, id, setOnDelete, router, deleteAsync])
 
   // 저장
   const handleSave = async () => {

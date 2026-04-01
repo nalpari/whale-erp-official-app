@@ -1,5 +1,5 @@
 'use client'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePartTimerPayrollDetail } from '@/hooks/queries/use-parttime-payroll-queries'
 import PartTimerTimeEdit from '@/components/parttimer/PartTimerTimeEdit'
@@ -23,10 +23,13 @@ export default function PartTimerTimePage() {
     sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ ...existing, id, paymentItems: items }))
   }, [id])
 
-  if (!id) {
-    router.replace('/parttimer')
-    return null
-  }
+  useEffect(() => {
+    if (!id) {
+      router.replace('/parttimer')
+    }
+  }, [id, router])
+
+  if (!id) return null
 
   if (isLoading) {
     return (

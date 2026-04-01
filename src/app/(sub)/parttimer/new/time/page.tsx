@@ -64,7 +64,7 @@ export default function PartTimerNewTimePage() {
 
     const draftRaw = sessionStorage.getItem(DRAFT_KEY)
     if (draftRaw) {
-      const draft = safeJsonParse<Record<string, unknown>>(draftRaw)
+      const draft = safeJsonParse<{ paymentItems?: PartTimerPaymentItem[] }>(draftRaw)
       if (draft) {
         draft.paymentItems = items
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
