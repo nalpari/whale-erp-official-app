@@ -1,12 +1,14 @@
 'use client'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { usePopupControler } from '@/store/usePopupControler'
+import { useHeaderStore } from '@/store/useHeaderStore'
 import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule-queries'
+import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS } from '@/lib/schedule-utils'
 import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest } from '@/types/schedule'
@@ -25,12 +27,52 @@ export default function PlanTableEdit({ storeId }: { storeId: number }) {
   const openWorkerSearchSheet = useBottomSheetControler((state) => state.openWorkerSearchSheet)
   const openTimePicker = useBottomSheetControler((state) => state.openTimePicker)
   const openAlert = usePopupControler((state) => state.openAlert)
+  const setTitle = useHeaderStore((state) => state.setTitle)
+  const setOnBack = useHeaderStore((state) => state.setOnBack)
+  const setWorkerSheetEmployees = useBottomSheetControler((state) => state.setWorkerSheetEmployees)
 
   const upsertMutation = useUpsertSchedule()
 
   // 본사 ID: 점포 선택 바텀시트 > authStore 순 fallback
   const effectiveHeadOfficeId = selectedHeadOffice?.id ?? authHeadOfficeId ?? null
   const headOfficeId = mounted ? effectiveHeadOfficeId : null
+  const authFranchiseId = useAuthStore((state) => state.franchiseId)
+
+  // 헤더 제목 설정
+  useEffect(() => {
+    setTitle('근무계획표 수정')
+    setOnBack(() => {
+      openAlert({
+        message: '입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?',
+        confirmText: '이동',
+        cancelText: '취소',
+        onConfirm: () => router.push('/plan'),
+      })
+    })
+    return () => {
+      setTitle('')
+      setOnBack(null)
+    }
+  }, [setTitle, setOnBack, openAlert, router])
+
+  // 직원 목록 API 연동
+  const { data: employeeList = [] } = useEmployeeOptions({
+    purpose: 'SEARCH',
+    headOfficeId: headOfficeId ?? undefined,
+    franchiseId: authFranchiseId ?? undefined,
+    storeId: storeId ?? undefined,
+  }, !!headOfficeId)
+
+  // 직원 목록을 바텀시트 store에 동기화
+  useEffect(() => {
+    if (employeeList.length > 0) {
+      setWorkerSheetEmployees(employeeList.map((e) => ({
+        id: e.employeeInfoId,
+        name: e.employeeName,
+        contractType: '정직원',
+      })))
+    }
+  }, [employeeList, setWorkerSheetEmployees])
 
   // 검색 조건 (목록 페이지에서 상속)
   const params: ScheduleSearchParams = useMemo(() => ({

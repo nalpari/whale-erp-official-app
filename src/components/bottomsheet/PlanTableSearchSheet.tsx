@@ -14,7 +14,6 @@ export default function PlanTableSearchSheet() {
   const storeTo = usePlanSearchStore((s) => s.to)
   const setField = usePlanSearchStore((s) => s.setField)
   const search = usePlanSearchStore((s) => s.search)
-  const reset = usePlanSearchStore((s) => s.reset)
 
   const [localEmployeeName, setLocalEmployeeName] = useState(employeeName)
   const [localDayType, setLocalDayType] = useState<string | null>(dayType)
@@ -45,11 +44,8 @@ export default function PlanTableSearchSheet() {
   const handleReset = () => {
     setLocalEmployeeName('')
     setLocalDayType(null)
-    // 기간은 디폴트값(이번 주)으로 복원
-    reset()
-    const s = usePlanSearchStore.getState()
-    setLocalFrom(s.from)
-    setLocalTo(s.to)
+    setLocalFrom('')
+    setLocalTo('')
   }
 
   const isSearchDisabled = !localFrom || !localTo
@@ -124,8 +120,8 @@ export default function PlanTableSearchSheet() {
                     </div>
                   </div>
                   {isSearchDisabled && (
-                    <div className="warning mt5">
-                      기간 선택은 필수 입력 사항입니다.
+                    <div className="warning mt5" style={{ color: '#e74c3c' }}>
+                      * 필수 입력값입니다.
                     </div>
                   )}
                 </div>

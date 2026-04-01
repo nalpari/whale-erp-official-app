@@ -7,6 +7,7 @@ import { useStoreStore } from '@/store/useStoreStore'
 import { useScheduleList } from '@/hooks/queries/use-schedule-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers } from '@/lib/schedule-utils'
+import '@/components/storeinfo/css/store-search-btn.scss'
 import TimelineBar from './TimelineBar'
 import type { ScheduleSearchParams } from '@/types/schedule'
 
@@ -17,7 +18,7 @@ export default function PlanTable() {
   const searchDayType = usePlanSearchStore((s) => s.dayType)
   const searchFrom = usePlanSearchStore((s) => s.from)
   const searchTo = usePlanSearchStore((s) => s.to)
-  const setSearchField = usePlanSearchStore((s) => s.setField)
+  const hasSearched = usePlanSearchStore((s) => s.hasSearched)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
@@ -82,7 +83,7 @@ export default function PlanTable() {
           <div className="search-count">
             검색결과 <span>{totalCount}건</span>
           </div>
-          <button className="search-btn" onClick={() => setPlanSearchSheet(true)}>
+          <button className={`search-btn${hasSearched ? ' filtered' : ''}`} onClick={() => setPlanSearchSheet(true)}>
             <i className="icon-search"></i>
             <span>검색</span>
           </button>
@@ -108,11 +109,7 @@ export default function PlanTable() {
                   <div className="auto-right">
                     <button
                       className="sub-edit-btn"
-                      onClick={() => {
-                        setSearchField('from', schedule.date)
-                        setSearchField('to', schedule.date)
-                        handleGoToEdit(schedule.storeId)
-                      }}
+                      onClick={() => handleGoToEdit(schedule.storeId)}
                     />
                   </div>
                 </div>
