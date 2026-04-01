@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePartTimerPayrollDetail } from '@/hooks/queries/use-parttime-payroll-queries'
 import PartTimerPayStub from '@/components/parttimer/PartTimerPayStub'
@@ -8,9 +9,14 @@ const PREVIEW_KEY = 'partTimerStubPreview'
 
 const readPreview = (): PartTimerPayrollDetail | null => {
   if (typeof window === 'undefined') return null
-  const raw = sessionStorage.getItem(PREVIEW_KEY)
-  if (!raw) return null
-  return JSON.parse(raw) as PartTimerPayrollDetail
+  try {
+    const raw = sessionStorage.getItem(PREVIEW_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as PartTimerPayrollDetail
+  } catch {
+    sessionStorage.removeItem(PREVIEW_KEY)
+    return null
+  }
 }
 
 export default function PartTimerPayDetailStub() {
@@ -20,14 +26,16 @@ export default function PartTimerPayDetailStub() {
   const id = isNaN(rawId) || rawId <= 0 ? undefined : rawId
 
   const previewData = readPreview()
-
   const { data: detail, isLoading } = usePartTimerPayrollDetail(id)
   const data = previewData ?? detail
 
-  if (!id) {
-    router.replace('/parttimer')
-    return null
-  }
+  useEffect(() => {
+    if (!id) {
+      router.replace('/parttimer')
+    }
+  }, [id, router])
+
+  if (!id) return null
 
   if (!data && isLoading) {
     return (

@@ -15,6 +15,7 @@ import { getDailyWorkHours } from '@/lib/api/parttime-payroll'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
 import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
+import { getContractsByEmployee } from '@/lib/api/contract'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import DeductionAddSheet from '@/components/bottomsheet/DeductionAddSheet'
@@ -83,9 +84,13 @@ const loadEditDraft = (id?: number): EditDraft | null => {
   const raw = sessionStorage.getItem(EDIT_DRAFT_KEY)
   if (!raw) return null
   sessionStorage.removeItem(EDIT_DRAFT_KEY)
-  const draft = JSON.parse(raw) as EditDraft
-  if (draft.id !== id) return null
-  return draft
+  try {
+    const draft = JSON.parse(raw) as EditDraft
+    if (draft.id !== id) return null
+    return draft
+  } catch {
+    return null
+  }
 }
 
 interface FormDraft {
@@ -110,7 +115,11 @@ const loadDraft = (): FormDraft | null => {
   const raw = sessionStorage.getItem(FORM_DRAFT_KEY)
   if (!raw) return null
   sessionStorage.removeItem(FORM_DRAFT_KEY)
-  return JSON.parse(raw) as FormDraft
+  try {
+    return JSON.parse(raw) as FormDraft
+  } catch {
+    return null
+  }
 }
 
 const DEDUCTION_LABELS: Record<string, string> = {
@@ -155,15 +164,15 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           const dailyItems: PartTimerPaymentItem[] = result.items
             .filter((item) => item.type === 'DAILY' && item.dailyRecord)
             .map((item) => {
-              const r = item.dailyRecord as Record<string, unknown>
+              const r = item.dailyRecord!
               return {
-                workDay: (r.date ?? r.workDay) as string,
-                workHour: (r.workHours ?? r.workHour ?? 0) as number,
-                breakTimeHour: (r.breakTimeHour ?? 0) as number,
-                contractTimelyAmount: (r.contractTimelyAmount ?? r.applyTimelyAmount ?? 0) as number,
-                applyTimelyAmount: (r.applyTimelyAmount ?? 0) as number,
-                totalAmount: (r.paymentAmount ?? r.totalAmount ?? 0) as number,
-                deductionAmount: (r.deductionAmount ?? 0) as number,
+                workDay: r.date,
+                workHour: r.workHours,
+                breakTimeHour: 0,
+                contractTimelyAmount: r.applyTimelyAmount,
+                applyTimelyAmount: r.applyTimelyAmount,
+                totalAmount: r.paymentAmount,
+                deductionAmount: r.deductionAmount,
               }
             })
           setPaymentItems(dailyItems)
@@ -270,25 +279,32 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     setDeductionItems([])
   }
 
-  // 직원 선택 시 계약 정보 기반으로 급여지급월/지급일 자동 설정
+  // 직원 선택 시 계약 기반 급여지급월/지급일 자동 설정
   const prevMonthValue = payrollMonthOptions[1]?.value ?? ''
-  useEffect(() => {
-    if (!isNew || !employeeContract) return
+  const handleEmployeeChange = async (employeeInfoId: number | undefined) => {
+    setSelectedEmployeeInfoId(employeeInfoId)
+    if (!isNew || !employeeInfoId) return
 
-    const ym = isNextMonth && prevMonthValue ? prevMonthValue : payrollYearMonth
-    setPayrollYearMonth(ym)
+    try {
+      const contracts = await getContractsByEmployee(employeeInfoId)
+      const contract = contracts[0]
+      if (!contract) return
+      const header = contract.employmentContractHeader
+      const nextMonth = header?.salaryMonth === 'SLRCF_002'
+      const ym = nextMonth && prevMonthValue ? prevMonthValue : payrollYearMonth
+      setPayrollYearMonth(ym)
 
-    const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
-    if (date) {
-      setPaymentDate(date)
-      const period = computeWorkPeriodFromPaymentDate(date)
-      if (period) {
-        setSettlementStartDate(period.start)
-        setSettlementEndDate(period.end)
+      const date = computePaymentDate(ym, header?.salaryDay, nextMonth)
+      if (date) {
+        setPaymentDate(date)
+        const period = computeWorkPeriodFromPaymentDate(date)
+        if (period) {
+          setSettlementStartDate(period.start)
+          setSettlementEndDate(period.end)
+        }
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- employeeContract 변경 시에만 실행
-  }, [employeeContract?.id])
+    } catch { /* 계약 조회 실패 무시 */ }
+  }
 
   // 금액 계산
   const totalPayment = paymentItems.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
@@ -314,8 +330,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
       })
     }
     return () => setOnDelete(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deleteMutation은 매 렌더마다 새 참조
-  }, [isNew, id, setOnDelete, router])
+  }, [isNew, id, setOnDelete, router, deleteMutation])
 
   // 저장
   const handleSave = async () => {
@@ -490,7 +505,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
                       <select
                         className="select-form"
                         value={selectedEmployeeInfoId ?? ''}
-                        onChange={(e) => setSelectedEmployeeInfoId(Number(e.target.value) || undefined)}
+                        onChange={(e) => handleEmployeeChange(Number(e.target.value) || undefined)}
                         disabled={!selectedOfficeId}
                       >
                         <option value="">직원 선택</option>

@@ -128,16 +128,14 @@ export interface PartTimerPayrollUpdateRequest {
 
 // 일별 근무 기록 (daily-work-hours API 응답)
 export interface DailyWorkRecord {
-  workDay: string
-  workHour: number
-  breakTimeHour: number
-  overtimeHour: number
-  nightHour: number
-  holidayHour: number
-  contractTimelyAmount: number
+  date: string
+  dayOfWeek: string
+  dayOfWeekKorean: string
+  workHours: number
   applyTimelyAmount: number
-  totalAmount: number
+  paymentAmount: number
   deductionAmount: number
+  totalAmount: number
 }
 
 export interface WeeklySubtotal {

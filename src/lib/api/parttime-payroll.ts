@@ -76,7 +76,7 @@ export const downloadPartTimerPayrollExcel = async (id: number): Promise<void> =
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  setTimeout(() => window.URL.revokeObjectURL(url), 100)
+  setTimeout(() => window.URL.revokeObjectURL(url), 1000)
 }
 
 // 일별 근무시간 조회

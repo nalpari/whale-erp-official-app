@@ -18,7 +18,8 @@ export default function PartTimerTimePage() {
     if (!id) return
     // 기존 draft에서 deductionItems 유지
     const existingRaw = sessionStorage.getItem(EDIT_DRAFT_KEY)
-    const existing = existingRaw ? JSON.parse(existingRaw) : {}
+    let existing = {}
+    try { if (existingRaw) existing = JSON.parse(existingRaw) } catch { /* ignore */ }
     sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ ...existing, id, paymentItems: items }))
   }, [id])
 

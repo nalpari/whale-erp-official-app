@@ -55,14 +55,14 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
     )
   }
 
-  const weeks = groupByWeek(initialData.paymentItems)
+  const weeks = groupByWeek(initialData.paymentItems ?? [])
   const weeklyAllowanceMap = new Map(
-    initialData.weeklyPaidHolidayAllowances.map((w) => [w.workWeek, w]),
+    (initialData.weeklyPaidHolidayAllowances ?? []).map((w) => [w.workWeek, w]),
   )
 
-  const totalPayment = initialData.paymentItems.reduce((sum, i) => sum + i.totalAmount, 0)
-  const weeklyHolidayTotal = initialData.weeklyPaidHolidayAllowances.reduce((sum, w) => sum + w.totalAmount, 0)
-  const insuranceDeduction = initialData.deductionItems.reduce((sum, i) => sum + i.amount, 0)
+  const totalPayment = (initialData.paymentItems ?? []).reduce((sum, i) => sum + i.totalAmount, 0)
+  const weeklyHolidayTotal = (initialData.weeklyPaidHolidayAllowances ?? []).reduce((sum, w) => sum + w.totalAmount, 0)
+  const insuranceDeduction = (initialData.deductionItems ?? []).reduce((sum, i) => sum + i.amount, 0)
 
   return (
     <div className="container sub">
