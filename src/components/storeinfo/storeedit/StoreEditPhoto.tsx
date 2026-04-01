@@ -14,7 +14,7 @@ export default function StoreEditPhoto({ id }: { id: number }) {
   const openAlert = usePopupControler((state) => state.openAlert);
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
   const setFields = useStoreFormStore((state) => state.setFields);
-  const { data, isLoading, isError } = useStoreDetail(id);
+  const { data, isLoading, isError, refetch } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
   const setRightLabel = useHeaderStore((state) => state.setRightLabel);
@@ -54,8 +54,12 @@ export default function StoreEditPhoto({ id }: { id: number }) {
   if (isError) {
     return (
       <div className="container sub">
-        <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
-          점포 정보를 불러올 수 없습니다.
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ color: "#e74c3c", marginBottom: "16px" }}>점포 정보를 불러올 수 없습니다.</div>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+            <button className="btn-form outline min" onClick={() => refetch()}>다시 시도</button>
+            <button className="btn-form outline min" onClick={() => router.back()}>돌아가기</button>
+          </div>
         </div>
       </div>
     );

@@ -53,7 +53,8 @@ export default function StoreOperatingHourForm() {
   const operating = useStoreFormStore((s) => s.operating);
   const setOperating = useStoreFormStore((s) => s.setOperating);
 
-  const updateHour = (dayType: string, field: string, value: string | null) => {
+  type TimeField = 'openTime' | 'closeTime' | 'breakStartTime' | 'breakEndTime'
+  const updateHour = (dayType: string, field: TimeField, value: string | null) => {
     setOperating(
       operating.map((o) => {
         if (o.dayType !== dayType) return o;

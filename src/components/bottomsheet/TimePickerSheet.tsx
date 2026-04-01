@@ -37,10 +37,9 @@ export default function TimePickerSheet() {
   const handleSelect = (time: string | null) => {
     try {
       onTimeSelect?.(time);
+      handleClose();
     } catch (err) {
       console.error('[TimePickerSheet] onTimeSelect 콜백 실행 실패:', err);
-    } finally {
-      handleClose();
     }
   };
 
