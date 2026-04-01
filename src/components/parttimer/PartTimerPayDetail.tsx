@@ -312,9 +312,10 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   const totalPayment = paymentItems.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
   const totalPaymentDeduction = paymentItems.reduce((sum, item) => sum + (item.deductionAmount || 0), 0)
   const weeklyHolidayTotal = initialData?.weeklyPaidHolidayAllowances?.reduce((sum, w) => sum + (w.totalAmount || 0), 0) ?? 0
+  const weeklyHolidayNet = initialData?.weeklyPaidHolidayAllowances?.reduce((sum, w) => sum + (w.netAmount || 0), 0) ?? 0
   const insuranceDeduction = deductionItems.reduce((sum, item) => sum + (item.amount || 0), 0)
   const totalDeduction = totalPaymentDeduction + insuranceDeduction
-  const actualPayment = totalPayment + weeklyHolidayTotal - totalDeduction
+  const actualPayment = totalPayment + weeklyHolidayNet - totalDeduction
 
   // 삭제 핸들러 등록
   const setOnDelete = useHeaderStore((s) => s.setOnDelete)
