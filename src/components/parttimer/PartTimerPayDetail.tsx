@@ -305,7 +305,9 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           setSettlementEndDate(period.end)
         }
       }
-    } catch { /* 계약 조회 실패 무시 */ }
+    } catch (error) {
+      console.warn('계약 정보 조회 실패:', error)
+    }
   }
 
   // 금액 계산
