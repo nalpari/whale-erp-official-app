@@ -1,3 +1,6 @@
+// 근무 계획표 계약 유형
+export type ScheduleContractType = '정직원' | '계약직' | '수습' | '파트타이머' | '임시근무'
+
 // 목록 조회 응답
 export interface ScheduleResponse {
   storeId: number | null
@@ -12,7 +15,7 @@ export interface WorkerResponse {
   shiftId: number | null
   workerId: number | null
   workerName: string
-  contractType: string // "정직원", "파트타이머", "임시근무" 등
+  contractType: ScheduleContractType
   workStartTime: string | null
   workEndTime: string | null
   breakStartTime: string | null
@@ -29,10 +32,9 @@ export interface ScheduleRequest {
   workerRequests: WorkerRequest[]
 }
 
-export interface WorkerRequest {
+// workerId(등록 직원)와 tempWorkerName(임시 근무자)은 상호 배타
+interface WorkerRequestBase {
   shiftId?: number
-  workerId?: number
-  tempWorkerName?: string
   hasWork: boolean
   workStartTime?: string
   workEndTime?: string
@@ -42,6 +44,18 @@ export interface WorkerRequest {
   iconType?: number
   isDeleted?: boolean
 }
+
+interface RegisteredWorkerRequest extends WorkerRequestBase {
+  workerId: number
+  tempWorkerName?: never
+}
+
+interface TempWorkerRequest extends WorkerRequestBase {
+  workerId?: never
+  tempWorkerName: string
+}
+
+export type WorkerRequest = RegisteredWorkerRequest | TempWorkerRequest
 
 // 저장 결과
 export interface ScheduleSummary {
@@ -75,7 +89,7 @@ export interface WorkerEditItem {
   shiftId: number | null
   workerId: number | null
   workerName: string
-  contractType: string
+  contractType: ScheduleContractType
   hasWork: boolean
   workStartTime: string | null
   workEndTime: string | null
@@ -92,6 +106,6 @@ export interface WorkerSheetEmployee {
   id: number
   memberId: number | null
   name: string
-  contractType: string
+  contractType: ScheduleContractType
   employeeNumber?: string
 }

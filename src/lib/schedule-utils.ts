@@ -1,7 +1,7 @@
-import type { WorkerResponse } from '@/types/schedule'
+import type { WorkerResponse, ScheduleContractType } from '@/types/schedule'
 
 // ── 아바타 아이콘 매핑 ──
-
+// index 0(기본)과 1은 동일 이미지 — iconType 서버 값(0~3)과 1:1 매핑
 const AVATAR_IMAGES = [
   '/assets/images/layout/avatar01.svg',
   '/assets/images/layout/avatar01.svg',
@@ -16,7 +16,7 @@ export function getWorkerAvatar(iconType: number): string {
 
 // ── 계약유형 스타일 매핑 ──
 
-export function getContractStyle(contractType: string) {
+export function getContractStyle(contractType: ScheduleContractType) {
   switch (contractType) {
     case '파트타이머':
       return { wrapClass: 'part', badgeClass: 'badge green', label: '파트' }
@@ -49,7 +49,7 @@ export function calcWorkHours(worker: Pick<WorkerResponse, 'hasWork' | 'workStar
 
 // ── 정렬 ──
 
-const CONTRACT_ORDER: Record<string, number> = {
+const CONTRACT_ORDER: Record<ScheduleContractType, number> = {
   '정직원': 1, '계약직': 2, '수습': 3, '파트타이머': 4, '임시근무': 5,
 }
 

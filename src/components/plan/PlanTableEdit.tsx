@@ -12,7 +12,7 @@ import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS, getMonday, getSunday, parseDateLocal } from '@/lib/schedule-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
-import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest } from '@/types/schedule'
+import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest, ScheduleContractType } from '@/types/schedule'
 
 function createDateRange(from: string, to: string) {
   if (!from || !to || from > to) return []
@@ -96,7 +96,7 @@ export default function PlanTableEdit() {
         id: e.employeeInfoId,
         memberId: e.memberId,
         name: e.employeeName,
-        contractType: e.contractType ?? '정직원',
+        contractType: (e.contractType ?? '정직원') as ScheduleContractType,
         employeeNumber: e.employeeNumber,
       })))
     }
@@ -174,6 +174,16 @@ export default function PlanTableEdit() {
     [updateWorkers],
   )
 
+  // 근무자 복수 필드 동시 업데이트
+  const updateWorkerFields = useCallback(
+    (date: string, index: number, fields: Partial<WorkerEditItem>) => {
+      updateWorkers(date, (workers) =>
+        workers.map((w, i) => (i === index ? { ...w, ...fields } : w)),
+      )
+    },
+    [updateWorkers],
+  )
+
   // 근무자 추가 (기간 내 날짜에만 추가)
   const handleAddWorker = useCallback(
     (worker: WorkerEditItem, fromDate: string, toDate: string) => {
@@ -194,7 +204,7 @@ export default function PlanTableEdit() {
 
   // 근무자 교체
   const handleReplaceWorker = useCallback(
-    (date: string, index: number, newWorkerId: number, newWorkerName: string, newContractType: string) => {
+    (date: string, index: number, newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => {
       updateWorkers(date, (workers) =>
         workers.map((w, i) =>
           i === index ? { ...w, workerId: newWorkerId, workerName: newWorkerName, contractType: newContractType } : w,
@@ -218,19 +228,23 @@ export default function PlanTableEdit() {
   const buildRequests = (): ScheduleRequest[] => {
     const requests: ScheduleRequest[] = []
     for (const [date, workers] of effectiveEditState) {
-      const workerRequests: WorkerRequest[] = workers.map((w) => ({
-        shiftId: w.shiftId ?? undefined,
-        workerId: w.workerId ?? undefined,
-        tempWorkerName: w.workerId ? undefined : w.workerName,
-        hasWork: w.hasWork,
-        workStartTime: w.workStartTime ?? undefined,
-        workEndTime: w.workEndTime ?? undefined,
-        hasBreak: w.hasBreak,
-        breakStartTime: w.breakStartTime ?? undefined,
-        breakEndTime: w.breakEndTime ?? undefined,
-        iconType: w.iconType,
-        isDeleted: w.isDeleted,
-      }))
+      const workerRequests: WorkerRequest[] = workers.map((w) => {
+        const base = {
+          shiftId: w.shiftId ?? undefined,
+          hasWork: w.hasWork,
+          workStartTime: w.workStartTime ?? undefined,
+          workEndTime: w.workEndTime ?? undefined,
+          hasBreak: w.hasBreak,
+          breakStartTime: w.breakStartTime ?? undefined,
+          breakEndTime: w.breakEndTime ?? undefined,
+          iconType: w.iconType,
+          isDeleted: w.isDeleted,
+        }
+        if (w.workerId) {
+          return { ...base, workerId: w.workerId }
+        }
+        return { ...base, tempWorkerName: w.workerName }
+      })
       requests.push({ date, workerRequests })
     }
     return requests
@@ -283,11 +297,11 @@ export default function PlanTableEdit() {
         const isEmployee = !!w.workerId
         const isTemp = !w.workerId
 
-        // 직원명 필터: 정규직만 대상
+        // 직원명 필터: 등록된 직원 대상 (workerId가 있는 근무자)
         if (filterEmployeeName && isEmployee) {
           return w.workerName === filterEmployeeName
         }
-        // 임시근무자명 필터: 임시근무만 대상
+        // 임시근무자명 필터: workerId 없는 임시근무만 대상
         if (filterTempName && isTemp) {
           return w.workerName.includes(filterTempName)
         }
@@ -469,13 +483,7 @@ export default function PlanTableEdit() {
                                         openTimePicker(
                                           '휴게 시작시간',
                                           worker.breakStartTime ?? '12:00',
-                                          (time) => {
-                                            updateWorkers(date, (workers) =>
-                                              workers.map((w, i) =>
-                                                i === originalIndex ? { ...w, breakStartTime: time, hasBreak: true } : w
-                                              )
-                                            )
-                                          },
+                                          (time) => updateWorkerFields(date, originalIndex, { breakStartTime: time, hasBreak: true }),
                                         )
                                       }
                                     >
@@ -489,13 +497,7 @@ export default function PlanTableEdit() {
                                         openTimePicker(
                                           '휴게 종료시간',
                                           worker.breakEndTime ?? '13:00',
-                                          (time) => {
-                                            updateWorkers(date, (workers) =>
-                                              workers.map((w, i) =>
-                                                i === originalIndex ? { ...w, breakEndTime: time, hasBreak: true } : w
-                                              )
-                                            )
-                                          },
+                                          (time) => updateWorkerFields(date, originalIndex, { breakEndTime: time, hasBreak: true }),
                                         )
                                       }
                                     >

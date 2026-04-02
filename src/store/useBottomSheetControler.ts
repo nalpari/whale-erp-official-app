@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { WorkerEditItem, WorkerSheetEmployee } from '@/types/schedule'
+import type { WorkerEditItem, WorkerSheetEmployee, ScheduleContractType } from '@/types/schedule'
 
 // 근무자 시트에 전달할 컨텍스트
 interface WorkerSheetContext {
@@ -20,8 +20,8 @@ type BottomSheetControlerState = {
   onTempWorkerAdd: ((worker: WorkerEditItem, fromDate: string, toDate: string) => void) | null
   openTempWorkerAddSheet: (onAdd: (worker: WorkerEditItem, fromDate: string, toDate: string) => void, defaultDates?: { from: string; to: string }) => void
   // 근무자 교체 콜백
-  onWorkerReplace: ((newWorkerId: number, newWorkerName: string, newContractType: string) => void) | null
-  openWorkerChangeSheet: (worker: WorkerEditItem, date: string, onReplace: (newWorkerId: number, newWorkerName: string, newContractType: string) => void) => void
+  onWorkerReplace: ((newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => void) | null
+  openWorkerChangeSheet: (worker: WorkerEditItem, date: string, onReplace: (newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => void) => void
   // 근무자 삭제 콜백
   onWorkerDelete: (() => void) | null
   openWorkerDeleteSheet: (worker: WorkerEditItem, date: string, onDelete: () => void) => void
