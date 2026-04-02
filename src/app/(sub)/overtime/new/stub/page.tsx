@@ -13,7 +13,6 @@ export default function OverTimeNewStubPage() {
     try {
       const raw = sessionStorage.getItem(PREVIEW_KEY)
       if (!raw) return null
-      sessionStorage.removeItem(PREVIEW_KEY)
       return JSON.parse(raw) as OvertimeAllowanceDetail
     } catch (err) {
       console.warn('[OverTimeNewStubPage] sessionStorage 파싱 실패:', err)

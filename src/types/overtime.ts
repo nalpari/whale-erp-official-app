@@ -90,7 +90,7 @@ export interface OvertimeAllowanceCreateRequest {
   calculationEndDate: string
   paymentDate?: string
   remarks?: string
-  details: Omit<OvertimeAllowanceItemDto, 'id'>[]
+  details: OvertimeAllowanceItemDto[]
 }
 
 // 수정 요청

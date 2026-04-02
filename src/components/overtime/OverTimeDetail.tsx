@@ -10,7 +10,6 @@ import {
   useDownloadOvertimeExcel,
 } from '@/hooks/queries/use-overtime-queries'
 import { getErrorMessage } from '@/lib/api'
-import { getDailyOvertimeHours } from '@/lib/api/overtime'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
 import { getContractsByEmployee } from '@/lib/api/contract'
@@ -94,6 +93,7 @@ interface FormDraft {
   selectedFranchiseId?: number
   selectedStoreId?: number
   selectedEmployeeInfoId?: number
+  contractWage?: number
   allowanceYearMonth: string
   calculationStartDate: string
   calculationEndDate: string
@@ -128,10 +128,10 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
   const { mutateAsync: sendEmail, isPending: isSendingEmail } = useSendOvertimeEmail()
   const { mutateAsync: downloadExcel, isPending: isDownloading } = useDownloadOvertimeExcel()
 
-  // 조직 선택
+  // 조직 선택 (신규 등록 시에만 필요)
   const authHeadOfficeId = useAuthStore((s) => s.headOfficeId)
   const globalHeadOffice = useStoreStore((s) => s.selectedHeadOffice)
-  const { data: headOfficeTree = [] } = useHeadOfficeTree()
+  const { data: headOfficeTree = [] } = useHeadOfficeTree(isNew)
   const [selectedOfficeId, setSelectedOfficeId] = useState<number | undefined>(
     draft?.selectedOfficeId ?? (initialData?.headOfficeName ? undefined : (globalHeadOffice?.id ?? authHeadOfficeId ?? undefined)),
   )
@@ -140,9 +140,9 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
 
   const selectedOffice = headOfficeTree.find((o) => o.id === selectedOfficeId)
   const franchises = selectedOffice?.franchises ?? []
-  const { data: storeOptions = [] } = useStoreOptions(selectedOfficeId, selectedFranchiseId)
+  const { data: storeOptions = [] } = useStoreOptions(isNew ? selectedOfficeId : undefined, isNew ? selectedFranchiseId : undefined)
 
-  // 직원 목록 (초과근무는 전체 직원 대상)
+  // 직원 목록 (신규 등록 시에만 조회)
   const { data: employeeList = [] } = useEmployeeListByType(
     { headOfficeId: selectedOfficeId ?? 0, franchiseId: selectedFranchiseId, employeeType: 'ALL' },
     isNew && !!selectedOfficeId,
@@ -165,6 +165,9 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
   const [calculationEndDate, setCalculationEndDate] = useState(draft?.calculationEndDate ?? initialPeriod.end)
   const [paymentDate, setPaymentDate] = useState(draft?.paymentDate ?? initialData?.paymentDate ?? '')
   const [remarks, setRemarks] = useState(draft?.remarks ?? initialData?.remarks ?? '')
+  const [contractWage, setContractWage] = useState<number>(
+    draft?.contractWage ?? initialData?.details?.[0]?.contractTimelyAmount ?? 0,
+  )
   const [details, setDetails] = useState<OvertimeAllowanceItemDto[]>(
     editDraft?.details ?? draft?.details ?? initialData?.details ?? [],
   )
@@ -204,46 +207,11 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
         setCalculationStartDate(range.start)
         setCalculationEndDate(range.end)
       }
+      // 계약 시급 저장
+      const wage = contract.salaryInfo?.timelySalary ?? 0
+      setContractWage(wage)
     } catch (error) {
       console.warn('[OverTimeDetail] 계약 정보 조회 실패:', error)
-    }
-  }
-
-  // 연장근무 기간 설정 후 일별 데이터 조회
-  const handleLoadDailyHours = async () => {
-    if (!selectedEmployeeInfoId || !calculationStartDate || !calculationEndDate) {
-      alert('직원과 연장근무 기간을 먼저 설정해주세요.')
-      return
-    }
-    try {
-      const result = await getDailyOvertimeHours({
-        employeeInfoId: selectedEmployeeInfoId,
-        startDate: calculationStartDate,
-        endDate: calculationEndDate,
-        headOfficeId: selectedOfficeId,
-        franchiseStoreId: selectedFranchiseId,
-        storeId: selectedStoreId,
-      })
-      if (result?.items) {
-        const dailyItems: OvertimeAllowanceItemDto[] = result.items
-          .filter((item) => item.type === 'DAILY')
-          .map((item) => ({
-            workDay: item.date,
-            workHour: item.overtimeHours,
-            breakTimeHour: 0,
-            contractTimelyAmount: item.contractTimelyAmount,
-            applyTimelyAmount: item.applyTimelyAmount,
-            expectedOvertimeHours: item.overtimeHours,
-            actualOvertimeHours: item.overtimeHours,
-            overtimeStartTime: item.overtimeStartTime,
-            overtimeEndTime: item.overtimeEndTime,
-            deductionAmount: item.deductionAmount,
-            actualPaymentAmount: item.paymentAmount,
-          }))
-        setDetails(dailyItems)
-      }
-    } catch (error) {
-      alert(getErrorMessage(error, '근무내역을 불러오는데 실패했습니다.'))
     }
   }
 
@@ -289,11 +257,14 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
       alert('연장근무 기간을 설정해주세요.')
       return
     }
-    if (details.length === 0) {
+    // API 저장 시 근무시간이 0보다 큰 항목만 전송
+    const validDetails = details.filter((item) => (item.workHour || 0) > 0)
+    if (validDetails.length === 0) {
       alert('근무시간을 입력해주세요.')
       return
     }
-    if (totalPayment === 0) {
+    const validTotalPayment = validDetails.reduce((sum, item) => sum + (item.actualPaymentAmount || 0), 0)
+    if (validTotalPayment === 0) {
       alert('급여내역이 0원입니다. 근무시간을 확인해주세요.')
       return
     }
@@ -308,8 +279,8 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
           calculationEndDate,
           paymentDate: paymentDate || undefined,
           remarks: remarks || undefined,
-          details: details.map(({ workDay, workHour, breakTimeHour, contractTimelyAmount, applyTimelyAmount, expectedOvertimeHours, actualOvertimeHours, overtimeStartTime, overtimeEndTime, deductionAmount, actualPaymentAmount, remarks: r }) => ({
-            workDay, workHour, breakTimeHour, contractTimelyAmount, applyTimelyAmount, expectedOvertimeHours, actualOvertimeHours, overtimeStartTime, overtimeEndTime, deductionAmount, actualPaymentAmount, remarks: r,
+          details: validDetails.map(({ workDay, workHour, breakTimeHour, contractTimelyAmount, applyTimelyAmount, actualOvertimeHours, deductionAmount, actualPaymentAmount }) => ({
+            workDay, workHour, breakTimeHour, contractTimelyAmount, applyTimelyAmount, actualOvertimeHours, deductionAmount, actualPaymentAmount,
           })),
         }
         await createOvertime(request)
@@ -322,7 +293,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
           calculationEndDate,
           paymentDate: paymentDate || undefined,
           remarks: remarks || undefined,
-          details,
+          details: validDetails,
         }
         await updateOvertime({ id, data: request })
         alert('수당명세서가 수정되었습니다.')
@@ -378,6 +349,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
         selectedFranchiseId,
         selectedStoreId,
         selectedEmployeeInfoId,
+        contractWage,
         allowanceYearMonth,
         calculationStartDate,
         calculationEndDate,
@@ -410,39 +382,6 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
     }
   }
 
-  // 근무시간 편집 페이지 이동
-  const handleGoToTimeEdit = () => {
-    const previewData: Partial<OvertimeAllowanceDetail> = {
-      ...(initialData ?? {}),
-      allowanceYearMonth,
-      calculationStartDate,
-      calculationEndDate,
-      paymentDate,
-      details,
-    }
-    if (isNew) {
-      const formDraft: FormDraft = {
-        selectedOfficeId,
-        selectedFranchiseId,
-        selectedStoreId,
-        selectedEmployeeInfoId,
-        allowanceYearMonth,
-        calculationStartDate,
-        calculationEndDate,
-        paymentDate,
-        remarks,
-        details,
-      }
-      sessionStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formDraft))
-      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(previewData))
-      router.push('/overtime/new/time')
-    } else {
-      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(previewData))
-      sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ id, details }))
-      router.push(`/overtime/${id}/time`)
-    }
-  }
-
   return (
     <>
       <div className="container sub">
@@ -457,15 +396,6 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
           </div>
         )}
         <div className="sub-content-body">
-          <button className="work-time-edit" onClick={handleGoToTimeEdit}>
-            <div className="work-time-edit-tit">
-              <i className="time-edit-icon"></i>
-              <span>근무시간 수정</span>
-            </div>
-            <div className="auto-right">
-              <i className="contract-arr"></i>
-            </div>
-          </button>
           <div className="sub-cont-wrap">
             <div className="sub-cont-item-wrap">
               <div className="sub-item-bx">
@@ -614,15 +544,6 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
                       />
                     </div>
                   </div>
-                  {isNew && (
-                    <button
-                      className="btn-s sky"
-                      onClick={handleLoadDailyHours}
-                      disabled={!selectedEmployeeInfoId || !calculationStartDate || !calculationEndDate}
-                    >
-                      계약시간 적용
-                    </button>
-                  )}
                 </div>
               </div>
               <div className="sub-item-bx">
@@ -714,7 +635,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
       <div className="content-pagination flex g8">
         <button
           className="btn-form block sky brd"
-          disabled={details.length === 0}
+          disabled={isNew ? (!selectedEmployeeInfoId || !calculationStartDate || !calculationEndDate) : (!calculationStartDate || !calculationEndDate)}
           onClick={handlePreview}
         >
           급여내역 미리보기

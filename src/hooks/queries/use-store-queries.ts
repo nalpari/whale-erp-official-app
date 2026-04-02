@@ -29,10 +29,11 @@ export const useHeadOffices = () => {
 }
 
 // 본사-가맹점 트리
-export const useHeadOfficeTree = () => {
+export const useHeadOfficeTree = (enabled = true) => {
   return useQuery({
     queryKey: storeKeys.headOfficeTree(),
     queryFn: getHeadOfficeTree,
+    enabled,
   })
 }
 

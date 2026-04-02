@@ -203,44 +203,6 @@ export default function OverTimeStub({ initialData, isPreview = false }: OverTim
           </div>
         </div>
 
-        {/* 등록/수정 이력 */}
-        {!isPreview && initialData.createdAt && (
-          <div className="sub-cont-wrap">
-            <div className="sub-cont-item-wrap">
-              <div className="sub-cont-tit-wrap">
-                <div className="sub-cont-tit">등록 및 수정 이력</div>
-              </div>
-              <div className="sub-item-bx">
-                <table className="info-table">
-                  <colgroup>
-                    <col style={{ width: '95px' }} />
-                    <col />
-                  </colgroup>
-                  <tbody>
-                    <tr>
-                      <th>등록일</th>
-                      <td>
-                        <div className="data-list">
-                          <span>{initialData.createdByName ?? '-'}</span>
-                          <span>{initialData.createdAt?.slice(0, 10).replace(/-/g, '.') ?? '-'}</span>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>최근수정일</th>
-                      <td>
-                        <div className="data-list">
-                          <span>{initialData.updatedByName ?? '-'}</span>
-                          <span>{initialData.updatedAt?.slice(0, 10).replace(/-/g, '.') ?? '-'}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
