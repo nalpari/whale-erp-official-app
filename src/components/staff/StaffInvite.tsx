@@ -31,7 +31,6 @@ export default function StaffInvite() {
       alert('필수 항목을 입력해주세요.')
       return
     }
-    // 정의서 #15: 확인창
     if (!confirm(`${request.employeeName}님에게 초대 카카오톡을 발송할까요?`)) return
 
     try {

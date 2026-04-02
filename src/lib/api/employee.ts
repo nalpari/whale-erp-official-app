@@ -21,7 +21,7 @@ import type {
 } from '@/types/employee'
 import type { PaginatedResponse } from '@/types/payroll'
 
-const BASE_URL = '/api/employee/info'
+const BASE_URL = '/api/v1/employee/info'
 
 // undefined/null/빈 문자열 제거 (API에서 null을 long으로 변환 시 에러 방지)
 const cleanParams = (params: object) => {
@@ -195,7 +195,7 @@ export async function sendEmployeeRegistrationEmail(employeeId: number): Promise
 
 export async function getEmployeeCareers(memberId: number): Promise<EmployeeCareerResponse[]> {
   const response = await api.get<{ data: EmployeeCareerResponse[] }>(
-    `/api/employee/member/${memberId}/careers`,
+    `/api/v1/employee/member/${memberId}/careers`,
   )
   return response.data.data
 }
@@ -205,14 +205,14 @@ export async function saveEmployeeCareers(
   data: SaveEmployeeCareersRequest,
 ): Promise<EmployeeCareerResponse[]> {
   const response = await api.put<{ data: EmployeeCareerResponse[] }>(
-    `/api/employee/member/${memberId}/careers`,
+    `/api/v1/employee/member/${memberId}/careers`,
     data,
   )
   return response.data.data
 }
 
 export async function deleteAllEmployeeCareers(memberId: number): Promise<void> {
-  await api.delete(`/api/employee/member/${memberId}/careers`)
+  await api.delete(`/api/v1/employee/member/${memberId}/careers`)
 }
 
 // ========== 자격증 정보 ==========
@@ -221,7 +221,7 @@ export async function getEmployeeCertificates(
   memberId: number,
 ): Promise<EmployeeCertificateResponse[]> {
   const response = await api.get<{ data: EmployeeCertificateResponse[] }>(
-    `/api/employee/member/${memberId}/certificates`,
+    `/api/v1/employee/member/${memberId}/certificates`,
   )
   return response.data.data
 }
@@ -231,7 +231,7 @@ export async function saveEmployeeCertificates(
   data: SaveEmployeeCertificatesRequest,
 ): Promise<EmployeeCertificateResponse[]> {
   const response = await api.put<{ data: EmployeeCertificateResponse[] }>(
-    `/api/employee/member/${memberId}/certificates`,
+    `/api/v1/employee/member/${memberId}/certificates`,
     data,
   )
   return response.data.data
@@ -250,7 +250,7 @@ export async function saveEmployeeCertificatesWithFiles(
   })
 
   const response = await api.put<{ data: EmployeeCertificateResponse[] }>(
-    `/api/employee/member/${memberId}/certificates/with-files`,
+    `/api/v1/employee/member/${memberId}/certificates/with-files`,
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } },
   )
@@ -258,14 +258,14 @@ export async function saveEmployeeCertificatesWithFiles(
 }
 
 export async function deleteAllEmployeeCertificates(memberId: number): Promise<void> {
-  await api.delete(`/api/employee/member/${memberId}/certificates`)
+  await api.delete(`/api/v1/employee/member/${memberId}/certificates`)
 }
 
 // ========== 회원 문서 ==========
 
 export async function getMemberDocuments(memberId: number): Promise<MemberDocument[]> {
   const response = await api.get<{ data: MemberDocument[] }>(
-    `/api/members/${memberId}/documents`,
+    `/api/v1/members/${memberId}/documents`,
   )
   return response.data.data
 }
@@ -275,7 +275,7 @@ export async function createMemberDocument(
   data: { documentType: string; uploadFileId: number; expiryDate?: string },
 ): Promise<MemberDocument> {
   const response = await api.post<{ data: MemberDocument }>(
-    `/api/members/${memberId}/documents`,
+    `/api/v1/members/${memberId}/documents`,
     data,
   )
   return response.data.data
@@ -285,7 +285,7 @@ export async function deleteMemberDocument(
   memberId: number,
   documentId: number,
 ): Promise<void> {
-  await api.delete(`/api/members/${memberId}/documents/${documentId}`)
+  await api.delete(`/api/v1/members/${memberId}/documents/${documentId}`)
 }
 
 // ========== 로그인 / 권한 ==========
@@ -305,7 +305,7 @@ export async function withdrawEmployeeMember(employeeInfoId: number): Promise<vo
 
 export async function getMinimumWage(year: number): Promise<number> {
   const response = await api.get<{ data: { minimumWage: number } }>(
-    `/api/employee/contract/minimum-wage/${year}`,
+    `/api/v1/employee/contract/minimum-wage/${year}`,
   )
   return response.data.data.minimumWage
 }

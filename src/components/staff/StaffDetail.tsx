@@ -13,9 +13,12 @@ import {
 import { getErrorMessage } from '@/lib/api'
 import { downloadFile } from '@/lib/api/file'
 
-const formatDate = (date?: string | null) => {
-  if (!date) return '-'
-  return date.replace(/-/g, '.')
+/** 건강진단 만료일이 오늘 기준으로 경과했는지 판별 */
+const isExpired = (date?: string | null) => {
+  if (!date) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return new Date(date) < today
 }
 
 export default function StaffDetail() {
@@ -45,7 +48,7 @@ export default function StaffDetail() {
 
   const handleDelete = async () => {
     if (!employeeId) return
-    if (!confirm('해당 직원 정보를 삭제하시겠습니까?')) return
+    if (!confirm('해당 직원을 삭제하시겠습니까?\n삭제하면 더 이상 매장정보에 접근할 수 없습니다.')) return
     try {
       await deleteMutation.mutateAsync(employeeId)
       alert('삭제되었습니다.')
@@ -99,12 +102,23 @@ export default function StaffDetail() {
   const healthDoc = documents?.find((d) => d.documentType === 'HEALTH_CHECK')
   const resumeDoc = documents?.find((d) => d.documentType === 'RESUME')
 
-  // 초대 상태: 회원 ID가 있으면 초대완료
   const isInviteCompleted = !!employee.memberId
   const inviteStatusText = isInviteCompleted ? '초대완료' : '초대요청'
+  const healthExpiryDate = healthDoc?.expiryDate ?? null
+  const healthExpired = isExpired(healthExpiryDate)
 
   return (
     <div className="container sub">
+      {/* 근로계약서 */}
+      <div className="sub-tit-wrap" onClick={() => router.push('/contract')}>
+        <div className="sub-tit">
+          <span className="sub-s-txt">근로계약서</span>
+        </div>
+        <div className="auto-right flex g8">
+          {/* TODO: 근로계약관리 PR에서 상태배지 + 갱신알림 아이콘 연동 */}
+          <button className="contract-arr"></button>
+        </div>
+      </div>
       <div className="sub-content-body">
         {/* 메모 */}
         {employee.memo && (
@@ -157,7 +171,6 @@ export default function StaffDetail() {
                 </div>
               </div>
               <div className="staff-invite-btn-wrap">
-                {/* 정의서 #3-1: 초대요청 상태일 때만 표시 */}
                 {!isInviteCompleted && (
                   <button className="staff-invite-btn" onClick={handleSendInvite}>
                     <i className="invite"></i>
@@ -178,7 +191,7 @@ export default function StaffDetail() {
           </div>
         </div>
 
-        {/* 기본 정보 */}
+        {/* 입사일/퇴사일/건강진단만료일 */}
         <div className="sub-cont-wrap">
           <div className="sub-cont-item-wrap">
             <div className="sub-item-bx">
@@ -190,14 +203,14 @@ export default function StaffDetail() {
                 <tbody>
                   <tr>
                     <th>입사일</th>
-                    <td>{formatDate(employee.hireDate)}</td>
+                    <td>{employee.hireDate || '-'}</td>
                   </tr>
                   {employee.resignationDate && (
                     <tr>
                       <th>퇴사일</th>
                       <td>
                         <div className="data-list">
-                          <span>{formatDate(employee.resignationDate)}</span>
+                          <span>{employee.resignationDate}</span>
                           {employee.resignationReason && (
                             <span>{employee.resignationReason}</span>
                           )}
@@ -205,10 +218,16 @@ export default function StaffDetail() {
                       </td>
                     </tr>
                   )}
-                  {healthDoc?.expiryDate && (
+                  {healthExpiryDate && (
                     <tr>
                       <th>건강진단만료일</th>
-                      <td>{formatDate(healthDoc.expiryDate)}</td>
+                      <td>
+                        {healthExpired ? (
+                          <span className="imp">{healthExpiryDate}</span>
+                        ) : (
+                          healthExpiryDate
+                        )}
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -227,85 +246,72 @@ export default function StaffDetail() {
                     <th>본사</th>
                     <td>{employee.headOfficeOrganizationName || '-'}</td>
                   </tr>
-                  {employee.franchiseOrganizationName && (
-                    <tr>
-                      <th>가맹점</th>
-                      <td>
-                        <div className="ellipsis">{employee.franchiseOrganizationName}</div>
-                      </td>
-                    </tr>
-                  )}
-                  {employee.storeName && (
-                    <tr>
-                      <th>점포</th>
-                      <td>
-                        <div className="ellipsis">{employee.storeName}</div>
-                      </td>
-                    </tr>
-                  )}
-                  {employee.memberAuthorityNames && employee.memberAuthorityNames.length > 0 && (
-                    <tr>
-                      <th>파트너 오피스 권한</th>
-                      <td>{employee.memberAuthorityNames.join(', ')}</td>
-                    </tr>
-                  )}
-                  {(employee.salaryBank || employee.salaryAccountNumber) && (
-                    <tr>
-                      <th>급여계좌</th>
-                      <td>
-                        {employee.salaryBank && <div>{employee.salaryBank}</div>}
-                        {employee.salaryAccountNumber && <div>{employee.salaryAccountNumber}</div>}
-                        {employee.salaryAccountHolder && <div>{employee.salaryAccountHolder}</div>}
-                      </td>
-                    </tr>
-                  )}
+                  <tr>
+                    <th>가맹점</th>
+                    <td>{employee.franchiseOrganizationName || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>점포</th>
+                    <td>{employee.storeName || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>Partner Office 권한</th>
+                    <td>
+                      {employee.memberAuthorityNames && employee.memberAuthorityNames.length > 0
+                        ? employee.memberAuthorityNames.join(', ')
+                        : '-'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>급여계좌</th>
+                    <td>
+                      {employee.salaryBank || employee.salaryAccountNumber ? (
+                        <>
+                          {employee.salaryBank && <div>{employee.salaryBank}</div>}
+                          {employee.salaryAccountNumber && <div>{employee.salaryAccountNumber}</div>}
+                          {employee.salaryAccountHolder && <div>{employee.salaryAccountHolder}</div>}
+                        </>
+                      ) : '-'}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* 개인 정보 */}
-            {(employee.birthDate || employee.mobilePhone || employee.email || employee.address) && (
-              <div className="sub-item-bx">
-                <table className="info-table">
-                  <colgroup>
-                    <col style={{ width: '95px' }} />
-                    <col />
-                  </colgroup>
-                  <tbody>
-                    {employee.birthDate && (
-                      <tr>
-                        <th>생일</th>
-                        <td>{formatDate(employee.birthDate)}</td>
-                      </tr>
-                    )}
-                    {employee.mobilePhone && (
-                      <tr>
-                        <th>전화번호</th>
-                        <td>{employee.mobilePhone}</td>
-                      </tr>
-                    )}
-                    {employee.email && (
-                      <tr>
-                        <th>이메일</th>
-                        <td>{employee.email}</td>
-                      </tr>
-                    )}
-                    {employee.address && (
-                      <tr>
-                        <th>주소</th>
-                        <td>
-                          {employee.address}
-                          {employee.addressDetail ? ` ${employee.addressDetail}` : ''}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {/* 개인정보 */}
+            <div className="sub-item-bx">
+              <table className="info-table">
+                <colgroup>
+                  <col style={{ width: '95px' }} />
+                  <col />
+                </colgroup>
+                <tbody>
+                  <tr>
+                    <th>생일</th>
+                    <td>{employee.birthDate || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>전화번호</th>
+                    <td>{employee.mobilePhone || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>이메일</th>
+                    <td>{employee.email || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>주소</th>
+                    <td>
+                      {employee.address
+                        ? `${employee.address}${employee.addressDetail ? ` ${employee.addressDetail}` : ''}`
+                        : '-'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             {/* 증명서 파일 */}
-            {(residentDoc || familyDoc || healthDoc || resumeDoc) && (
+            {(residentDoc || familyDoc || healthDoc) && (
               <div className="sub-item-bx">
                 <table className="info-table">
                   <colgroup>
@@ -352,19 +358,6 @@ export default function StaffDetail() {
                         </td>
                       </tr>
                     )}
-                    {resumeDoc && (
-                      <tr>
-                        <th>이력서</th>
-                        <td>
-                          <button
-                            className="down-btn"
-                            onClick={() => handleFileDownload(resumeDoc.uploadFileId)}
-                          >
-                            {resumeDoc.fileName || '이력서.pdf'}
-                          </button>
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -372,18 +365,14 @@ export default function StaffDetail() {
           </div>
         </div>
 
-        {/* 로그인 정보 및 권한 */}
+        {/* 로그인 정보 — TODO: ERP 관리자만 표시 여부 확인 필요 */}
         <div className="sub-cont-wrap">
           <div className="sub-cont-item-wrap">
             <div className="sub-cont-tit-wrap">
               <div className="sub-cont-tit">로그인 정보</div>
-              {/* 정의서 #1-2: 가입완료 상태일 경우 탈퇴 처리 버튼 활성화 */}
               {isInviteCompleted && (
                 <div className="sub-cont-btn-wrap">
-                  <button
-                    className="btn-s red"
-                    onClick={handleWithdraw}
-                  >
+                  <button className="btn-s red" onClick={handleWithdraw}>
                     탈퇴 처리
                   </button>
                 </div>
@@ -397,110 +386,114 @@ export default function StaffDetail() {
                 </colgroup>
                 <tbody>
                   <tr>
-                    <th>승인상태</th>
-                    <td>{inviteStatusText}</td>
+                    <th>로그인ID</th>
+                    <td>{employee.memberLoginId || '-'}</td>
                   </tr>
-                  {employee.memberLoginId && (
-                    <tr>
-                      <th>로그인ID</th>
-                      <td>{employee.memberLoginId}</td>
-                    </tr>
-                  )}
-                  {employee.memberAuthorityNames && employee.memberAuthorityNames.length > 0 && (
-                    <tr>
-                      <th>권한</th>
-                      <td>{employee.memberAuthorityNames.join(', ')}</td>
-                    </tr>
-                  )}
-                  {employee.emailSendDate && (
-                    <tr>
-                      <th>요청일</th>
-                      <td>{formatDate(employee.emailSendDate)}</td>
-                    </tr>
-                  )}
-                  {employee.memberCreatedAt && (
-                    <tr>
-                      <th>가입일</th>
-                      <td>{formatDate(employee.memberCreatedAt)}</td>
-                    </tr>
-                  )}
+                  <tr>
+                    <th>초대요청일</th>
+                    <td>{employee.emailSendDate || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>초대완료일</th>
+                    <td>{employee.memberCreatedAt || '-'}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        {/* 근로계약서 링크 */}
-        <div className="sub-cont-wrap">
-          <div className="sub-cont-item-wrap">
-            <button
-              className="contract-link"
-              onClick={() => router.push(`/contract`)}
-            >
-              <div className="contract-inner">
-                <div className="contract-tit">근로계약서</div>
-                <div className="auto-right">
-                  <i className="contract-arr"></i>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* 경력 정보 */}
-        {careers && careers.length > 0 && (
+        {/* 경력정보 */}
+        {memberId && (
           <div className="sub-cont-wrap">
             <div className="sub-cont-item-wrap">
               <div className="sub-cont-tit-wrap">
-                <div className="sub-cont-tit">경력 정보</div>
-                <div className="sub-cont-btn-wrap">
-                  <button className="sub-down-btn"></button>
+                <div className="sub-cont-tit">경력정보</div>
+              </div>
+              {careers && careers.length > 0 ? (
+                <>
+                  {/* 이력서 파일 */}
+                  {resumeDoc && (
+                    <div className="sub-item-bx">
+                      <button
+                        className="down-btn"
+                        onClick={() => handleFileDownload(resumeDoc.uploadFileId)}
+                      >
+                        {resumeDoc.fileName || '이력서.pdf'}
+                      </button>
+                    </div>
+                  )}
+                  <div className="sub-item-bx">
+                    <ul className="career-wrap">
+                      {careers.map((career) => (
+                        <li className="career-item" key={career.id}>
+                          <div className="career-item-tit">{career.companyName}</div>
+                          <div className="career-item-desc">
+                            <span>
+                              {career.startDate} ~{' '}
+                              {career.endDate || '재직중'}
+                            </span>
+                            <div className="data-list">
+                              {career.contractClassificationName && (
+                                <span>{career.contractClassificationName}</span>
+                              )}
+                              {career.jobDescription && <span>{career.jobDescription}</span>}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <div className="sub-item-bx">
+                  <div style={{ textAlign: 'center', padding: '20px 0', color: '#999' }}>
+                    등록된 정보가 없습니다.
+                  </div>
                 </div>
-              </div>
-              <div className="sub-item-bx">
-                <ul className="career-wrap">
-                  {careers.map((career) => (
-                    <li className="career-item" key={career.id}>
-                      <div className="career-item-tit">{career.companyName}</div>
-                      <div className="career-item-desc">
-                        <span>
-                          {formatDate(career.startDate)} ~{' '}
-                          {career.endDate ? formatDate(career.endDate) : '재직중'}
-                        </span>
-                        <div className="data-list">
-                          {career.contractClassificationName && (
-                            <span>{career.contractClassificationName}</span>
-                          )}
-                          {career.jobDescription && <span>{career.jobDescription}</span>}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              )}
             </div>
           </div>
         )}
 
         {/* 자격증 정보 */}
-        {certificates && certificates.length > 0 && (
+        {memberId && (
           <div className="sub-cont-wrap">
             <div className="sub-cont-item-wrap">
               <div className="sub-cont-tit-wrap">
-                <div className="sub-cont-tit">자격증 정보</div>
+                <div className="sub-cont-tit">자격증정보</div>
               </div>
-              <div className="sub-item-bx">
-                <ul className="qualifications-wrap">
-                  {certificates.map((cert) => (
-                    <li className="qualifications-item" key={cert.id}>
-                      <div className="qualifications-item-tit">{cert.certificateName}</div>
-                      <div className="qualifications-item-date">
-                        {formatDate(cert.acquisitionDate)}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {certificates && certificates.length > 0 ? (
+                <div className="sub-item-bx">
+                  <ul className="qualifications-wrap">
+                    {certificates.map((cert) => (
+                      <li className="qualifications-item" key={cert.id}>
+                        <div className="qualifications-item-tit">{cert.certificateName}</div>
+                        <div className="qualifications-item-date">
+                          {cert.acquisitionDate}
+                          {cert.validityStartDate && cert.validityEndDate && (
+                            <span> ({cert.validityStartDate}~{cert.validityEndDate})</span>
+                          )}
+                        </div>
+                        {cert.certificateFileId && cert.certificateFileName && (
+                          <button
+                            className="down-btn"
+                            onClick={() => handleFileDownload(cert.certificateFileId!)}
+                          >
+                            {cert.certificateFileName}
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="sub-item-bx">
+                  <div style={{ textAlign: 'center', padding: '20px 0', color: '#999' }}>
+                    등록된 정보가 없습니다.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -523,7 +516,7 @@ export default function StaffDetail() {
                     <td>
                       <div className="data-list">
                         {employee.createdByName && <span>{employee.createdByName}</span>}
-                        <span>{formatDate(employee.createdAt)}</span>
+                        <span>{employee.createdAt || '-'}</span>
                       </div>
                     </td>
                   </tr>
@@ -532,7 +525,7 @@ export default function StaffDetail() {
                     <td>
                       <div className="data-list">
                         {employee.updatedByName && <span>{employee.updatedByName}</span>}
-                        <span>{formatDate(employee.updatedAt)}</span>
+                        <span>{employee.updatedAt || '-'}</span>
                       </div>
                     </td>
                   </tr>
@@ -542,13 +535,15 @@ export default function StaffDetail() {
           </div>
         </div>
 
-        {/* 삭제/목록 버튼 */}
+        {/* 삭제/목록 */}
         <div className="sub-cont-wrap">
           <div className="sub-cont-item-wrap">
             <div className="flex g8">
-              <button className="btn-form block red" onClick={handleDelete}>
-                삭제
-              </button>
+              {(employee.isEmailSend || isInviteCompleted) && (
+                <button className="btn-form block red" onClick={handleDelete}>
+                  삭제
+                </button>
+              )}
               <button className="btn-form block grey" onClick={() => router.push('/staff')}>
                 목록
               </button>

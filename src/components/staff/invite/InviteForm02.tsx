@@ -48,7 +48,7 @@ export default function InviteForm02() {
           <div className="sub-cont-tit">근로/계약조건</div>
         </div>
 
-        {/* 정의서 #10: 계약 기간 */}
+        {/* 계약기간 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
@@ -91,7 +91,7 @@ export default function InviteForm02() {
           </div>
         </div>
 
-        {/* 정의서 #11: 업무 내용 - 체크박스 교체 */}
+        {/* 업무내용 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
@@ -119,7 +119,7 @@ export default function InviteForm02() {
           </div>
         </div>
 
-        {/* 정의서 #7: 계약 분류 */}
+        {/* 계약분류 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="tit-head">
@@ -165,7 +165,7 @@ export default function InviteForm02() {
           </div>
         </div>
 
-        {/* 정의서 #8,8-1: 4대보험 가입 여부 */}
+        {/* 4대보험 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
@@ -201,7 +201,7 @@ export default function InviteForm02() {
           </div>
         </div>
 
-        {/* 정의서 #9,9-1,9-2: 급여 지급일 */}
+        {/* 급여 지급일 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="tit-head">

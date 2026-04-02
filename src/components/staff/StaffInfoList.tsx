@@ -203,7 +203,7 @@ function StaffListContent({
               </tbody>
             </table>
           </div>
-          {/* 근로계약서 클릭 → 근로계약관리 페이지 (이벤트 버블링 차단) */}
+          {/* 근로계약서 */}
           <button
             className="contract-link"
             onClick={(e) => { e.stopPropagation(); onContractClick() }}

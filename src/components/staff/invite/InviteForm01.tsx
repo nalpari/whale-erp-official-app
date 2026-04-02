@@ -25,7 +25,7 @@ export default function InviteForm01() {
           <div className="sub-cont-tit">직원 기본정보</div>
         </div>
 
-        {/* 정의서 #1: 직원 소속 선택 */}
+        {/* 근무장소 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
@@ -48,7 +48,7 @@ export default function InviteForm01() {
           </div>
         </div>
 
-        {/* 정의서 #2,2-1,3: 본사/가맹점/점포 선택 */}
+        {/* 본사/가맹점/점포 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
@@ -74,7 +74,7 @@ export default function InviteForm01() {
                   ))}
                 </select>
               </div>
-              {/* 가맹점 선택: workplaceType이 FRANCHISE일 때만 표시 */}
+              {/* 가맹점 */}
               {stepOne.workplaceType === 'FRANCHISE' && (
                 <div className="block mb8">
                   <select
@@ -113,7 +113,7 @@ export default function InviteForm01() {
           </div>
         </div>
 
-        {/* 정의서 #4: 직원명 */}
+        {/* 직원명 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">
@@ -131,7 +131,7 @@ export default function InviteForm01() {
           </div>
         </div>
 
-        {/* 정의서 #5: 휴대폰 번호 */}
+        {/* 휴대폰 번호 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="filed-tit">

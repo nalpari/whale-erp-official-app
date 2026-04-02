@@ -61,7 +61,7 @@ export default function InviteForm04() {
           </div>
         </div>
 
-        {/* 평일 - 정의서 #1-1,1-2,1-4 */}
+        {/* 평일 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="store-img-list-tit">평일</div>
@@ -105,7 +105,7 @@ export default function InviteForm04() {
               </div>
             </div>
           </div>
-          {/* 정의서 #13: 요일별 근무 여부 체크 */}
+          {/* 근무요일 */}
           <div className="data-filed">
             <div className="filed-tit sub">근무요일</div>
             <div className="flex g8">
@@ -118,7 +118,7 @@ export default function InviteForm04() {
           </div>
         </div>
 
-        {/* 토요일 - 정의서 #14,14-1 */}
+        {/* 토요일 */}
         <div className="sub-item-bx">
           <div className="data-filed">
             <div className="store-img-list-tit">토요일</div>
