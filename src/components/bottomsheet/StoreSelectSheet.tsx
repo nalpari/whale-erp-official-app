@@ -57,13 +57,18 @@ export default function StoreSelectSheet() {
   }
 
   const handleSelect = () => {
-    const office = headOffices.find((o) => o.id === localOfficeId) ?? null
-    const store = storeOptions.find((s) => s.id === localStoreId) ?? null
-    setSelection(office, store)
-    // 본사/점포 변경 시 관련 캐시 모두 무효화
-    queryClient.removeQueries({ queryKey: [...todoKeys.all, 'employees'] })
-    queryClient.removeQueries({ queryKey: scheduleKeys.all })
-    handleClose()
+    try {
+      const office = headOffices.find((o) => o.id === localOfficeId) ?? null
+      const store = storeOptions.find((s) => s.id === localStoreId) ?? null
+      setSelection(office, store)
+      // 본사/점포 변경 시 관련 캐시 모두 무효화
+      queryClient.removeQueries({ queryKey: [...todoKeys.all, 'employees'] })
+      queryClient.removeQueries({ queryKey: scheduleKeys.all })
+    } catch (err) {
+      console.error('[StoreSelectSheet] 점포 선택 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const handleReset = () => {

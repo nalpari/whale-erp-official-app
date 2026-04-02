@@ -219,15 +219,15 @@ export default function PlanTableEdit() {
     const requests: ScheduleRequest[] = []
     for (const [date, workers] of effectiveEditState) {
       const workerRequests: WorkerRequest[] = workers.map((w) => ({
-        shiftId: w.shiftId,
-        workerId: w.workerId,
-        tempWorkerName: w.workerId ? null : w.workerName,
+        shiftId: w.shiftId ?? undefined,
+        workerId: w.workerId ?? undefined,
+        tempWorkerName: w.workerId ? undefined : w.workerName,
         hasWork: w.hasWork,
-        workStartTime: w.workStartTime,
-        workEndTime: w.workEndTime,
+        workStartTime: w.workStartTime ?? undefined,
+        workEndTime: w.workEndTime ?? undefined,
         hasBreak: w.hasBreak,
-        breakStartTime: w.breakStartTime,
-        breakEndTime: w.breakEndTime,
+        breakStartTime: w.breakStartTime ?? undefined,
+        breakEndTime: w.breakEndTime ?? undefined,
         iconType: w.iconType,
         isDeleted: w.isDeleted,
       }))

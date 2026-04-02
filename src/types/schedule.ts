@@ -30,15 +30,15 @@ export interface ScheduleRequest {
 }
 
 export interface WorkerRequest {
-  shiftId?: number | null
-  workerId?: number | null
-  tempWorkerName?: string | null
+  shiftId?: number
+  workerId?: number
+  tempWorkerName?: string
   hasWork: boolean
-  workStartTime?: string | null
-  workEndTime?: string | null
+  workStartTime?: string
+  workEndTime?: string
   hasBreak: boolean
-  breakStartTime?: string | null
-  breakEndTime?: string | null
+  breakStartTime?: string
+  breakEndTime?: string
   iconType?: number
   isDeleted?: boolean
 }

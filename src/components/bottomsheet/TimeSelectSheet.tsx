@@ -108,7 +108,7 @@ export default function TimeSelectSheet() {
                   <div className="time-colon">:</div>
                   <div className="minute-swiper-wrap">
                     <Swiper
-                      slidesPerView={3}
+                      slidesPerView={1}
                       direction="vertical"
                       className="time-swiper"
                       centeredSlides={true}
