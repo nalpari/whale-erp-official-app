@@ -9,6 +9,7 @@ import { useOvertimeList, useSendOvertimeEmail } from '@/hooks/queries/use-overt
 import { useCodeToName } from '@/hooks/queries/use-common-code-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getErrorMessage } from '@/lib/api'
+import { usePopupControler } from '@/store/usePopupControler'
 import type { OvertimeAllowanceListItem } from '@/types/overtime'
 
 const AVATAR_IMAGES = [
@@ -29,6 +30,7 @@ const formatDate = (date: string) => {
 
 export default function OverTimeList() {
   const router = useRouter()
+  const openAlert = usePopupControler((s) => s.openAlert)
   const setOverTimeSearchSheet = useBottomSheetControler(
     (state) => state.setOverTimeSearchSheet,
   )
@@ -48,22 +50,28 @@ export default function OverTimeList() {
   }
   const canSearch = mounted && hasSearched && !!effectiveHeadOfficeId
   const { data, isLoading, isError } = useOvertimeList(params, canSearch)
-  const { mutateAsync: sendEmail } = useSendOvertimeEmail()
+  const { mutateAsync: sendEmail, isPending: isSendingEmail } = useSendOvertimeEmail()
   const getWorkStatusName = useCodeToName('EMPWK')
 
   const overtimeList = data?.content ?? []
   const totalElements = data?.totalElements ?? 0
 
-  const handleSendEmail = async (e: React.MouseEvent, item: OvertimeAllowanceListItem) => {
+  const handleSendEmail = (e: React.MouseEvent, item: OvertimeAllowanceListItem) => {
     e.stopPropagation()
-    if (item.isEmailSend) return
-    if (!confirm(`${item.memberName}님에게 수당명세서를 이메일로 전송하시겠습니까?`)) return
-    try {
-      await sendEmail(item.id)
-      alert('이메일이 전송되었습니다.')
-    } catch (error) {
-      alert(getErrorMessage(error, '이메일 전송에 실패했습니다.'))
-    }
+    if (item.isEmailSend || isSendingEmail) return
+    openAlert({
+      message: `${item.memberName}님에게 수당명세서를 이메일로 전송하시겠습니까?`,
+      confirmText: '전송',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await sendEmail(item.id)
+          openAlert({ message: '이메일이 전송되었습니다.' })
+        } catch (error) {
+          openAlert({ message: getErrorMessage(error, '이메일 전송에 실패했습니다.') })
+        }
+      },
+    })
   }
 
   return (
@@ -102,6 +110,7 @@ export default function OverTimeList() {
           overtimeList={overtimeList}
           onSendEmail={handleSendEmail}
           onItemClick={(id) => router.push(`/overtime/${id}`)}
+          onRetry={() => useOvertimeSearchStore.getState().search()}
           getWorkStatusName={getWorkStatusName}
         />
       </div>
@@ -109,11 +118,16 @@ export default function OverTimeList() {
   )
 }
 
-function EmptyMessage({ text }: { text: string }) {
+function EmptyMessage({ text, isError, onRetry }: { text: string; isError?: boolean; onRetry?: () => void }) {
   return (
     <div className="staff-list-wrap">
-      <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-        {text}
+      <div style={{ textAlign: 'center', padding: '40px 0', color: isError ? '#e74c3c' : '#999' }}>
+        <div>{text}</div>
+        {onRetry && (
+          <button className="btn-s blue" style={{ marginTop: '12px' }} onClick={onRetry}>
+            다시 시도
+          </button>
+        )}
       </div>
     </div>
   )
@@ -128,6 +142,7 @@ function OverTimeListContent({
   overtimeList,
   onSendEmail,
   onItemClick,
+  onRetry,
   getWorkStatusName,
 }: {
   mounted: boolean
@@ -138,11 +153,12 @@ function OverTimeListContent({
   overtimeList: OvertimeAllowanceListItem[]
   onSendEmail: (e: React.MouseEvent, item: OvertimeAllowanceListItem) => void
   onItemClick: (id: number) => void
+  onRetry: () => void
   getWorkStatusName: (code: string | undefined | null) => string
 }) {
   if (!mounted || !hasSearched) return <EmptyMessage text="검색 조건을 설정해주세요." />
   if (!headOfficeId) return <EmptyMessage text="상단에서 점포를 먼저 선택해주세요." />
-  if (isError) return <EmptyMessage text="데이터를 불러올 수 없습니다." />
+  if (isError) return <EmptyMessage text="데이터를 불러올 수 없습니다." isError onRetry={onRetry} />
   if (isLoading) return <EmptyMessage text="불러오는 중..." />
   if (overtimeList.length === 0) return <EmptyMessage text="검색 결과가 없습니다." />
 

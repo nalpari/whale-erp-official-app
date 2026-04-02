@@ -15,6 +15,8 @@ import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
 import { getContractsByEmployee } from '@/lib/api/contract'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
+import { usePopupControler } from '@/store/usePopupControler'
+import { formatAmount, safeSessionGet, safeSessionSet, safeSessionRemove } from '@/lib/overtime-utils'
 import type {
   OvertimeAllowanceItemDto,
   OvertimeAllowanceDetail,
@@ -27,7 +29,8 @@ interface OverTimeDetailProps {
   initialData?: OvertimeAllowanceDetail
 }
 
-const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
+/** 급여월 코드: 익월 지급 */
+const SALARY_MONTH_NEXT = 'SLRCF_002'
 
 const getAllowanceMonthOptions = () => {
   const options: { value: string; label: string }[] = []
@@ -74,18 +77,12 @@ interface EditDraft {
 }
 
 const loadEditDraft = (id?: number): EditDraft | null => {
-  if (typeof window === 'undefined' || !id) return null
-  const raw = sessionStorage.getItem(EDIT_DRAFT_KEY)
-  if (!raw) return null
-  sessionStorage.removeItem(EDIT_DRAFT_KEY)
-  try {
-    const draft = JSON.parse(raw) as EditDraft
-    if (draft.id !== id) return null
-    return draft
-  } catch (err) {
-    console.warn('[OverTimeDetail] editDraft 파싱 실패:', err)
-    return null
-  }
+  if (!id) return null
+  const draft = safeSessionGet<EditDraft>(EDIT_DRAFT_KEY)
+  if (!draft) return null
+  safeSessionRemove(EDIT_DRAFT_KEY)
+  if (draft.id !== id) return null
+  return draft
 }
 
 interface FormDraft {
@@ -103,20 +100,15 @@ interface FormDraft {
 }
 
 const loadFormDraft = (): FormDraft | null => {
-  if (typeof window === 'undefined') return null
-  const raw = sessionStorage.getItem(FORM_DRAFT_KEY)
-  if (!raw) return null
-  sessionStorage.removeItem(FORM_DRAFT_KEY)
-  try {
-    return JSON.parse(raw) as FormDraft
-  } catch (err) {
-    console.warn('[OverTimeDetail] formDraft 파싱 실패:', err)
-    return null
-  }
+  const draft = safeSessionGet<FormDraft>(FORM_DRAFT_KEY)
+  if (!draft) return null
+  safeSessionRemove(FORM_DRAFT_KEY)
+  return draft
 }
 
 export default function OverTimeDetail({ isNew = false, initialData }: OverTimeDetailProps) {
   const router = useRouter()
+  const openAlert = usePopupControler((s) => s.openAlert)
   const id = initialData?.id
   const allowanceMonthOptions = getAllowanceMonthOptions()
   const [draft] = useState(() => isNew ? loadFormDraft() : null)
@@ -194,7 +186,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
       const contract = contracts[0]
       if (!contract) return
       const header = contract.employmentContractHeader
-      const nextMonth = header?.salaryMonth === 'SLRCF_002'
+      const nextMonth = header?.salaryMonth === SALARY_MONTH_NEXT
       const ym = nextMonth && prevMonthValue ? prevMonthValue : allowanceYearMonth
       setAllowanceYearMonth(ym)
 
@@ -211,7 +203,8 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
       const wage = contract.salaryInfo?.timelySalary ?? 0
       setContractWage(wage)
     } catch (error) {
-      console.warn('[OverTimeDetail] 계약 정보 조회 실패:', error)
+      console.error('[OverTimeDetail] 계약 정보 조회 실패:', error)
+      openAlert({ message: '계약 정보를 불러올 수 없습니다. 시급이 기본값(0원)으로 설정됩니다.' })
     }
   }
 
@@ -226,46 +219,54 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
   useEffect(() => {
     if (!isNew && id) {
       setShowDeleteButton(true)
-      setOnDelete(async () => {
-        if (!confirm('수당명세서를 삭제하시겠습니까?')) return
-        try {
-          await deleteOvertime(id)
-          alert('삭제되었습니다.')
-          router.push('/overtime')
-        } catch (error) {
-          alert(getErrorMessage(error, '삭제에 실패했습니다.'))
-        }
+      setOnDelete(() => {
+        openAlert({
+          message: '수당명세서를 삭제하시겠습니까?',
+          confirmText: '삭제',
+          cancelText: '취소',
+          onConfirm: async () => {
+            try {
+              await deleteOvertime(id)
+              openAlert({
+                message: '삭제되었습니다.',
+                onConfirm: () => router.push('/overtime'),
+              })
+            } catch (error) {
+              openAlert({ message: getErrorMessage(error, '삭제에 실패했습니다.') })
+            }
+          },
+        })
       })
     }
     return () => {
       setOnDelete(null)
       setShowDeleteButton(false)
     }
-  }, [isNew, id, setOnDelete, setShowDeleteButton, router, deleteOvertime])
+  }, [isNew, id, setOnDelete, setShowDeleteButton, router, deleteOvertime, openAlert])
 
   // 저장
   const handleSave = async () => {
     if (isNew && !selectedEmployeeInfoId) {
-      alert('직원을 선택해주세요.')
+      openAlert({ message: '직원을 선택해주세요.' })
       return
     }
     if (!allowanceYearMonth) {
-      alert('급여 지급월을 선택해주세요.')
+      openAlert({ message: '급여 지급월을 선택해주세요.' })
       return
     }
     if (!calculationStartDate || !calculationEndDate) {
-      alert('연장근무 기간을 설정해주세요.')
+      openAlert({ message: '연장근무 기간을 설정해주세요.' })
       return
     }
     // API 저장 시 근무시간이 0보다 큰 항목만 전송
     const validDetails = details.filter((item) => (item.workHour || 0) > 0)
     if (validDetails.length === 0) {
-      alert('근무시간을 입력해주세요.')
+      openAlert({ message: '근무시간을 입력해주세요.' })
       return
     }
     const validTotalPayment = validDetails.reduce((sum, item) => sum + (item.actualPaymentAmount || 0), 0)
     if (validTotalPayment === 0) {
-      alert('급여내역이 0원입니다. 근무시간을 확인해주세요.')
+      openAlert({ message: '급여내역이 0원입니다. 근무시간을 확인해주세요.' })
       return
     }
 
@@ -284,8 +285,10 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
           })),
         }
         await createOvertime(request)
-        alert('수당명세서가 등록되었습니다.')
-        router.push('/overtime')
+        openAlert({
+          message: '수당명세서가 등록되었습니다.',
+          onConfirm: () => router.push('/overtime'),
+        })
       } else if (id) {
         const request: OvertimeAllowanceUpdateRequest = {
           allowanceYearMonth,
@@ -296,23 +299,31 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
           details: validDetails,
         }
         await updateOvertime({ id, data: request })
-        alert('수당명세서가 수정되었습니다.')
-        router.push('/overtime')
+        openAlert({
+          message: '수당명세서가 수정되었습니다.',
+          onConfirm: () => router.push('/overtime'),
+        })
       }
     } catch (error) {
-      alert(getErrorMessage(error, '저장에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '저장에 실패했습니다.') })
     }
   }
 
   const handleSendEmail = async () => {
     if (!id || isSendingEmail) return
-    if (!confirm('수당명세서를 이메일로 전송하시겠습니까?')) return
-    try {
-      await sendEmail(id)
-      alert('이메일이 전송되었습니다.')
-    } catch (error) {
-      alert(getErrorMessage(error, '이메일 전송에 실패했습니다.'))
-    }
+    openAlert({
+      message: '수당명세서를 이메일로 전송하시겠습니까?',
+      confirmText: '전송',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await sendEmail(id)
+          openAlert({ message: '이메일이 전송되었습니다.' })
+        } catch (error) {
+          openAlert({ message: getErrorMessage(error, '이메일 전송에 실패했습니다.') })
+        }
+      },
+    })
   }
 
   const handleDownload = async () => {
@@ -320,7 +331,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
     try {
       await downloadExcel(id)
     } catch (error) {
-      alert(getErrorMessage(error, '다운로드에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '다운로드에 실패했습니다.') })
     }
   }
 
@@ -357,8 +368,8 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
         remarks,
         details,
       }
-      sessionStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formDraft))
-      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(previewData))
+      safeSessionSet(FORM_DRAFT_KEY, formDraft)
+      safeSessionSet(PREVIEW_KEY, previewData)
       router.push('/overtime/new/stub')
     } else {
       const previewData: Partial<OvertimeAllowanceDetail> = {
@@ -376,8 +387,8 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
         remarks,
         details,
       }
-      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(previewData))
-      sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ id, details }))
+      safeSessionSet(PREVIEW_KEY, previewData)
+      safeSessionSet(EDIT_DRAFT_KEY, { id, details })
       router.push(`/overtime/${id}/stub`)
     }
   }

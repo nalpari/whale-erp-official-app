@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useOvertimeDetail } from '@/hooks/queries/use-overtime-queries'
 import OverTimeStub from '@/components/overtime/OverTimeStub'
+import ErrorFallback from '@/components/ui/ErrorFallback'
 import type { OvertimeAllowanceDetail } from '@/types/overtime'
 
 const PREVIEW_KEY = 'overtimeStubPreview'
@@ -28,7 +29,7 @@ export default function OverTimeStubPage() {
     }
   })
 
-  const { data: detail, isLoading } = useOvertimeDetail(id)
+  const { data: detail, isLoading, isError } = useOvertimeDetail(id)
   const data = previewData ?? detail
 
   useEffect(() => {
@@ -38,6 +39,8 @@ export default function OverTimeStubPage() {
   }, [id, router])
 
   if (!id) return null
+
+  if (isError) return <ErrorFallback />
 
   if (!data && isLoading) {
     return (

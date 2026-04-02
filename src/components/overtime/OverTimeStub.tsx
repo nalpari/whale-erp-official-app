@@ -1,24 +1,11 @@
 'use client'
 import { useRouter, useParams } from 'next/navigation'
+import { formatAmount, formatDate, formatDateShort, parseLocalDate } from '@/lib/overtime-utils'
 import type { OvertimeAllowanceDetail, OvertimeAllowanceItemDto } from '@/types/overtime'
 
 interface OverTimeStubProps {
   initialData?: OvertimeAllowanceDetail
   isPreview?: boolean
-}
-
-const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
-
-const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
-
-const parseLocalDate = (dateStr: string): Date => {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
-
-const formatDateShort = (dateStr: string) => {
-  const d = parseLocalDate(dateStr)
-  return `${d.getMonth() + 1}/${d.getDate()}(${DAY_NAMES[d.getDay()]})`
 }
 
 // 주차별로 그룹핑
@@ -34,11 +21,10 @@ const groupByWeek = (items: OvertimeAllowanceItemDto[]) => {
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
 
-    const fmt = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
-    const weekKey = fmt(weekStart)
+    const weekKey = formatDate(weekStart)
     let week = weeks.find((w) => w.weekStart === weekKey)
     if (!week) {
-      week = { weekStart: weekKey, weekEnd: fmt(weekEnd), items: [] }
+      week = { weekStart: weekKey, weekEnd: formatDate(weekEnd), items: [] }
       weeks.push(week)
     }
     week.items.push(item)

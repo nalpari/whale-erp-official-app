@@ -2,7 +2,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUpdateOvertime } from '@/hooks/queries/use-overtime-queries'
+import { usePopupControler } from '@/store/usePopupControler'
 import { getErrorMessage } from '@/lib/api'
+import { formatAmount, parseAmount, formatDateLabel, parseLocalDate, formatDate } from '@/lib/overtime-utils'
 import type { OvertimeAllowanceDetail, OvertimeAllowanceItemDto } from '@/types/overtime'
 
 interface OverTimeWorkEditProps {
@@ -15,34 +17,11 @@ interface OverTimeWorkEditProps {
 
 const DEDUCTION_RATE = 0.033
 
-const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
-
-const parseAmount = (value: string) => Number(value.replace(/[^\d]/g, '')) || 0
-
 // 0.5시간 단위 옵션 (0~24)
 const HOUR_OPTIONS = Array.from({ length: 49 }, (_, i) => i * 0.5)
 
 // 휴게시간 옵션 (0~3시간, 30분 단위)
 const BREAK_HOUR_OPTIONS = Array.from({ length: 7 }, (_, i) => i * 0.5)
-
-const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
-
-const parseLocalDate = (dateStr: string): Date => {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
-
-const formatDate = (d: Date): string => {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-const formatDateLabel = (dateStr: string) => {
-  const d = parseLocalDate(dateStr)
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const dayName = DAY_NAMES[d.getDay()]
-  return `${d.getFullYear()}.${mm}.${dd} (${dayName})`
-}
 
 // 기간 내 날짜 목록 생성
 const generateDates = (startDate: string, endDate: string): string[] => {
@@ -59,6 +38,7 @@ const generateDates = (startDate: string, endDate: string): string[] => {
 
 export default function OverTimeWorkEdit({ overtimeId, initialData, isPreview = false, onPreviewSave, contractWage }: OverTimeWorkEditProps) {
   const router = useRouter()
+  const openAlert = usePopupControler((s) => s.openAlert)
   const { mutateAsync: updateOvertime, isPending: isUpdating } = useUpdateOvertime()
 
   const contractTimelyAmount = contractWage
@@ -107,7 +87,6 @@ export default function OverTimeWorkEdit({ overtimeId, initialData, isPreview = 
   }
 
 
-
   const handleSave = async () => {
     if (!initialData) return
 
@@ -139,10 +118,12 @@ export default function OverTimeWorkEdit({ overtimeId, initialData, isPreview = 
           remarks: initialData.remarks || undefined,
         },
       })
-      alert('근무시간이 저장되었습니다.')
-      router.push(`/overtime/${overtimeId}`)
+      openAlert({
+        message: '근무시간이 저장되었습니다.',
+        onConfirm: () => router.push(`/overtime/${overtimeId}`),
+      })
     } catch (error) {
-      alert(getErrorMessage(error, '저장에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '저장에 실패했습니다.') })
     }
   }
 

@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useOvertimeDetail } from '@/hooks/queries/use-overtime-queries'
 import OverTimeDetail from '@/components/overtime/OverTimeDetail'
+import ErrorFallback from '@/components/ui/ErrorFallback'
 
 export default function OverTimeDetailPage() {
   const params = useParams()
@@ -25,15 +26,7 @@ export default function OverTimeDetailPage() {
 
   if (!id) return null
 
-  if (isError) {
-    return (
-      <div className="container sub">
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#e74c3c' }}>
-          데이터를 불러올 수 없습니다.
-        </div>
-      </div>
-    )
-  }
+  if (isError) return <ErrorFallback showBack={false} />
 
   if (isLoading || !detail) {
     return (

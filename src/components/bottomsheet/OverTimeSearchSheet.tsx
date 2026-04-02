@@ -53,15 +53,20 @@ export default function OverTimeSearchSheet() {
   }
 
   const handleSearch = () => {
-    setSearchParams({
-      workStatus: workStatus || undefined,
-      memberName: memberName || undefined,
-      workDays: workDays.length > 0 ? workDays : undefined,
-      paymentStartDate: paymentStartDate || undefined,
-      paymentEndDate: paymentEndDate || undefined,
-    })
-    search()
-    handleClose()
+    try {
+      setSearchParams({
+        workStatus: workStatus || undefined,
+        memberName: memberName || undefined,
+        workDays: workDays.length > 0 ? workDays : undefined,
+        paymentStartDate: paymentStartDate || undefined,
+        paymentEndDate: paymentEndDate || undefined,
+      })
+      search()
+    } catch (err) {
+      console.error('[OverTimeSearchSheet] 검색 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const handleReset = () => {
