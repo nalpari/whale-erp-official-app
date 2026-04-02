@@ -132,7 +132,21 @@ export const useStaffInviteStore = create<StaffInviteState>()(
       toPostRequest: (): PostEmployeeInfoRequest | null => {
         const { stepOne, stepTwo, stepFour } = get()
 
-        if (!stepOne.headOfficeOrganizationId || !stepOne.employeeName || !stepTwo.hireDate) {
+        // Step 1 필수: 본사, 직원명, 휴대폰
+        if (!stepOne.headOfficeOrganizationId || !stepOne.employeeName || !stepOne.mobilePhone) {
+          return null
+        }
+        // Step 2 필수: 입사일, 계약시작일, 업무내용
+        if (!stepTwo.hireDate || !stepTwo.contractStartDate || !stepTwo.jobDescription) {
+          return null
+        }
+        // Step 2: 계약기간 미정이 아닌 경우 종료일 필수
+        if (!stepTwo.noEndDate && !stepTwo.contractEndDate) {
+          return null
+        }
+        // Step 4: 평일/토/일 중 1개 이상 근무 설정 필수
+        const hasWorkDay = stepFour.workHours.some((wh) => wh.isWork)
+        if (!hasWorkDay) {
           return null
         }
 

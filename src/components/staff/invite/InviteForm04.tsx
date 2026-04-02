@@ -105,15 +105,35 @@ export default function InviteForm04() {
               </div>
             </div>
           </div>
-          {/* 근무요일 */}
+          {/* 근무요일 토글 */}
           <div className="data-filed">
             <div className="filed-tit sub">근무요일</div>
             <div className="flex g8">
-              {WEEKDAYS.map((day) => (
-                <button key={day.dayType} className="day-btn act">
-                  {day.label}
-                </button>
-              ))}
+              {WEEKDAYS.map((day) => {
+                const dayWh = workHours.find((wh) => wh.dayType === day.dayType)
+                const isActive = dayWh ? dayWh.isWork : true
+                return (
+                  <button
+                    key={day.dayType}
+                    className={`day-btn${isActive ? ' act' : ''}`}
+                    onClick={() => {
+                      const exists = workHours.some((wh) => wh.dayType === day.dayType)
+                      if (exists) {
+                        const newWorkHours = workHours.map((wh) =>
+                          wh.dayType === day.dayType ? { ...wh, isWork: !wh.isWork } : wh,
+                        )
+                        setStepFour({ workHours: newWorkHours })
+                      } else {
+                        setStepFour({
+                          workHours: [...workHours, { dayType: day.dayType, isWork: true, isBreak: false }],
+                        })
+                      }
+                    }}
+                  >
+                    {day.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>

@@ -1,14 +1,20 @@
 'use client'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
-import { useHeadOffices, useStoreOptions } from '@/hooks/queries/use-store-queries'
+import { useHeadOffices, useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import type { WorkplaceType } from '@/types/employee'
 
 export default function InviteForm01() {
   const { stepOne, setStepOne } = useStaffInviteStore()
   const { data: headOffices } = useHeadOffices()
+  const { data: headOfficeTree } = useHeadOfficeTree()
   const { data: storeOptions } = useStoreOptions(
     stepOne.headOfficeOrganizationId ?? undefined,
   )
+
+  // 선택된 본사의 가맹점 목록
+  const franchiseOptions = headOfficeTree
+    ?.find((ho) => ho.id === stepOne.headOfficeOrganizationId)
+    ?.children ?? []
 
   const handleWorkplaceTypeChange = (type: WorkplaceType) => {
     setStepOne({
@@ -87,6 +93,11 @@ export default function InviteForm01() {
                     }
                   >
                     <option value="">가맹점 선택</option>
+                    {franchiseOptions.map((fr) => (
+                      <option key={fr.id} value={fr.id}>
+                        {fr.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -143,7 +154,7 @@ export default function InviteForm01() {
                 className="input-frame"
                 value={stepOne.mobilePhone}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9-]/g, '')
+                  const value = e.target.value.replace(/[^0-9]/g, '')
                   setStepOne({ mobilePhone: value })
                 }}
                 placeholder="010-0000-0000"

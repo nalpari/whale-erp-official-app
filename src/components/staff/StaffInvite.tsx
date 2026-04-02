@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import InviteForm01 from './invite/InviteForm01'
 import InviteForm02 from './invite/InviteForm02'
@@ -9,11 +9,49 @@ import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import { useCreateEmployee } from '@/hooks/queries/use-employee-queries'
 import { getErrorMessage } from '@/lib/api'
 
+type StepOneData = ReturnType<typeof useStaffInviteStore.getState>['stepOne']
+type StepTwoData = ReturnType<typeof useStaffInviteStore.getState>['stepTwo']
+type StepFourData = ReturnType<typeof useStaffInviteStore.getState>['stepFour']
+
+function isStepValid(step: number, stepOne: StepOneData, stepTwo: StepTwoData, stepFour: StepFourData): boolean {
+  if (step === 1) {
+    if (!stepOne.headOfficeOrganizationId) return false
+    if (stepOne.workplaceType === 'FRANCHISE' && !stepOne.franchiseOrganizationId) return false
+    if (!stepOne.employeeName.trim()) return false
+    if (!stepOne.mobilePhone.trim()) return false
+    if (stepOne.mobilePhone.replace(/[^0-9]/g, '').length < 10) return false
+  }
+  if (step === 2) {
+    if (!stepTwo.hireDate && !stepTwo.contractStartDate) return false
+    if (!stepTwo.contractStartDate) return false
+    if (!stepTwo.noEndDate && !stepTwo.contractEndDate) return false
+    if (!stepTwo.jobDescription.trim()) return false
+  }
+  if (step === 4) {
+    const hasWorkDay = stepFour.workHours.some((wh) => wh.isWork)
+    if (!hasWorkDay) return false
+    const saturday = stepFour.workHours.find((wh) => wh.dayType === 'SATURDAY')
+    if (saturday?.isWork && !saturday.everySaturdayWork && !saturday.firstSaturdayWorkDay) return false
+    const sunday = stepFour.workHours.find((wh) => wh.dayType === 'SUNDAY')
+    if (sunday?.isWork && !sunday.everySundayWork && !sunday.firstSundayWorkDay) return false
+  }
+  return true
+}
+
 export default function StaffInvite() {
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const { toPostRequest, reset } = useStaffInviteStore()
+  const { stepOne, stepTwo, stepFour, toPostRequest, reset } = useStaffInviteStore()
   const createMutation = useCreateEmployee()
+
+  useEffect(() => {
+    return () => { reset() }
+  }, [reset])
+
+  const canGoNext = isStepValid(step, stepOne, stepTwo, stepFour)
+  const canInvite = isStepValid(1, stepOne, stepTwo, stepFour)
+    && isStepValid(2, stepOne, stepTwo, stepFour)
+    && isStepValid(4, stepOne, stepTwo, stepFour)
 
   const handleNext = () => {
     window.scrollTo({ top: 0 })
@@ -27,10 +65,7 @@ export default function StaffInvite() {
 
   const handleInvite = async () => {
     const request = toPostRequest()
-    if (!request) {
-      alert('필수 항목을 입력해주세요.')
-      return
-    }
+    if (!request) return
     if (!confirm(`${request.employeeName}님에게 초대 카카오톡을 발송할까요?`)) return
 
     try {
@@ -56,7 +91,11 @@ export default function StaffInvite() {
       <div className="content-pagination">
         {step === 4 && (
           <div className="mb25">
-            <button className="btn-form block blue" onClick={handleInvite}>
+            <button
+              className="btn-form block blue"
+              onClick={handleInvite}
+              disabled={!canInvite}
+            >
               초대하기
             </button>
           </div>
@@ -77,7 +116,7 @@ export default function StaffInvite() {
           </div>
           <button
             className="page-btn next"
-            disabled={step === 4}
+            disabled={step === 4 || !canGoNext}
             onClick={handleNext}
           >
             <span>다음</span>

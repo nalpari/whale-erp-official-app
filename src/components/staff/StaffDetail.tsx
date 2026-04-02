@@ -391,11 +391,11 @@ export default function StaffDetail() {
                   </tr>
                   <tr>
                     <th>초대요청일</th>
-                    <td>{employee.emailSendDate || '-'}</td>
+                    <td>{employee.emailSendDate ? employee.emailSendDate.split('T')[0] : '-'}</td>
                   </tr>
                   <tr>
                     <th>초대완료일</th>
-                    <td>{employee.memberCreatedAt || '-'}</td>
+                    <td>{employee.memberCreatedAt ? employee.memberCreatedAt.split('T')[0] : '-'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -516,7 +516,7 @@ export default function StaffDetail() {
                     <td>
                       <div className="data-list">
                         {employee.createdByName && <span>{employee.createdByName}</span>}
-                        <span>{employee.createdAt || '-'}</span>
+                        <span>{employee.createdAt ? employee.createdAt.split('T')[0] : '-'}</span>
                       </div>
                     </td>
                   </tr>
@@ -525,7 +525,7 @@ export default function StaffDetail() {
                     <td>
                       <div className="data-list">
                         {employee.updatedByName && <span>{employee.updatedByName}</span>}
-                        <span>{employee.updatedAt || '-'}</span>
+                        <span>{employee.updatedAt ? employee.updatedAt.split('T')[0] : '-'}</span>
                       </div>
                     </td>
                   </tr>
