@@ -54,7 +54,7 @@ export default function TemporaryWorkerAddSheet() {
     try {
       onTempWorkerAdd?.(newWorker, fromDate, toDate)
     } catch (err) {
-      console.error('[TemporaryWorkerAddSheet] 임시 근무자 추가 ���백 실패:', err)
+      console.error('[TemporaryWorkerAddSheet] 임시 근무자 추가 콜백 실패:', err)
     } finally {
       handleClose()
     }

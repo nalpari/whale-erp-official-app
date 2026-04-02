@@ -91,12 +91,19 @@ export function formatDateWithDay(dateStr: string): string {
 
 // ── 날짜 유틸 ──
 
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
 export function getMonday(date: Date = new Date()): string {
   const d = new Date(date)
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1)
   d.setDate(diff)
-  return d.toISOString().slice(0, 10)
+  return formatLocalDate(d)
 }
 
 export function getSunday(date: Date = new Date()): string {
@@ -104,5 +111,5 @@ export function getSunday(date: Date = new Date()): string {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? 0 : 7)
   d.setDate(diff)
-  return d.toISOString().slice(0, 10)
+  return formatLocalDate(d)
 }

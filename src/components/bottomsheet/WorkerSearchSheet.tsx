@@ -27,7 +27,7 @@ export default function WorkerSearchSheet() {
     try {
       onWorkerSearch?.({ employeeName: selectedEmployeeName, tempWorkerName })
     } catch (err) {
-      console.error('[WorkerSearchSheet] 검색 콜백 실���:', err)
+      console.error('[WorkerSearchSheet] 검색 콜백 실행 실패:', err)
     } finally {
       handleClose()
     }
