@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
+import { QueryClientProvider, QueryClient, QueryCache } from '@tanstack/react-query'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -12,7 +12,17 @@ function makeQueryClient() {
         refetchOnWindowFocus: false,
         retry: 1,
       },
+      mutations: {
+        onError: (err, variables) => {
+          console.error('[mutation] 실패:', err, variables)
+        },
+      },
     },
+    queryCache: new QueryCache({
+      onError: (err, query) => {
+        console.error(`[query] 실패 — key: ${JSON.stringify(query.queryKey)}, error:`, err)
+      },
+    }),
   })
 }
 

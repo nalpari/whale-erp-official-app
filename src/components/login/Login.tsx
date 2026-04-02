@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAuthStore } from "@/store/useAuthStore"
 import { useLoginMutation, useAuthoritySelectMutation } from "@/hooks/queries/use-login-mutation"
 import { getErrorMessage } from "@/lib/api"
+import { getBpTree } from "@/lib/api/bp"
+import { usePopupControler } from "@/store/usePopupControler"
+import { OWNER_CODE } from "@/lib/constants"
 import type { LoginResponse } from "@/types/auth"
 
 function getSafeReturnUrl(url: string | null): string {
@@ -15,18 +18,19 @@ function getSafeReturnUrl(url: string | null): string {
 
 function safeGetItem(key: string): string | null {
   if (typeof window === "undefined") return null
-  try { return localStorage.getItem(key) } catch { return null }
+  try { return localStorage.getItem(key) } catch (err) { console.warn('[Login] localStorage 읽기 실패:', err); return null }
 }
 
 function safeSetItem(key: string, value: string) {
-  try { localStorage.setItem(key, value) } catch { /* noop */ }
+  try { localStorage.setItem(key, value) } catch (err) { console.warn('[Login] localStorage 저장 실패:', err) }
 }
 
 function safeRemoveItem(key: string) {
-  try { localStorage.removeItem(key) } catch { /* noop */ }
+  try { localStorage.removeItem(key) } catch (err) { console.warn('[Login] localStorage 삭제 실패:', err) }
 }
 
 export default function Login() {
+  const openAlert = usePopupControler((state) => state.openAlert)
   const [loginId, setLoginId] = useState(() => safeGetItem("savedLoginId") ?? "")
   const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
@@ -45,7 +49,7 @@ export default function Login() {
   const loginMutation = useLoginMutation()
   const authoritySelectMutation = useAuthoritySelectMutation()
 
-  const completeLogin = useCallback((data: LoginResponse, authorityId: number, programs: LoginResponse["authority"], ownerCode?: string, headOfficeId?: number) => {
+  const completeLogin = useCallback(async (data: LoginResponse, authorityId: number, programs: LoginResponse["authority"], ownerCode?: string, headOfficeId?: number) => {
     const store = useAuthStore.getState()
     store.setTokens(data.accessToken, data.refreshToken)
     store.setAffiliationId(String(authorityId))
@@ -56,6 +60,24 @@ export default function Login() {
       store.setOwnerCode(ownerCode)
     }
     store.setHeadOfficeId(headOfficeId ?? null)
+    store.setFranchiseId(null)
+
+    // 가맹점 권한(PRGRP_002_002)이면 bp-tree에서 가맹점 ID 조회
+    if (ownerCode === OWNER_CODE.FRANCHISE && headOfficeId) {
+      try {
+        const bpTree = await getBpTree()
+        const office = bpTree.find((o) => o.id === headOfficeId)
+        if (office?.franchises?.length) {
+          store.setFranchiseId(office.franchises[0].id)
+        }
+      } catch (err) {
+        console.error('[Login] bp-tree 조회 실패:', err)
+        openAlert({ message: '가맹점 정보를 불러오지 못했습니다. 다시 로그인해주세요.' })
+        store.clearAuth()
+        return
+      }
+    }
+
     if (data.loginId && data.name) {
       store.setUserInfo(data.loginId, data.name, data.mobilePhone ?? "", data.avatar ?? null)
     }
@@ -72,7 +94,7 @@ export default function Login() {
     }
 
     router.push(getSafeReturnUrl(returnUrl))
-  }, [saveId, loginId, returnUrl, router])
+  }, [saveId, loginId, returnUrl, router, openAlert])
 
   const handleLogin = async () => {
     if (!loginId.trim() || !password.trim()) {
@@ -85,9 +107,11 @@ export default function Login() {
       const data = await loginMutation.mutateAsync({ loginId: loginId.trim(), password })
 
       if (data.authority) {
-        const matchedCompany = data.companies?.find((c) => c.authorityId === data.authority!.authorityId)
+        const authority = data.authority
+        const matchedCompany = data.companies?.find((c) => c.authorityId === authority.authorityId)
         const headOfficeId = matchedCompany?.headOfficeId ?? data.companies?.[0]?.headOfficeId
-        completeLogin(data, data.authority.authorityId, data.authority, data.authority.ownerCode, headOfficeId)
+        const ownerCode = matchedCompany?.ownerCode ?? authority.ownerCode
+        await completeLogin(data, authority.authorityId, authority, ownerCode, headOfficeId)
         return
       }
 
@@ -118,7 +142,7 @@ export default function Login() {
       const ownerCode = result.authority?.ownerCode ?? selectedCompany?.ownerCode
       const headOfficeId = selectedCompany?.headOfficeId
 
-      completeLogin(
+      await completeLogin(
         { ...pendingLoginData, accessToken: pendingTokens.accessToken, refreshToken: pendingTokens.refreshToken },
         authorityId,
         result.authority ? { authorityId, programs: result.authority.programs, ownerCode: result.authority.ownerCode } : undefined,

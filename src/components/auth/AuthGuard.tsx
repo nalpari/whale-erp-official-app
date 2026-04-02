@@ -22,7 +22,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [mounted, hasToken, router, pathname])
 
-  if (mounted && !hasToken) {
+  if (!mounted || !hasToken) {
     return null
   }
 

@@ -1,56 +1,538 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import { useHeaderStore } from '@/store/useHeaderStore'
+import {
+  useCreatePartTimerPayroll,
+  useUpdatePartTimerPayroll,
+  useDeletePartTimerPayroll,
+  useSendPartTimerPayrollEmail,
+  useDownloadPartTimerPayrollExcel,
+} from '@/hooks/queries/use-parttime-payroll-queries'
+import { getErrorMessage } from '@/lib/api'
+import { getDailyWorkHours } from '@/lib/api/parttime-payroll'
+import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
+import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
+import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
+import { getContractsByEmployee } from '@/lib/api/contract'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useStoreStore } from '@/store/useStoreStore'
+import DeductionAddSheet from '@/components/bottomsheet/DeductionAddSheet'
+import type {
+  PartTimerPaymentItem,
+  PartTimerDeductionItem,
+  PartTimerPayrollDetail,
+  PartTimerPayrollCreateRequest,
+  PartTimerPayrollUpdateRequest,
+} from '@/types/parttime-payroll'
+import type { ContractWorkHour, ContractSalaryInfo } from '@/types/contract'
 
-export default function PartTimerPayDetail() {
+interface PartTimerPayDetailProps {
+  isNew?: boolean
+  initialData?: PartTimerPayrollDetail
+}
+
+const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
+
+const getPayrollMonthOptions = () => {
+  const options: { value: string; label: string }[] = []
+  const now = new Date()
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    options.push({ value: `${yyyy}${mm}`, label: `${yyyy}. ${mm}` })
+  }
+  return options
+}
+
+const computePaymentDate = (ym: string, salaryDay?: number, nextMonth?: boolean): string => {
+  if (!ym || ym.length !== 6 || !salaryDay) return ''
+  const year = Number(ym.slice(0, 4))
+  const month = Number(ym.slice(4)) - 1
+  const offset = nextMonth ? 1 : 0
+  const lastDay = new Date(year, month + offset + 1, 0).getDate()
+  const clampedDay = Math.min(salaryDay, lastDay)
+  const d = new Date(year, month + offset, clampedDay)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const computeSettlementRange = (ym: string): { start: string; end: string } | null => {
+  if (!ym || ym.length !== 6) return null
+  const year = Number(ym.slice(0, 4))
+  const month = Number(ym.slice(4))
+  const lastDay = new Date(year, month, 0).getDate()
+  const mm = String(month).padStart(2, '0')
+  return {
+    start: `${year}-${mm}-01`,
+    end: `${year}-${mm}-${String(lastDay).padStart(2, '0')}`,
+  }
+}
+
+const payrollMonthOptions = getPayrollMonthOptions()
+
+const FORM_DRAFT_KEY = 'partTimerFormDraft'
+const EDIT_DRAFT_KEY = 'partTimerEditDraft'
+
+interface EditDraft {
+  id: number
+  paymentItems: PartTimerPaymentItem[]
+  deductionItems?: PartTimerDeductionItem[]
+}
+
+const loadEditDraft = (id?: number): EditDraft | null => {
+  if (typeof window === 'undefined' || !id) return null
+  const raw = sessionStorage.getItem(EDIT_DRAFT_KEY)
+  if (!raw) return null
+  sessionStorage.removeItem(EDIT_DRAFT_KEY)
+  try {
+    const draft = JSON.parse(raw) as EditDraft
+    if (draft.id !== id) return null
+    return draft
+  } catch {
+    return null
+  }
+}
+
+interface FormDraft {
+  selectedOfficeId?: number
+  selectedFranchiseId?: number
+  selectedStoreId?: number
+  selectedEmployeeInfoId?: number
+  contractWage?: number
+  contractWorkHours?: ContractWorkHour[]
+  contractSalaryInfo?: ContractSalaryInfo
+  payrollYearMonth: string
+  settlementStartDate: string
+  settlementEndDate: string
+  paymentDate: string
+  remarks: string
+  paymentItems: PartTimerPaymentItem[]
+  deductionItems: PartTimerDeductionItem[]
+}
+
+const loadDraft = (): FormDraft | null => {
+  if (typeof window === 'undefined') return null
+  const raw = sessionStorage.getItem(FORM_DRAFT_KEY)
+  if (!raw) return null
+  sessionStorage.removeItem(FORM_DRAFT_KEY)
+  try {
+    return JSON.parse(raw) as FormDraft
+  } catch {
+    return null
+  }
+}
+
+const DEDUCTION_LABELS: Record<string, string> = {
+  NATIONAL_PENSION: '국민연금',
+  HEALTH_INSURANCE: '건강보험',
+  EMPLOYMENT_INSURANCE: '고용보험',
+  LONG_TERM_CARE_INSURANCE: '장기요양보험',
+}
+
+export default function PartTimerPayDetail({ isNew = false, initialData }: PartTimerPayDetailProps) {
   const router = useRouter()
+  const id = initialData?.id
+  const [draft] = useState(() => isNew ? loadDraft() : null)
+  const [editDraft] = useState(() => !isNew ? loadEditDraft(id) : null)
+
   const setDeductionAddSheet = useBottomSheetControler(
     (state) => state.setDeductionAddSheet,
   )
+
+  // DeductionAddSheet 저장 콜백 — 근무기간 설정 후 일별 근무내역 자동 조회
+  const handleDeductionSheetSave = async (data: {
+    settlementStartDate: string
+    settlementEndDate: string
+    deductionItems: PartTimerDeductionItem[]
+  }) => {
+    setSettlementStartDate(data.settlementStartDate)
+    setSettlementEndDate(data.settlementEndDate)
+    setDeductionItems(data.deductionItems)
+
+    // 직원이 선택된 상태에서만 일별 근무내역 조회
+    if (selectedEmployeeInfoId && data.settlementStartDate && data.settlementEndDate) {
+      try {
+        const result = await getDailyWorkHours({
+          employeeInfoId: selectedEmployeeInfoId,
+          startDate: data.settlementStartDate,
+          endDate: data.settlementEndDate,
+          headOfficeId: selectedOfficeId,
+          franchiseStoreId: selectedFranchiseId,
+          storeId: selectedStoreId,
+        })
+        if (result?.items) {
+          const dailyItems: PartTimerPaymentItem[] = result.items
+            .filter((item) => item.type === 'DAILY' && item.dailyRecord)
+            .map((item) => {
+              const r = item.dailyRecord!
+              return {
+                workDay: r.date,
+                workHour: r.workHours,
+                breakTimeHour: 0,
+                contractTimelyAmount: r.applyTimelyAmount,
+                applyTimelyAmount: r.applyTimelyAmount,
+                totalAmount: r.paymentAmount,
+                deductionAmount: r.deductionAmount,
+              }
+            })
+          setPaymentItems(dailyItems)
+        }
+      } catch (error) {
+        alert(getErrorMessage(error, '근무내역을 불러오는데 실패했습니다.'))
+      }
+    }
+  }
+
+  const createMutation = useCreatePartTimerPayroll()
+  const updateMutation = useUpdatePartTimerPayroll()
+  const deleteMutation = useDeletePartTimerPayroll()
+  const sendEmailMutation = useSendPartTimerPayrollEmail()
+  const downloadExcelMutation = useDownloadPartTimerPayrollExcel()
+
+  // 조직 선택
+  const authHeadOfficeId = useAuthStore((s) => s.headOfficeId)
+  const globalHeadOffice = useStoreStore((s) => s.selectedHeadOffice)
+  const { data: headOfficeTree = [] } = useHeadOfficeTree()
+  const [selectedOfficeId, setSelectedOfficeId] = useState<number | undefined>(
+    draft?.selectedOfficeId ?? (initialData?.headOfficeName ? undefined : (globalHeadOffice?.id ?? authHeadOfficeId ?? undefined)),
+  )
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState<number | undefined>(draft?.selectedFranchiseId)
+  const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>(draft?.selectedStoreId)
+
+  const selectedOffice = headOfficeTree.find((o) => o.id === selectedOfficeId)
+  const franchises = selectedOffice?.franchises ?? []
+  const { data: storeOptions = [] } = useStoreOptions(selectedOfficeId, selectedFranchiseId)
+
+  // 직원 목록
+  const { data: employeeList = [] } = useEmployeeListByType(
+    { headOfficeId: selectedOfficeId ?? 0, franchiseId: selectedFranchiseId, employeeType: 'PART_TIME' },
+    isNew && !!selectedOfficeId,
+  )
+
+  const [selectedEmployeeInfoId, setSelectedEmployeeInfoId] = useState<number | undefined>(draft?.selectedEmployeeInfoId)
+
+  // 직원 선택 시 계약 정보 자동 조회
+  const { data: employeeContracts = [] } = useContractsByEmployee(
+    selectedEmployeeInfoId ?? 0,
+    !!selectedEmployeeInfoId,
+  )
+  const employeeContract = employeeContracts[0] ?? null
+  const contractHeader = employeeContract?.employmentContractHeader
+  const isNextMonth = contractHeader?.salaryMonth === 'SLRCF_002'
+
+  // 폼 상태
+  const [payrollYearMonth, setPayrollYearMonth] = useState(
+    draft?.payrollYearMonth ?? initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '',
+  )
+  // 초기 근무기간: initialData가 있으면 그 값, 없으면 paymentDate 기반, 그래도 없으면 지급월 기반
+  const initialPeriod = (() => {
+    if (initialData?.settlementStartDate && initialData?.settlementEndDate) {
+      return { start: initialData.settlementStartDate, end: initialData.settlementEndDate }
+    }
+    if (initialData?.paymentDate) {
+      const payDate = new Date(initialData.paymentDate)
+      const end = new Date(payDate)
+      end.setDate(end.getDate() - 1)
+      const start = new Date(end)
+      start.setMonth(start.getMonth() - 1)
+      start.setDate(start.getDate() + 1)
+      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      return { start: fmt(start), end: fmt(end) }
+    }
+    const range = computeSettlementRange(initialData?.payrollYearMonth ?? payrollMonthOptions[0]?.value ?? '')
+    return range ?? { start: '', end: '' }
+  })()
+  const [settlementStartDate, setSettlementStartDate] = useState(draft?.settlementStartDate ?? initialPeriod.start)
+  const [settlementEndDate, setSettlementEndDate] = useState(draft?.settlementEndDate ?? initialPeriod.end)
+  const [paymentDate, setPaymentDate] = useState(draft?.paymentDate ?? initialData?.paymentDate ?? '')
+  const [remarks, setRemarks] = useState(draft?.remarks ?? initialData?.remarks ?? '')
+  const [paymentItems, setPaymentItems] = useState<PartTimerPaymentItem[]>(editDraft?.paymentItems ?? draft?.paymentItems ?? initialData?.paymentItems ?? [])
+  const [deductionItems, setDeductionItems] = useState<PartTimerDeductionItem[]>(editDraft?.deductionItems ?? draft?.deductionItems ?? initialData?.deductionItems ?? [])
+
+  // 지급일 기준 근무기간 계산 (지급일 한달전 ~ 지급일 하루전)
+  const computeWorkPeriodFromPaymentDate = (pd: string) => {
+    if (!pd) return null
+    const payDate = new Date(pd)
+    const end = new Date(payDate)
+    end.setDate(end.getDate() - 1)
+    const start = new Date(end)
+    start.setMonth(start.getMonth() - 1)
+    start.setDate(start.getDate() + 1)
+    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return { start: fmt(start), end: fmt(end) }
+  }
+
+  // 급여지급월 변경 시 지급일/정산기간/근무내역/공제항목 초기화
+  const handlePayrollYearMonthChange = (ym: string) => {
+    setPayrollYearMonth(ym)
+    const date = computePaymentDate(ym, contractHeader?.salaryDay, isNextMonth)
+    if (date) {
+      setPaymentDate(date)
+      const period = computeWorkPeriodFromPaymentDate(date)
+      if (period) {
+        setSettlementStartDate(period.start)
+        setSettlementEndDate(period.end)
+      }
+    }
+    // 기간이 바뀌면 기존 근무내역/공제항목은 유효하지 않으므로 초기화
+    setPaymentItems([])
+    setDeductionItems([])
+  }
+
+  // 직원 선택 시 계약 기반 급여지급월/지급일 자동 설정
+  const prevMonthValue = payrollMonthOptions[1]?.value ?? ''
+  const handleEmployeeChange = async (employeeInfoId: number | undefined) => {
+    setSelectedEmployeeInfoId(employeeInfoId)
+    if (!isNew || !employeeInfoId) return
+
+    try {
+      const contracts = await getContractsByEmployee(employeeInfoId)
+      const contract = contracts[0]
+      if (!contract) return
+      const header = contract.employmentContractHeader
+      const nextMonth = header?.salaryMonth === 'SLRCF_002'
+      const ym = nextMonth && prevMonthValue ? prevMonthValue : payrollYearMonth
+      setPayrollYearMonth(ym)
+
+      const date = computePaymentDate(ym, header?.salaryDay, nextMonth)
+      if (date) {
+        setPaymentDate(date)
+        const period = computeWorkPeriodFromPaymentDate(date)
+        if (period) {
+          setSettlementStartDate(period.start)
+          setSettlementEndDate(period.end)
+        }
+      }
+    } catch (error) {
+      console.warn('계약 정보 조회 실패:', error)
+    }
+  }
+
+  // 금액 계산
+  const totalPayment = paymentItems.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
+  const totalPaymentDeduction = paymentItems.reduce((sum, item) => sum + (item.deductionAmount || 0), 0)
+  const weeklyHolidayTotal = initialData?.weeklyPaidHolidayAllowances?.reduce((sum, w) => sum + (w.totalAmount || 0), 0) ?? 0
+  const weeklyHolidayNet = initialData?.weeklyPaidHolidayAllowances?.reduce((sum, w) => sum + (w.netAmount || 0), 0) ?? 0
+  const insuranceDeduction = deductionItems.reduce((sum, item) => sum + (item.amount || 0), 0)
+  const totalDeduction = totalPaymentDeduction + insuranceDeduction
+  const actualPayment = totalPayment + weeklyHolidayNet - totalDeduction
+
+  // 삭제 핸들러 등록
+  const setOnDelete = useHeaderStore((s) => s.setOnDelete)
+  const setShowDeleteButton = useHeaderStore((s) => s.setShowDeleteButton)
+  const deleteAsync = deleteMutation.mutateAsync
+  useEffect(() => {
+    if (!isNew && id) {
+      setShowDeleteButton(true)
+      setOnDelete(async () => {
+        if (!confirm('급여명세서를 삭제하시겠습니까?')) return
+        try {
+          await deleteAsync(id)
+          alert('삭제되었습니다.')
+          router.push('/parttimer')
+        } catch (error) {
+          alert(getErrorMessage(error, '삭제에 실패했습니다.'))
+        }
+      })
+    }
+    return () => {
+      setOnDelete(null)
+      setShowDeleteButton(false)
+    }
+  }, [isNew, id, setOnDelete, setShowDeleteButton, router, deleteAsync])
+
+  // 저장
+  const handleSave = async () => {
+    if (isNew && !selectedEmployeeInfoId) {
+      alert('직원을 선택해주세요.')
+      return
+    }
+    if (!payrollYearMonth) {
+      alert('급여 지급월을 선택해주세요.')
+      return
+    }
+    if (!paymentDate || !settlementStartDate || !settlementEndDate) {
+      alert('지급일과 근무기간을 먼저 설정해주세요.')
+      return
+    }
+    if (paymentItems.length === 0) {
+      alert('근무시간을 입력해주세요.')
+      return
+    }
+    const totalAmount = paymentItems.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
+    if (totalAmount === 0) {
+      alert('급여내역이 0원입니다. 근무시간을 확인해주세요.')
+      return
+    }
+
+    try {
+      if (isNew) {
+        const request: PartTimerPayrollCreateRequest = {
+          employeeInfoId: selectedEmployeeInfoId!,
+          payrollYearMonth,
+          settlementStartDate,
+          settlementEndDate,
+          paymentDate,
+          paymentItems: paymentItems.map(({ workDay, workHour, breakTimeHour, contractTimelyAmount, applyTimelyAmount, totalAmount, deductionAmount, remarks: r }) => ({
+            workDay, workHour, breakTimeHour, contractTimelyAmount, applyTimelyAmount, totalAmount, deductionAmount, remarks: r,
+          })),
+          deductionItems: deductionItems.length > 0 ? deductionItems.map(({ itemCode, itemOrder, amount, remarks: r }) => ({
+            itemCode, itemOrder, amount, remarks: r,
+          })) : undefined,
+          remarks: remarks || undefined,
+        }
+        await createMutation.mutateAsync(request)
+        alert('급여명세서가 등록되었습니다.')
+        router.push('/parttimer')
+      } else if (id) {
+        const request: PartTimerPayrollUpdateRequest = {
+          payrollYearMonth,
+          settlementStartDate,
+          settlementEndDate,
+          paymentDate,
+          paymentItems,
+          deductionItems: deductionItems.length > 0 ? deductionItems : undefined,
+          remarks: remarks || undefined,
+        }
+        await updateMutation.mutateAsync({ id, data: request })
+        alert('급여명세서가 수정되었습니다.')
+        router.push('/parttimer')
+      }
+    } catch (error) {
+      alert(getErrorMessage(error, '저장에 실패했습니다.'))
+    }
+  }
+
+  const handleSendEmail = async () => {
+    if (!id || sendEmailMutation.isPending) return
+    if (!confirm('급여명세서를 이메일로 전송하시겠습니까?')) return
+    try {
+      await sendEmailMutation.mutateAsync(id)
+      alert('이메일이 전송되었습니다.')
+    } catch (error) {
+      alert(getErrorMessage(error, '이메일 전송에 실패했습니다.'))
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!id) return
+    try {
+      await downloadExcelMutation.mutateAsync(id)
+    } catch (error) {
+      alert(getErrorMessage(error, '다운로드에 실패했습니다.'))
+    }
+  }
+
   return (
     <>
       <div className="container sub">
-        <div className="pay-head-btn-wrap">
-          <button className="pay-head-btn">
-            <i className="email-icon"></i>이메일 전송
-          </button>
-          <button className="pay-head-btn">
-            <i className="download-icon"></i>급여명세서 다운로드
-          </button>
-        </div>
+        {!isNew && (
+          <div className="pay-head-btn-wrap">
+            <button className="pay-head-btn" onClick={handleSendEmail} disabled={sendEmailMutation.isPending}>
+              <i className="email-icon"></i>{sendEmailMutation.isPending ? '전송 중...' : '이메일 전송'}
+            </button>
+            <button className="pay-head-btn" onClick={handleDownload} disabled={downloadExcelMutation.isPending}>
+              <i className="download-icon"></i>{downloadExcelMutation.isPending ? '다운로드 중...' : '급여명세서 다운로드'}
+            </button>
+          </div>
+        )}
         <div className="sub-content-body">
           <div className="sub-cont-wrap">
             <div className="sub-cont-item-wrap">
               <div className="sub-item-bx">
                 <div className="data-filed">
                   <div className="filed-tit">
-                    소속 <span className="imp">*</span>
+                    본사/가맹점/점포{isNew && <span className="imp"> *</span>}
                   </div>
-                  <div className="flex g8">
-                    <button className="radio-btn block act">본사</button>
-                    <button className="radio-btn block">가맹점</button>
-                  </div>
+                  {isNew ? (
+                    <>
+                      <div className="block mb8">
+                        <select
+                          className="select-form"
+                          value={selectedOfficeId ?? ''}
+                          onChange={(e) => {
+                            setSelectedOfficeId(Number(e.target.value) || undefined)
+                            setSelectedFranchiseId(undefined)
+                            setSelectedStoreId(undefined)
+                          }}
+                          disabled={!!authHeadOfficeId}
+                        >
+                          <option value="">본사 선택</option>
+                          {headOfficeTree.map((office) => (
+                            <option key={office.id} value={office.id}>{office.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="block mb8">
+                        <select
+                          className="select-form"
+                          value={selectedFranchiseId ?? ''}
+                          onChange={(e) => {
+                            setSelectedFranchiseId(Number(e.target.value) || undefined)
+                            setSelectedStoreId(undefined)
+                          }}
+                          disabled={!selectedOfficeId || franchises.length === 0}
+                        >
+                          <option value="">가맹점 선택</option>
+                          {franchises.map((f) => (
+                            <option key={f.id} value={f.id}>{f.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="block">
+                        <select
+                          className="select-form"
+                          value={selectedStoreId ?? ''}
+                          onChange={(e) => setSelectedStoreId(Number(e.target.value) || undefined)}
+                          disabled={!selectedOfficeId}
+                        >
+                          <option value="">점포 선택</option>
+                          {storeOptions.map((store) => (
+                            <option key={store.id} value={store.id}>{store.storeName}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="block mb8">
+                        <input type="text" className="input-frame" value={initialData?.headOfficeName ?? '-'} readOnly />
+                      </div>
+                      <div className="block mb8">
+                        <input type="text" className="input-frame" value={initialData?.franchiseName ?? '-'} readOnly />
+                      </div>
+                      <div className="block">
+                        <input type="text" className="input-frame" value={initialData?.storeName ?? '-'} readOnly />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="sub-item-bx">
                 <div className="data-filed">
                   <div className="filed-tit">
-                    본사/가맹점/점포 <span className="imp">*</span>
-                  </div>
-                  <div className="block mb8">
-                    <select name="" id="" className="select-form">
-                      <option value="1"> 본사 선택</option>
-                    </select>
-                  </div>
-                  <div className="block mb8">
-                    <select name="" id="" className="select-form" disabled>
-                      <option value="1"> 가맹점 선택</option>
-                    </select>
+                    직원명{isNew && <span className="imp"> *</span>}
                   </div>
                   <div className="block">
-                    <select name="" id="" className="select-form">
-                      <option value="1"> 점포선택</option>
-                    </select>
+                    {isNew ? (
+                      <select
+                        className="select-form"
+                        value={selectedEmployeeInfoId ?? ''}
+                        onChange={(e) => handleEmployeeChange(Number(e.target.value) || undefined)}
+                        disabled={!selectedOfficeId}
+                      >
+                        <option value="">직원 선택</option>
+                        {employeeList.map((emp) => (
+                          <option key={emp.employeeInfoId} value={emp.employeeInfoId}>
+                            {emp.employeeName} ({emp.employeeNumber})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input type="text" className="input-frame" value={initialData?.memberName ?? '-'} readOnly />
+                    )}
                   </div>
                 </div>
               </div>
@@ -60,15 +542,22 @@ export default function PartTimerPayDetail() {
                     급여 지급월 <span className="imp">*</span>
                   </div>
                   <div className="block mb8">
-                    <select name="" id="" className="select-form">
-                      <option value="1"> 2025.05</option>
+                    <select
+                      className="select-form"
+                      value={payrollYearMonth}
+                      onChange={(e) => handlePayrollYearMonthChange(e.target.value)}
+                    >
+                      <option value="">선택</option>
+                      {payrollMonthOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="block">
                     <input
                       type="text"
                       className="input-frame"
-                      defaultValue="지급일 - 2025.06.10"
+                      value={paymentDate ? `지급일 - ${paymentDate.replace(/-/g, '.')}` : ''}
                       readOnly
                     />
                   </div>
@@ -76,26 +565,29 @@ export default function PartTimerPayDetail() {
               </div>
               <div className="sub-item-bx">
                 <div className="data-filed">
-                  <div className="filed-tit">
-                    직원명 <span className="imp">*</span>
-                  </div>
+                  <div className="filed-tit">비고</div>
                   <div className="block">
-                    <select name="" id="" className="select-form" disabled>
-                      <option value="1"> 홍길동</option>
-                    </select>
+                    <input
+                      type="text"
+                      className="input-frame"
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                      placeholder="비고를 입력하세요"
+                    />
                   </div>
-                  <div className="s-txt mt10">BIM1001</div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* 근무기간 / 4대보험 */}
           <div className="sub-cont-wrap">
             <div className="sub-cont-item-wrap">
               <div className="sub-cont-tit-wrap">
                 <div className="sub-cont-tit">
                   근무기간 / 4대보험 공제액 설정 <span className="imp">*</span>
                 </div>
-                <div className="auto-right ">
+                <div className="auto-right">
                   <button
                     className="sub-edit-btn"
                     onClick={() => setDeductionAddSheet(true)}
@@ -111,8 +603,11 @@ export default function PartTimerPayDetail() {
                     <input
                       type="text"
                       className="input-frame"
-                      defaultValue="2025.10.28 ~ 2025.11.28"
+                      value={settlementStartDate && settlementEndDate
+                        ? `${settlementStartDate.replace(/-/g, '.')} ~ ${settlementEndDate.replace(/-/g, '.')}`
+                        : '설정해주세요'}
                       readOnly
+                      onClick={() => setDeductionAddSheet(true)}
                     />
                   </div>
                 </div>
@@ -121,37 +616,176 @@ export default function PartTimerPayDetail() {
                 <div className="data-filed">
                   <div className="filed-tit">4대보험 공제</div>
                   <div className="pay-data-list">
-                    <div className="pay-data-item">
-                      <div className="pay-data-item-tit">국민연금(원)</div>
-                      <div className="pay-data-item-value">38,000</div>
-                    </div>
-                    <div className="pay-data-item">
-                      <div className="pay-data-item-tit">건강보험(원)</div>
-                      <div className="pay-data-item-value">38,000</div>
-                    </div>
-                    <div className="pay-data-item">
-                      <div className="pay-data-item-tit">고용보험(원)</div>
-                      <div className="pay-data-item-value">38,000</div>
-                    </div>
-                    <div className="pay-data-item">
-                      <div className="pay-data-item-tit">장기요양보험(원)</div>
-                      <div className="pay-data-item-value">38,000</div>
-                    </div>
+                    {deductionItems.map((item) => (
+                      <div className="pay-data-item" key={item.itemCode}>
+                        <div className="pay-data-item-tit">
+                          {item.displayName || item.remarks || DEDUCTION_LABELS[item.itemCode] || item.itemCode}(원)
+                        </div>
+                        <div className="pay-data-item-value">
+                          {formatAmount(item.amount)}
+                        </div>
+                      </div>
+                    ))}
+                    {deductionItems.length === 0 && (
+                      <div style={{ padding: '8px 0', color: '#999', fontSize: '13px' }}>
+                        4대보험 공제 항목이 없습니다.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* 급여 요약 */}
+          <div className="sub-cont-wrap">
+            <div className="sub-cont-item-wrap">
+              <div className="sub-cont-tit-wrap">
+                <div className="sub-cont-tit">급여 요약</div>
+              </div>
+              <div className="sub-item-bx">
+                <div className="pay-data-list">
+                  <div className="pay-data-item top">
+                    <div className="pay-data-item-tit">실지급액</div>
+                    <div className="pay-data-item-value">{formatAmount(actualPayment)}원</div>
+                  </div>
+                  <div className="pay-data-item">
+                    <div className="pay-data-item-tit">지급총액</div>
+                    <div className="pay-data-item-value">{formatAmount(totalPayment)}원</div>
+                  </div>
+                  <div className="pay-data-item">
+                    <div className="pay-data-item-tit">주휴수당</div>
+                    <div className="pay-data-item-value">
+                      {weeklyHolidayTotal > 0 ? `${formatAmount(weeklyHolidayTotal)}원` : isNew ? '저장 시 자동 계산' : '0원'}
+                    </div>
+                  </div>
+                  <div className="pay-data-item">
+                    <div className="pay-data-item-tit">공제총액</div>
+                    <div className="pay-data-item-value">{formatAmount(totalDeduction)}원</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 등록/수정 이력 */}
+          {!isNew && initialData && (
+            <div className="sub-cont-wrap">
+              <div className="sub-cont-item-wrap">
+                <div className="sub-cont-tit-wrap">
+                  <div className="sub-cont-tit">등록 및 수정 이력</div>
+                </div>
+                <div className="sub-item-bx">
+                  <table className="info-table">
+                    <colgroup>
+                      <col style={{ width: '95px' }} />
+                      <col />
+                    </colgroup>
+                    <tbody>
+                      <tr>
+                        <th>등록일</th>
+                        <td>
+                          <div className="data-list">
+                            <span>{initialData.createdByName ?? '-'}</span>
+                            <span>{initialData.createdAt?.slice(0, 10).replace(/-/g, '.') ?? '-'}</span>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>최근수정일</th>
+                        <td>
+                          <div className="data-list">
+                            <span>{initialData.updatedByName ?? '-'}</span>
+                            <span>{initialData.updatedAt?.slice(0, 10).replace(/-/g, '.') ?? '-'}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="content-pagination flex g8">
         <button
           className="btn-form block sky brd"
-          onClick={() => router.push('/parttimer/1/stub')}
+          disabled={paymentItems.length === 0}
+          onClick={() => {
+            if (isNew) {
+              const selectedEmployee = employeeList.find((emp) => emp.employeeInfoId === selectedEmployeeInfoId)
+              const previewData: Omit<PartTimerPayrollDetail, 'id' | 'isEmailSend'> & { id?: number; isEmailSend?: boolean } = {
+                memberId: selectedEmployee?.employeeInfoId ?? 0,
+                memberName: selectedEmployee ? `${selectedEmployee.employeeName} (${selectedEmployee.employeeNumber})` : '',
+                payrollYearMonth,
+                settlementStartDate,
+                settlementEndDate,
+                paymentDate,
+                totalAmount: totalPayment,
+                totalDeductionAmount: totalDeduction,
+                actualPaymentAmount: actualPayment,
+                remarks,
+                paymentItems,
+                deductionItems,
+                weeklyPaidHolidayAllowances: [],
+              }
+              // 폼 상태 저장 (뒤로가기 시 복원용)
+              const formDraft: FormDraft = {
+                selectedOfficeId,
+                selectedFranchiseId,
+                selectedStoreId,
+                selectedEmployeeInfoId,
+                contractWage: employeeContract?.salaryInfo?.timelySalary,
+                contractWorkHours: employeeContract?.workHours,
+                contractSalaryInfo: employeeContract?.salaryInfo,
+                payrollYearMonth,
+                settlementStartDate,
+                settlementEndDate,
+                paymentDate,
+                remarks,
+                paymentItems,
+                deductionItems,
+              }
+              sessionStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formDraft))
+              sessionStorage.setItem('partTimerStubPreview', JSON.stringify(previewData))
+              router.push('/parttimer/new/stub')
+            } else {
+              const previewData: Partial<PartTimerPayrollDetail> = {
+                ...initialData,
+                payrollYearMonth,
+                settlementStartDate,
+                settlementEndDate,
+                paymentDate,
+                totalAmount: totalPayment,
+                totalDeductionAmount: totalDeduction,
+                actualPaymentAmount: actualPayment,
+                remarks,
+                paymentItems,
+                deductionItems,
+              }
+              sessionStorage.setItem('partTimerStubPreview', JSON.stringify(previewData))
+              sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ id, paymentItems, deductionItems }))
+              router.push(`/parttimer/${id}/stub`)
+            }
+          }}
         >
           급여내역 미리보기
         </button>
+        <button
+          className="btn-form block blue"
+          onClick={handleSave}
+          disabled={createMutation.isPending || updateMutation.isPending}
+        >
+          {createMutation.isPending || updateMutation.isPending ? '저장 중...' : '저장하기'}
+        </button>
       </div>
+      <DeductionAddSheet
+        settlementStartDate={settlementStartDate}
+        settlementEndDate={settlementEndDate}
+        deductionItems={deductionItems}
+        onSave={handleDeductionSheetSave}
+      />
     </>
   )
 }

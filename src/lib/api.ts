@@ -21,11 +21,14 @@ export function getErrorMessage(error: unknown, fallback = '알 수 없는 오�
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
 })
 
-// 요청 인터셉터 — 토큰 자동 첨부
+// 요청 인터셉터 — 토큰 자동 첨부 + FormData Content-Type 처리
 api.interceptors.request.use((config) => {
+  // FormData 전송 시 Content-Type 제거 (브라우저가 multipart/form-data + boundary 자동 설정)
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
   const url = config.url || ''
 
   if (url.startsWith('/api/auth/') && !url.includes('/change-password')) {
@@ -34,17 +37,19 @@ api.interceptors.request.use((config) => {
 
   let { accessToken, affiliationId } = useAuthStore.getState()
 
-  if (!accessToken && typeof window !== 'undefined') {
+  if ((!accessToken || !affiliationId) && typeof window !== 'undefined') {
     try {
       const stored = localStorage.getItem('auth-storage')
       if (stored) {
         const parsed = JSON.parse(stored)
-        accessToken = parsed.state?.accessToken
+        accessToken = accessToken || parsed.state?.accessToken
         affiliationId = affiliationId || parsed.state?.affiliationId
       }
     } catch (e) {
       console.warn('[api] localStorage 인증 정보 읽기 실패:', e)
-      try { localStorage.removeItem('auth-storage') } catch { /* noop */ }
+      try { localStorage.removeItem('auth-storage') } catch (removeErr) {
+        console.warn('[api] localStorage auth-storage 삭제 실패:', removeErr)
+      }
     }
   }
 
@@ -54,7 +59,8 @@ api.interceptors.request.use((config) => {
   if (affiliationId) {
     config.headers['affiliationId'] = affiliationId
   }
-
+  // TODO: 서버 programs.path와 매핑하는 로직으로 교체 필요
+  // config.headers['currentPath'] = '/store/info'
   return config
 })
 
@@ -110,8 +116,8 @@ api.interceptors.response.use(
           const parsed = JSON.parse(stored)
           refreshToken = parsed.state?.refreshToken ?? null
         }
-      } catch {
-        // localStorage 접근 실패
+      } catch (err) {
+        console.warn('[api] 리프레시 토큰 localStorage 읽기 실패:', err)
       }
     }
 

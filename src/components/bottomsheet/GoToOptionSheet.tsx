@@ -6,14 +6,14 @@ import { Sheet } from "react-modal-sheet";
 export default function GoToOptionSheet() {
   const goToOptionSheet = useBottomSheetControler((state) => state.goToOptionSheet);
   const setGoToOptionSheet = useBottomSheetControler((state) => state.setGoToOptionSheet);
-  const setAlertPopup = usePopupControler((state) => state.setAlertPopup);
+  const openAlert = usePopupControler((state) => state.openAlert);
 
   const handleClose = () => {
     setGoToOptionSheet(false);
   };
 
   const handleSetAlert = () => {
-    setAlertPopup(true);
+    openAlert({ message: "바로가기가 설정되었습니다." });
   };
 
   return (

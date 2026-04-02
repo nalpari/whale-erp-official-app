@@ -10,14 +10,14 @@ export interface PaginatedResponse<T> {
 // 근무 상태 코드
 export type WorkStatus = 'EMPWK_001' | 'EMPWK_002' | 'EMPWK_003'
 
-// 급여명세서 목록 항목
+// 급여명세서 목록 항목 (API: PayrollStatementListItemResponse 기준)
 export interface PayrollStatementListItem {
   id: number
-  employeeInfoId: number
-  employeeName: string
-  employeeNumber: string
-  employeeClassification: string
-  workStatus: WorkStatus
+  memberId: number
+  memberName: string
+  workStatus?: WorkStatus
+  employeeClassification?: string
+  employeeClassificationName?: string
   payrollYearMonth: string
   paymentDate: string
   totalPaymentAmount: number
@@ -63,8 +63,16 @@ export interface PayrollStatementDetail {
   id: number
   employmentContractId: number
   employeeInfoId: number
+  memberId: number
+  memberName: string
   employeeName: string
   employeeNumber: string
+  headOfficeId?: number
+  headOfficeName?: string
+  franchiseId?: number
+  franchiseName?: string
+  storeId?: number
+  storeName?: string
   payrollYearMonth: string
   settlementStartDate: string
   settlementEndDate: string
@@ -78,9 +86,9 @@ export interface PayrollStatementDetail {
   paymentItems: PaymentItem[]
   deductionItems: DeductionItem[]
   bonuses: BonusItem[]
-  createdBy?: string
+  createdByName?: string
   createdAt?: string
-  updatedBy?: string
+  updatedByName?: string
   updatedAt?: string
 }
 
@@ -101,6 +109,7 @@ export interface PayrollSearchParams {
 
 // 생성/수정 요청
 export interface PayrollStatementCreateRequest {
+  employeeInfoId: number
   employmentContractId: number
   payrollYearMonth: string
   settlementStartDate: string

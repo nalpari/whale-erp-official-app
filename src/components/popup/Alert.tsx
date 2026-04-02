@@ -1,11 +1,39 @@
 "use client";
+import { useState } from "react";
 import { usePopupControler } from "@/store/usePopupControler";
 
 export default function Alert() {
-  const setAlertPopup = usePopupControler((state) => state.setAlertPopup);
+  const alertOptions = usePopupControler((state) => state.alertOptions);
+  const closeAlert = usePopupControler((state) => state.closeAlert);
 
-  const handleClose = () => {
-    setAlertPopup(false);
+  const message = alertOptions?.message ?? "";
+  const confirmText = alertOptions?.confirmText ?? "확인";
+  const cancelText = alertOptions?.cancelText;
+  const isConfirm = !!cancelText;
+
+  const [isPending, setIsPending] = useState(false);
+
+  const handleConfirm = async () => {
+    if (isPending) return;
+    setIsPending(true);
+    try {
+      await alertOptions?.onConfirm?.();
+      closeAlert();
+    } catch (err) {
+      console.error('[Alert] onConfirm 콜백 실행 실패:', err);
+      // 에러 시 팝업을 닫지 않음 — 호출측에서 에러 Alert를 다시 띄울 수 있도록 함
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleCancel = () => {
+    try {
+      alertOptions?.onCancel?.();
+    } catch (err) {
+      console.error('[Alert] onCancel 콜백 실행 실패:', err);
+    }
+    closeAlert();
   };
 
   return (
@@ -15,21 +43,23 @@ export default function Alert() {
           <div className="modal-body">
             <div className="alert-frame">
               <div className="alert-info">
-                <span>바로가기는 최대 4개까지 선택 가능합니다.</span>
+                <span>{message}</span>
               </div>
               <div className="alert-btn flex g8">
-                {/* alert 팝업시 취소 버튼 숨김 confirm 팝업시 취소 버튼 노출 */}
-                {/* <button
-                  className="btn-form outline min block"
-                  onClick={handleClose}
-                >
-                  취소
-                </button> */}
+                {isConfirm && (
+                  <button
+                    className="btn-form outline min block"
+                    onClick={handleCancel}
+                  >
+                    {cancelText}
+                  </button>
+                )}
                 <button
                   className="btn-form black min block"
-                  onClick={handleClose}
+                  onClick={handleConfirm}
+                  disabled={isPending}
                 >
-                  선택
+                  {isPending ? "처리 중..." : confirmText}
                 </button>
               </div>
             </div>

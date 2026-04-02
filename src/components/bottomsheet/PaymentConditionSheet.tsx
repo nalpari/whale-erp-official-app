@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import { useCommonCodeHierarchy } from '@/hooks/queries/use-common-code-queries'
 import { Sheet } from 'react-modal-sheet'
-import type { PaymentItem, DeductionItem } from '@/types/payroll'
+import type { PaymentItem, DeductionItem, BonusItem } from '@/types/payroll'
 import { PAYMENT_ITEM_CODES, DEDUCTION_ITEM_CODES } from '@/types/payroll'
 
 interface PaymentConditionSheetProps {
@@ -10,6 +11,8 @@ interface PaymentConditionSheetProps {
   deductionItems: DeductionItem[]
   onPaymentItemsChange: (items: PaymentItem[]) => void
   onDeductionItemsChange: (items: DeductionItem[]) => void
+  availableBonuses?: BonusItem[]
+  onLoadOvertime?: () => void
 }
 
 const formatNumber = (value: string) => {
@@ -44,6 +47,8 @@ export default function PaymentConditionSheet({
   deductionItems: externalDeductionItems,
   onPaymentItemsChange,
   onDeductionItemsChange,
+  availableBonuses = [],
+  onLoadOvertime,
 }: PaymentConditionSheetProps) {
   const paymentConditionSheet = useBottomSheetControler(
     (state) => state.paymentConditionSheet,
@@ -59,7 +64,6 @@ export default function PaymentConditionSheet({
   const [localDeductionItems, setLocalDeductionItems] = useState<DeductionItem[]>(
     externalDeductionItems.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
   )
-
   // 시트 열릴 때 외부 데이터로 리셋 (이벤트 핸들러 — React Compiler 안전)
   const handleOpenStart = () => {
     setLocalPaymentItems(
@@ -97,8 +101,69 @@ export default function PaymentConditionSheet({
   }
 
   const handleReset = () => {
-    setLocalPaymentItems(DEFAULT_PAYMENT_ITEMS)
-    setLocalDeductionItems(DEFAULT_DEDUCTION_ITEMS)
+    setLocalPaymentItems(
+      externalPaymentItems.length > 0 ? externalPaymentItems : DEFAULT_PAYMENT_ITEMS,
+    )
+    setLocalDeductionItems(
+      externalDeductionItems.length > 0 ? externalDeductionItems : DEFAULT_DEDUCTION_ITEMS,
+    )
+  }
+
+  // 기본 항목 공통코드 조회 (DPTBS: 지급항목, DDTBS: 공제항목)
+  const { data: dptbsCodes = [] } = useCommonCodeHierarchy('DPTBS')
+  const { data: ddtbsCodes = [] } = useCommonCodeHierarchy('DDTBS')
+
+  // 기본 항목 코드 (삭제 불가) — enum 코드 + 공통코드 양쪽 호환
+  const defaultPaymentCodes = useMemo(() => {
+    const codes = new Set(Object.keys(PAYMENT_ITEM_CODES))
+    dptbsCodes.forEach((c) => codes.add(c.code))
+    return codes
+  }, [dptbsCodes])
+  const defaultDeductionCodes = useMemo(() => {
+    const codes = new Set(Object.keys(DEDUCTION_ITEM_CODES))
+    ddtbsCodes.forEach((c) => codes.add(c.code))
+    return codes
+  }, [ddtbsCodes])
+
+  const handleRemovePaymentItem = (index: number) => {
+    setLocalPaymentItems((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleRemoveDeductionItem = (index: number) => {
+    setLocalDeductionItems((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // 지급 항목 추가 (salaryInfo.bonuses 기반)
+  const [showAddPayment, setShowAddPayment] = useState(false)
+  const handleAddPaymentItem = (bonus: BonusItem) => {
+    setLocalPaymentItems((prev) => [
+      ...prev,
+      {
+        itemCode: bonus.bonusCode || bonus.bonusType,
+        itemOrder: prev.length + 1,
+        amount: bonus.amount,
+        remarks: bonus.bonusType,
+      },
+    ])
+    setShowAddPayment(false)
+  }
+
+  // 추가 공제 항목 공통코드 조회
+  const { data: additionalDeductionCodes = [] } = useCommonCodeHierarchy('DDTAD')
+
+  // 공제 항목 추가 (공통코드 선택)
+  const [showAddDeduction, setShowAddDeduction] = useState(false)
+  const handleAddDeductionItem = (code: string, name: string) => {
+    setLocalDeductionItems((prev) => [
+      ...prev,
+      {
+        itemCode: code,
+        itemOrder: prev.length + 1,
+        amount: 0,
+        remarks: name,
+      },
+    ])
+    setShowAddDeduction(false)
   }
 
   return (
@@ -130,14 +195,14 @@ export default function PaymentConditionSheet({
                       <td>
                         <div className="payment-data-list">
                           {localPaymentItems.map((item, index) => (
-                            <div className="payment-data-item" key={item.itemCode}>
+                            <div className="payment-data-item" key={`${item.itemCode}-${index}`}>
                               <div className="payment-data-item-tit">
                                 {item.remarks || PAYMENT_ITEM_CODES[item.itemCode as keyof typeof PAYMENT_ITEM_CODES] || item.itemCode}
                                 {item.itemCode === 'BASIC' && (
                                   <span className="imp"> *</span>
                                 )}
                               </div>
-                              <div className="payment-data-item-value">
+                              <div className="payment-data-item-value" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                                 <input
                                   type="text"
                                   className="input-frame al-r"
@@ -147,20 +212,84 @@ export default function PaymentConditionSheet({
                                     handlePaymentAmountChange(index, e.target.value)
                                   }
                                   placeholder="0"
+                                  style={{ flex: 1 }}
                                 />
+                                {item.itemCode === 'ADD' && onLoadOvertime && (
+                                  <button
+                                    type="button"
+                                    className="btn-form grey"
+                                    onClick={onLoadOvertime}
+                                    style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '6px 10px' }}
+                                  >
+                                    불러오기
+                                  </button>
+                                )}
+                                {!defaultPaymentCodes.has(item.itemCode) && (
+                                  <button
+                                    type="button"
+                                    className="btn-form grey"
+                                    onClick={() => handleRemovePaymentItem(index)}
+                                    style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '6px 10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '4px' }}
+                                  >
+                                    삭제
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}
+                          {availableBonuses.length > 0 && (
+                            showAddPayment ? (
+                              <div className="payment-data-item">
+                                {availableBonuses
+                                  .filter((b) => !localPaymentItems.some((p) => p.itemCode === (b.bonusCode || b.bonusType)))
+                                  .map((b, i) => (
+                                    <button
+                                      key={b.bonusCode ?? i}
+                                      type="button"
+                                      className="btn-form grey"
+                                      onClick={() => handleAddPaymentItem(b)}
+                                      style={{ width: '100%', fontSize: '13px', marginBottom: '4px', textAlign: 'left' }}
+                                    >
+                                      {b.bonusType} ({b.amount.toLocaleString('ko-KR')}원)
+                                    </button>
+                                  ))}
+                                {availableBonuses.filter((b) => !localPaymentItems.some((p) => p.itemCode === (b.bonusCode || b.bonusType))).length === 0 && (
+                                  <div style={{ padding: '8px 0', color: '#999', fontSize: '13px' }}>
+                                    추가 가능한 지급 항목이 없습니다.
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
+                                  className="btn-form grey"
+                                  onClick={() => setShowAddPayment(false)}
+                                  style={{ width: '100%', fontSize: '13px', marginTop: '4px' }}
+                                >
+                                  취소
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="payment-data-item">
+                                <button
+                                  type="button"
+                                  className="btn-form grey"
+                                  onClick={() => setShowAddPayment(true)}
+                                  style={{ width: '100%', fontSize: '13px' }}
+                                >
+                                  + 지급 항목 추가
+                                </button>
+                              </div>
+                            )
+                          )}
                         </div>
                       </td>
                       <td>
                         <div className="payment-data-list">
                           {localDeductionItems.map((item, index) => (
-                            <div className="payment-data-item" key={item.itemCode}>
+                            <div className="payment-data-item" key={`${item.itemCode}-${index}`}>
                               <div className="payment-data-item-tit">
                                 {item.remarks || DEDUCTION_ITEM_CODES[item.itemCode as keyof typeof DEDUCTION_ITEM_CODES] || item.itemCode}
                               </div>
-                              <div className="payment-data-item-value">
+                              <div className="payment-data-item-value" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                                 <input
                                   type="text"
                                   className="input-frame al-r"
@@ -170,10 +299,57 @@ export default function PaymentConditionSheet({
                                     handleDeductionAmountChange(index, e.target.value)
                                   }
                                   placeholder="0"
+                                  style={{ flex: 1 }}
                                 />
+                                {!defaultDeductionCodes.has(item.itemCode) && (
+                                  <button
+                                    type="button"
+                                    className="btn-form grey"
+                                    onClick={() => handleRemoveDeductionItem(index)}
+                                    style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '6px 10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '4px' }}
+                                  >
+                                    삭제
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}
+                          {showAddDeduction ? (
+                            <div className="payment-data-item">
+                              {additionalDeductionCodes
+                                .filter((c) => c.isActive && !localDeductionItems.some((d) => d.itemCode === c.code))
+                                .map((code) => (
+                                <button
+                                  key={code.id}
+                                  type="button"
+                                  className="btn-form grey"
+                                  onClick={() => handleAddDeductionItem(code.code, code.name)}
+                                  style={{ width: '100%', fontSize: '13px', marginBottom: '4px', textAlign: 'left' }}
+                                >
+                                  {code.name}
+                                </button>
+                              ))}
+                              <button
+                                type="button"
+                                className="btn-form grey"
+                                onClick={() => setShowAddDeduction(false)}
+                                style={{ width: '100%', fontSize: '13px', marginTop: '4px' }}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="payment-data-item">
+                              <button
+                                type="button"
+                                className="btn-form grey"
+                                onClick={() => setShowAddDeduction(true)}
+                                style={{ width: '100%', fontSize: '13px' }}
+                              >
+                                + 공제 항목 추가
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -14,7 +14,7 @@ export default function InviteForm01() {
   // 선택된 본사의 가맹점 목록
   const franchiseOptions = headOfficeTree
     ?.find((ho) => ho.id === stepOne.headOfficeOrganizationId)
-    ?.children ?? []
+    ?.franchises ?? []
 
   const handleWorkplaceTypeChange = (type: WorkplaceType) => {
     setStepOne({
