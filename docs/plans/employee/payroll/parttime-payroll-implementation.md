@@ -2,7 +2,7 @@
 
 ## 개요
 - **목표**: official-app(모바일)의 파트타이머 급여명세서 화면에 API 연동
-- **현재 상태**: 4개 컴포넌트 모두 하드코딩된 퍼블리싱 목업 수준, API 호출 없음
+- **현재 상태**: ✅ 전체 구현 완료 (Phase 1~6)
 - **참조**: whale-erp-front의 PartTimePayStub.tsx, PartTimeWorkTimeEdit.tsx
 - **API 기본 경로**: `/api/v1/employee/payroll/parttime`
 
