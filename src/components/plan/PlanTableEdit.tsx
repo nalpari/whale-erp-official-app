@@ -96,7 +96,7 @@ export default function PlanTableEdit() {
         id: e.employeeInfoId,
         memberId: e.memberId,
         name: e.employeeName,
-        contractType: '정직원',
+        contractType: e.contractType ?? '정직원',
         employeeNumber: e.employeeNumber,
       })))
     }
@@ -470,8 +470,11 @@ export default function PlanTableEdit() {
                                           '휴게 시작시간',
                                           worker.breakStartTime ?? '12:00',
                                           (time) => {
-                                            updateWorkerField(date, originalIndex, 'breakStartTime', time)
-                                            updateWorkerField(date, originalIndex, 'hasBreak', true)
+                                            updateWorkers(date, (workers) =>
+                                              workers.map((w, i) =>
+                                                i === originalIndex ? { ...w, breakStartTime: time, hasBreak: true } : w
+                                              )
+                                            )
                                           },
                                         )
                                       }
@@ -487,8 +490,11 @@ export default function PlanTableEdit() {
                                           '휴게 종료시간',
                                           worker.breakEndTime ?? '13:00',
                                           (time) => {
-                                            updateWorkerField(date, originalIndex, 'breakEndTime', time)
-                                            updateWorkerField(date, originalIndex, 'hasBreak', true)
+                                            updateWorkers(date, (workers) =>
+                                              workers.map((w, i) =>
+                                                i === originalIndex ? { ...w, breakEndTime: time, hasBreak: true } : w
+                                              )
+                                            )
                                           },
                                         )
                                       }

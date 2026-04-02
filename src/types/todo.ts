@@ -48,6 +48,7 @@ export interface EmployeeOption {
   memberId: number | null;
   employeeNumber: string;
   employeeName: string;
+  contractType?: string;
   headOfficeName: string;
   franchiseName: string | null;
   storeName: string | null;
