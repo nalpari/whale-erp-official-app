@@ -228,6 +228,7 @@ export default function PlanTableEdit() {
         hasBreak: w.hasBreak,
         breakStartTime: w.breakStartTime,
         breakEndTime: w.breakEndTime,
+        iconType: w.iconType,
         isDeleted: w.isDeleted,
       }))
       requests.push({ date, workerRequests })

@@ -38,6 +38,8 @@ export default function WorkerAddSheet() {
     const emp = employees.find((e) => e.id === selectedEmployeeId)
     if (!emp || emp.memberId === null || !fromDate || !toDate || !workStart || !workEnd) return
 
+    const hasBreak = !!breakStart && !!breakEnd
+
     const newWorker: WorkerEditItem = {
       shiftId: null,
       workerId: emp.memberId,
@@ -46,9 +48,9 @@ export default function WorkerAddSheet() {
       hasWork: true,
       workStartTime: workStart,
       workEndTime: workEnd,
-      hasBreak: !!breakStart && !!breakEnd,
-      breakStartTime: breakStart || null,
-      breakEndTime: breakEnd || null,
+      hasBreak,
+      breakStartTime: hasBreak ? breakStart : null,
+      breakEndTime: hasBreak ? breakEnd : null,
       isDeleted: false,
       isNew: true,
       iconType: 0,
@@ -64,7 +66,8 @@ export default function WorkerAddSheet() {
 
   const selectedEmployee = employees.find((employee) => employee.id === selectedEmployeeId)
   const isDateMissing = !fromDate || !toDate
-  const isValid = selectedEmployee != null && selectedEmployee.memberId !== null && !isDateMissing && workStart && workEnd
+  const hasPartialBreak = (!!breakStart) !== (!!breakEnd)
+  const isValid = selectedEmployee != null && selectedEmployee.memberId !== null && !isDateMissing && workStart && workEnd && !hasPartialBreak
 
   return (
     <Sheet

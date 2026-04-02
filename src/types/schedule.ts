@@ -39,6 +39,7 @@ export interface WorkerRequest {
   hasBreak: boolean
   breakStartTime?: string | null
   breakEndTime?: string | null
+  iconType?: number
   isDeleted?: boolean
 }
 

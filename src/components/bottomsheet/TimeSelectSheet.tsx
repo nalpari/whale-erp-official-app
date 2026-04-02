@@ -23,8 +23,10 @@ export default function TimeSelectSheet() {
 
   const handleOpenStart = useCallback(() => {
     if (timePickerValue) {
-      const [h, m] = timePickerValue.split(':').map(Number)
-      const mIdx = m === 30 ? 1 : 0
+      const parts = timePickerValue.split(':').map(Number)
+      const h = isNaN(parts[0]) ? 9 : parts[0]
+      const m = isNaN(parts[1]) ? 0 : parts[1]
+      const mIdx = m >= 15 ? 1 : 0
       setHour(h)
       setMinute(mIdx)
       setTimeout(() => {

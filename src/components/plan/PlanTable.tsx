@@ -107,7 +107,7 @@ export default function PlanTable() {
             if (activeWorkers.length === 0) return null
 
             return (
-              <div key={`${schedule.date}`} className="plan-table-item">
+              <div key={`${schedule.storeId ?? 'unknown'}-${schedule.date}`} className="plan-table-item">
                 <div className="plan-table-header">
                   <div className="plan-table-day">
                     {schedule.date.replace(/-/g, '.')} {schedule.day}

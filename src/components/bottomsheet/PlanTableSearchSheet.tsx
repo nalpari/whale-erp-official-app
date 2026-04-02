@@ -17,14 +17,17 @@ export default function PlanTableSearchSheet() {
 
   const [localEmployeeName, setLocalEmployeeName] = useState(employeeName)
   const [localDayType, setLocalDayType] = useState<string | null>(dayType)
-  const [localFrom, setLocalFrom] = useState(storeFrom)
-  const [localTo, setLocalTo] = useState(storeTo)
+  const effectiveFrom = storeFrom || getMonday()
+  const effectiveTo = storeTo || getSunday()
+
+  const [localFrom, setLocalFrom] = useState(effectiveFrom)
+  const [localTo, setLocalTo] = useState(effectiveTo)
 
   const handleOpenStart = () => {
     setLocalEmployeeName(employeeName)
     setLocalDayType(dayType)
-    setLocalFrom(storeFrom)
-    setLocalTo(storeTo)
+    setLocalFrom(effectiveFrom)
+    setLocalTo(effectiveTo)
   }
 
   const handleClose = () => {

@@ -36,6 +36,8 @@ export default function TemporaryWorkerAddSheet() {
   const handleAdd = () => {
     if (!tempName.trim() || !fromDate || !toDate || !workStart || !workEnd) return
 
+    const hasBreak = !!breakStart && !!breakEnd
+
     const newWorker: WorkerEditItem = {
       shiftId: null,
       workerId: null,
@@ -44,9 +46,9 @@ export default function TemporaryWorkerAddSheet() {
       hasWork: true,
       workStartTime: workStart,
       workEndTime: workEnd,
-      hasBreak: !!breakStart && !!breakEnd,
-      breakStartTime: breakStart || null,
-      breakEndTime: breakEnd || null,
+      hasBreak,
+      breakStartTime: hasBreak ? breakStart : null,
+      breakEndTime: hasBreak ? breakEnd : null,
       isDeleted: false,
       isNew: true,
       iconType: 0,
@@ -61,7 +63,8 @@ export default function TemporaryWorkerAddSheet() {
   }
 
   const isDateMissing = !fromDate || !toDate
-  const isValid = tempName.trim() && !isDateMissing && workStart && workEnd
+  const hasPartialBreak = (!!breakStart) !== (!!breakEnd)
+  const isValid = tempName.trim() && !isDateMissing && workStart && workEnd && !hasPartialBreak
 
   return (
     <Sheet
