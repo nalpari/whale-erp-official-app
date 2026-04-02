@@ -331,38 +331,38 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                           <td className="al-r">{salary.monthlyTime ?? 0}시간</td>
                           <td className="al-r">{formatAmount(salary.monthlyBaseSalary)}원</td>
                         </tr>
-                        {salary.monthlyOvertimeAllowanceAmount !== undefined && (
+                        {salary.monthlyOvertimeAllowance !== undefined && (
                           <tr>
                             <td className="tit">연장수당</td>
                             <td className="al-r">{salary.monthlyOvertimeAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyOvertimeAllowanceAmount)}원</td>
+                            <td className="al-r">{formatAmount(salary.monthlyOvertimeAllowance)}원</td>
                           </tr>
                         )}
-                        {salary.monthlyNightAllowanceAmount !== undefined && (
+                        {salary.monthlyNightAllowance !== undefined && (
                           <tr>
                             <td className="tit">야간수당</td>
                             <td className="al-r">{salary.monthlyNightAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyNightAllowanceAmount)}원</td>
+                            <td className="al-r">{formatAmount(salary.monthlyNightAllowance)}원</td>
                           </tr>
                         )}
-                        {salary.monthlyHolidayAllowanceAmount !== undefined && (
+                        {salary.monthlyHolidayAllowance !== undefined && (
                           <tr>
                             <td className="tit">휴일근무수당</td>
                             <td className="al-r">{salary.monthlyHolidayAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyHolidayAllowanceAmount)}원</td>
+                            <td className="al-r">{formatAmount(salary.monthlyHolidayAllowance)}원</td>
                           </tr>
                         )}
-                        {salary.monthlyAddHolidayAllowanceAmount !== undefined && (
+                        {salary.monthlyAddHolidayAllowance !== undefined && (
                           <tr>
                             <td className="tit">추가휴일근무수당</td>
                             <td className="al-r">{salary.monthlyAddHolidayAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyAddHolidayAllowanceAmount)}원</td>
+                            <td className="al-r">{formatAmount(salary.monthlyAddHolidayAllowance)}원</td>
                           </tr>
                         )}
                       </tbody>
                     </table>
                   </div>
-                  {(salary.mealAllowanceAmount !== undefined || salary.vehicleAllowanceAmount !== undefined || salary.childcareAllowanceAmount !== undefined) && (
+                  {(salary.mealAllowance !== undefined || salary.vehicleAllowance !== undefined || salary.childcareAllowance !== undefined) && (
                     <div className="sub-item-bx">
                       <div className="pay-table-header">
                         <div className="pay-table-tit">비과세 항목</div>
@@ -373,22 +373,22 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                           <col />
                         </colgroup>
                         <tbody>
-                          {salary.mealAllowanceAmount !== undefined && (
+                          {salary.mealAllowance !== undefined && (
                             <tr>
                               <td className="tit">식대</td>
-                              <td className="al-r">{formatAmount(salary.mealAllowanceAmount)}원</td>
+                              <td className="al-r">{formatAmount(salary.mealAllowance)}원</td>
                             </tr>
                           )}
-                          {salary.vehicleAllowanceAmount !== undefined && (
+                          {salary.vehicleAllowance !== undefined && (
                             <tr>
                               <td className="tit">자가운전보조금</td>
-                              <td className="al-r">{formatAmount(salary.vehicleAllowanceAmount)}원</td>
+                              <td className="al-r">{formatAmount(salary.vehicleAllowance)}원</td>
                             </tr>
                           )}
-                          {salary.childcareAllowanceAmount !== undefined && (
+                          {salary.childcareAllowance !== undefined && (
                             <tr>
                               <td className="tit">육아수당</td>
-                              <td className="al-r">{formatAmount(salary.childcareAllowanceAmount)}원</td>
+                              <td className="al-r">{formatAmount(salary.childcareAllowance)}원</td>
                             </tr>
                           )}
                         </tbody>
