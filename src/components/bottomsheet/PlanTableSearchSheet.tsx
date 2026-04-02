@@ -33,9 +33,14 @@ export default function PlanTableSearchSheet() {
 
   const handleSearch = () => {
     if (!localFrom || !localTo) return
-    setFields({ employeeName: localEmployeeName, dayType: localDayType, from: localFrom, to: localTo })
-    search()
-    handleClose()
+    try {
+      setFields({ employeeName: localEmployeeName, dayType: localDayType, from: localFrom, to: localTo })
+      search()
+    } catch (err) {
+      console.error('[PlanTableSearchSheet] 검색 조건 적용 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const handleReset = () => {
