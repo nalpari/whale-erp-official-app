@@ -64,7 +64,7 @@ export default function WorkerAddSheet() {
 
   const selectedEmployee = employees.find((employee) => employee.id === selectedEmployeeId)
   const isDateMissing = !fromDate || !toDate
-  const isValid = selectedEmployee?.memberId !== null && !isDateMissing && workStart && workEnd
+  const isValid = selectedEmployee != null && selectedEmployee.memberId !== null && !isDateMissing && workStart && workEnd
 
   return (
     <Sheet

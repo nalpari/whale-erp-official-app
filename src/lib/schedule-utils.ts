@@ -19,11 +19,11 @@ export function getWorkerAvatar(iconType: number): string {
 export function getContractStyle(contractType: string) {
   switch (contractType) {
     case '파트타이머':
-      return { boxClass: 'part', badgeClass: 'badge green', label: '파트' }
+      return { wrapClass: 'part', badgeClass: 'badge green', label: '파트' }
     case '임시근무':
-      return { boxClass: 'temporary', badgeClass: 'badge brown', label: '임시' }
+      return { wrapClass: 'temporary', badgeClass: 'badge brown', label: '임시' }
     default:
-      return { boxClass: 'full', badgeClass: 'badge blue', label: contractType }
+      return { wrapClass: 'full', badgeClass: 'badge blue', label: contractType }
   }
 }
 

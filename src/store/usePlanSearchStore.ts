@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { getMonday, getSunday } from '@/lib/schedule-utils'
 
 interface PlanSearchState {
   officeId: number | null
@@ -11,6 +12,7 @@ interface PlanSearchState {
   to: string
   hasSearched: boolean
   setField: <K extends keyof PlanSearchFields>(key: K, value: PlanSearchFields[K]) => void
+  setFields: (fields: Partial<PlanSearchFields>) => void
   search: () => void
   reset: () => void
 }
@@ -19,8 +21,6 @@ type PlanSearchFields = Pick<
   PlanSearchState,
   'officeId' | 'franchiseId' | 'storeId' | 'employeeName' | 'dayType' | 'from' | 'to'
 >
-
-import { getMonday, getSunday } from '@/lib/schedule-utils'
 
 export const usePlanSearchStore = create<PlanSearchState>()(
   devtools(
@@ -34,6 +34,7 @@ export const usePlanSearchStore = create<PlanSearchState>()(
       to: '',
       hasSearched: false,
       setField: (key, value) => set({ [key]: value }, false, `planSearch/set-${key}`),
+      setFields: (fields) => set(fields, false, 'planSearch/setFields'),
       search: () => set({ hasSearched: true }, false, 'planSearch/search'),
       reset: () =>
         set(

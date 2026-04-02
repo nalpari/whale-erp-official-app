@@ -33,6 +33,9 @@ export const useUpsertSchedule = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all })
     },
+    onError: (err) => {
+      console.error('[useUpsertSchedule] mutation 실패:', err)
+    },
   })
 }
 
@@ -44,6 +47,9 @@ export const useDeleteSchedule = () => {
       deleteSchedule(storeId, date),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all })
+    },
+    onError: (err) => {
+      console.error('[useDeleteSchedule] mutation 실패:', err)
     },
   })
 }
@@ -60,6 +66,9 @@ export const useDeleteWorker = () => {
     }) => deleteWorker(storeId, date, memberId, tempWorkerName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all })
+    },
+    onError: (err) => {
+      console.error('[useDeleteWorker] mutation 실패:', err)
     },
   })
 }

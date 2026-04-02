@@ -56,7 +56,7 @@ export default function PlanTableEdit() {
   const setOnBack = useHeaderStore((state) => state.setOnBack)
   const setWorkerSheetEmployees = useBottomSheetControler((state) => state.setWorkerSheetEmployees)
 
-  const upsertMutation = useUpsertSchedule()
+  const { mutateAsync: upsertSchedule, isPending: isUpserting } = useUpsertSchedule()
 
   // 본사 ID: 점포 선택 바텀시트 > authStore 순 fallback
   const effectiveHeadOfficeId = selectedHeadOffice?.id ?? authHeadOfficeId ?? null
@@ -82,7 +82,7 @@ export default function PlanTableEdit() {
   }, [setTitle, setOnBack, openAlert, router, editDate])
 
   // 직원 목록 API 연동
-  const { data: employeeList = [] } = useEmployeeOptions({
+  const { data: employeeList = [], isError: isEmployeeError, refetch: refetchEmployees } = useEmployeeOptions({
     purpose: 'BROAD',
     headOfficeId: headOfficeId ?? undefined,
     franchiseId: authFranchiseId ?? undefined,
@@ -110,7 +110,7 @@ export default function PlanTableEdit() {
     to: editDate ?? searchTo,
   }), [headOfficeId, storeId, editDate, searchFrom, searchTo])
 
-  const { data: scheduleList = [], isError, refetch } = useScheduleList(params, !!headOfficeId)
+  const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(params, !!headOfficeId)
 
   // API 데이터 → 초기 EditState 파생 (scheduleList 변경 시 재계산)
   const initialEditState = useMemo(() => {
@@ -237,10 +237,10 @@ export default function PlanTableEdit() {
 
   // 저장 (mutateAsync + try/catch 전용)
   const handleSave = async () => {
-    if (upsertMutation.isPending) return
+    if (isUpserting) return
     const requests = buildRequests()
     try {
-      await upsertMutation.mutateAsync({ storeId, data: requests })
+      await upsertSchedule({ storeId, data: requests })
       openAlert({
         message: '근무 계획이 저장되었습니다.',
         onConfirm: () => router.push('/plan'),
@@ -316,15 +316,25 @@ export default function PlanTableEdit() {
     return `${fmtDate(first)}~${fmtDate(last)}`
   }, [sortedEntries])
 
-  if (isError) {
+  if (isError || isEmployeeError) {
     return (
       <div className="container sub">
         <div style={{ padding: "40px 0", textAlign: "center" }}>
           <div style={{ color: "#e74c3c", marginBottom: "16px" }}>근무 계획 정보를 불러올 수 없습니다.</div>
           <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-            <button className="btn-form outline min" onClick={() => refetch()}>다시 시도</button>
+            <button className="btn-form outline min" onClick={() => { refetch(); refetchEmployees() }}>다시 시도</button>
             <button className="btn-form outline min" onClick={() => router.back()}>돌아가기</button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <p>데이터를 불러오는 중입니다...</p>
         </div>
       </div>
     )
@@ -388,7 +398,7 @@ export default function PlanTableEdit() {
                         const hours = calcWorkHours(worker)
 
                         return (
-                          <div key={`${worker.shiftId ?? worker.workerId ?? worker.workerName}-${originalIndex}`} className={`sub-item-bx ${style.boxClass}`}>
+                          <div key={`${worker.shiftId ?? worker.workerId ?? worker.workerName}-${originalIndex}`} className={`sub-item-bx ${style.wrapClass}`}>
                             <div className="plan-staff-head">
                               <div className="plan-staff-info">
                                 <span className={style.badgeClass}>{style.label}</span>
@@ -507,9 +517,9 @@ export default function PlanTableEdit() {
           <button
             className="btn-form block blue"
             onClick={handleSave}
-            disabled={upsertMutation.isPending}
+            disabled={isUpserting}
           >
-            {upsertMutation.isPending ? '저장 중...' : '저장'}
+            {isUpserting ? '저장 중...' : '저장'}
           </button>
         </div>
       </div>

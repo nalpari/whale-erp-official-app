@@ -3,18 +3,7 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import Image from 'next/image'
 import { Sheet } from 'react-modal-sheet'
-import { getWorkerAvatar } from '@/lib/schedule-utils'
-
-function getContractBadge(contractType: string) {
-  switch (contractType) {
-    case '파트타이머':
-      return { wrapClass: 'part', badgeClass: 'badge green', label: '파트' }
-    case '임시근무':
-      return { wrapClass: 'temporary', badgeClass: 'badge brown', label: '임시' }
-    default:
-      return { wrapClass: 'full', badgeClass: 'badge blue', label: contractType }
-  }
-}
+import { getWorkerAvatar, getContractStyle } from '@/lib/schedule-utils'
 
 export default function WorkerChangeSheet() {
   const workerChangeSheet = useBottomSheetControler((state) => state.workerChangeSheet)
@@ -47,7 +36,7 @@ export default function WorkerChangeSheet() {
   }
 
   const worker = context.worker
-  const badge = worker ? getContractBadge(worker.contractType) : null
+  const badge = worker ? getContractStyle(worker.contractType) : null
 
   return (
     <Sheet

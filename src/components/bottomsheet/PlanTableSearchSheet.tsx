@@ -12,7 +12,7 @@ export default function PlanTableSearchSheet() {
   const dayType = usePlanSearchStore((s) => s.dayType)
   const storeFrom = usePlanSearchStore((s) => s.from)
   const storeTo = usePlanSearchStore((s) => s.to)
-  const setField = usePlanSearchStore((s) => s.setField)
+  const setFields = usePlanSearchStore((s) => s.setFields)
   const search = usePlanSearchStore((s) => s.search)
 
   const [localEmployeeName, setLocalEmployeeName] = useState(employeeName)
@@ -33,10 +33,7 @@ export default function PlanTableSearchSheet() {
 
   const handleSearch = () => {
     if (!localFrom || !localTo) return
-    setField('employeeName', localEmployeeName)
-    setField('dayType', localDayType)
-    setField('from', localFrom)
-    setField('to', localTo)
+    setFields({ employeeName: localEmployeeName, dayType: localDayType, from: localFrom, to: localTo })
     search()
     handleClose()
   }

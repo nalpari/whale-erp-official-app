@@ -131,7 +131,7 @@ export default function PlanTable() {
                     return (
                       <div
                         key={`${worker.shiftId ?? worker.workerId ?? worker.workerName}`}
-                        className={`sub-item-bx ${style.boxClass}`}
+                        className={`sub-item-bx ${style.wrapClass}`}
                       >
                         <div className="plan-staff-head">
                           <div className="plan-staff-info">
