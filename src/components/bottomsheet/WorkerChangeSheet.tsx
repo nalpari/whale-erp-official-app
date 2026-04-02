@@ -37,8 +37,13 @@ export default function WorkerChangeSheet() {
     if (selectedId === null) return
     const emp = employees.find((e) => e.id === selectedId)
     if (!emp || emp.memberId === null) return
-    onWorkerReplace?.(emp.memberId, emp.name, emp.contractType)
-    handleClose()
+    try {
+      onWorkerReplace?.(emp.memberId, emp.name, emp.contractType)
+    } catch (err) {
+      console.error('[WorkerChangeSheet] 교체 콜백 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const worker = context.worker

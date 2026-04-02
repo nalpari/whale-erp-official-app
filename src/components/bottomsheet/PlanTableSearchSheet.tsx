@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { Sheet } from 'react-modal-sheet'
-import { DAY_OPTIONS } from '@/lib/schedule-utils'
+import { DAY_OPTIONS, getMonday, getSunday } from '@/lib/schedule-utils'
 
 export default function PlanTableSearchSheet() {
   const planSearchSheet = useBottomSheetControler((state) => state.planSearchSheet)
@@ -44,8 +44,8 @@ export default function PlanTableSearchSheet() {
   const handleReset = () => {
     setLocalEmployeeName('')
     setLocalDayType(null)
-    setLocalFrom('')
-    setLocalTo('')
+    setLocalFrom(getMonday())
+    setLocalTo(getSunday())
   }
 
   const isSearchDisabled = !localFrom || !localTo

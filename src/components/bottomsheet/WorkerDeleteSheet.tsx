@@ -26,8 +26,13 @@ export default function WorkerDeleteSheet() {
   }
 
   const handleDelete = () => {
-    onWorkerDelete?.()
-    handleClose()
+    try {
+      onWorkerDelete?.()
+    } catch (err) {
+      console.error('[WorkerDeleteSheet] 삭제 콜백 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const worker = context.worker

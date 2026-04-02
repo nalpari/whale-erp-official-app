@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useScheduleList } from '@/hooks/queries/use-schedule-queries'
 import { useMounted } from '@/hooks/use-mounted'
-import { getContractStyle, calcWorkHours, sortWorkers } from '@/lib/schedule-utils'
+import { getContractStyle, calcWorkHours, sortWorkers, getMonday, getSunday } from '@/lib/schedule-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
 import TimelineBar from './TimelineBar'
 import type { ScheduleSearchParams } from '@/types/schedule'
@@ -16,10 +16,13 @@ export default function PlanTable() {
   const setPlanSearchSheet = useBottomSheetControler((state) => state.setPlanSearchSheet)
   const searchEmployeeName = usePlanSearchStore((s) => s.employeeName)
   const searchDayType = usePlanSearchStore((s) => s.dayType)
-  const searchFrom = usePlanSearchStore((s) => s.from)
-  const searchTo = usePlanSearchStore((s) => s.to)
+  const storeFrom = usePlanSearchStore((s) => s.from)
+  const storeTo = usePlanSearchStore((s) => s.to)
+  // store가 빈 값(초기 상태)이면 이번 주로 폴백 — stale 날짜 방지
+  const searchFrom = storeFrom || getMonday()
+  const searchTo = storeTo || getSunday()
   // 기간/직원명/요일 등 검색 조건이 하나라도 있으면 하이라이트
-  const hasFilter = !!(searchFrom || searchTo || searchEmployeeName || searchDayType)
+  const hasFilter = !!(storeFrom || storeTo || searchEmployeeName || searchDayType)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)

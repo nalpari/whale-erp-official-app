@@ -24,12 +24,20 @@ export default function TimeSelectSheet() {
   const handleOpenStart = useCallback(() => {
     if (timePickerValue) {
       const [h, m] = timePickerValue.split(':').map(Number)
+      const mIdx = m === 30 ? 1 : 0
       setHour(h)
-      setMinute(m === 30 ? 1 : 0)
-      // Swiper 초기 슬라이드 설정은 onSwiper에서 처리
+      setMinute(mIdx)
+      setTimeout(() => {
+        hourSwiperRef.current?.slideTo(h, 0)
+        minuteSwiperRef.current?.slideTo(mIdx, 0)
+      }, 0)
     } else {
       setHour(9)
       setMinute(0)
+      setTimeout(() => {
+        hourSwiperRef.current?.slideTo(9, 0)
+        minuteSwiperRef.current?.slideTo(0, 0)
+      }, 0)
     }
   }, [timePickerValue])
 
@@ -40,8 +48,13 @@ export default function TimeSelectSheet() {
   const handleSave = () => {
     const hStr = String(hour).padStart(2, '0')
     const mStr = minute === 1 ? '30' : '00'
-    onTimeSelect?.(`${hStr}:${mStr}`)
-    handleClose()
+    try {
+      onTimeSelect?.(`${hStr}:${mStr}`)
+    } catch (err) {
+      console.error('[TimeSelectSheet] onTimeSelect 콜백 실행 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   return (

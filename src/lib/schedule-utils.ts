@@ -78,8 +78,14 @@ export const DAY_OPTIONS = [
 
 export const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const
 
+/** YYYY-MM-DD 문자열을 로컬 타임존 Date로 파싱 (UTC 오프셋 버그 방지) */
+export function parseDateLocal(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function formatDateWithDay(dateStr: string): string {
-  const date = new Date(dateStr)
+  const date = parseDateLocal(dateStr)
   return `${dateStr.replace(/-/g, '.')} ${DAY_LABELS[date.getDay()]}`
 }
 

@@ -24,8 +24,13 @@ export default function WorkerSearchSheet() {
   }
 
   const handleSearch = () => {
-    onWorkerSearch?.({ employeeName: selectedEmployeeName, tempWorkerName })
-    handleClose()
+    try {
+      onWorkerSearch?.({ employeeName: selectedEmployeeName, tempWorkerName })
+    } catch (err) {
+      console.error('[WorkerSearchSheet] 검색 콜백 실���:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const handleReset = () => {

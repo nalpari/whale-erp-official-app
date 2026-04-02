@@ -10,7 +10,7 @@ import { useHeaderStore } from '@/store/useHeaderStore'
 import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule-queries'
 import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
-import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS } from '@/lib/schedule-utils'
+import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS, getMonday, getSunday, parseDateLocal } from '@/lib/schedule-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
 import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest } from '@/types/schedule'
 
@@ -37,8 +37,10 @@ export default function PlanTableEdit() {
   const queryParams = useSearchParams()
   const urlStoreId = Number(queryParams.get('storeId')) || 0
   const editDate = queryParams.get('date')
-  const searchFrom = usePlanSearchStore((s) => s.from)
-  const searchTo = usePlanSearchStore((s) => s.to)
+  const storeFrom = usePlanSearchStore((s) => s.from)
+  const storeTo = usePlanSearchStore((s) => s.to)
+  const searchFrom = storeFrom || getMonday()
+  const searchTo = storeTo || getSunday()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
@@ -308,7 +310,7 @@ export default function PlanTableEdit() {
     const first = sortedEntries[0][0]
     const last = sortedEntries[sortedEntries.length - 1][0]
     const fmtDate = (d: string) => {
-      const date = new Date(d)
+      const date = parseDateLocal(d)
       return `${d.replace(/-/g, '.')}(${DAY_LABELS[date.getDay()]})`
     }
     return `${fmtDate(first)}~${fmtDate(last)}`
@@ -365,9 +367,8 @@ export default function PlanTableEdit() {
           <div className="sub-cont-wrap">
             <div className="plan-table-wrap">
               {sortedEntries.map(([date, workers]) => {
-                const displayDate = new Date(date)
-                const days = DAY_LABELS
-                const dayLabel = days[displayDate.getDay()]
+                const displayDate = parseDateLocal(date)
+                const dayLabel = DAY_LABELS[displayDate.getDay()]
                 const filtered = filterWorkers(workers)
 
                 if (filtered.length === 0) return null

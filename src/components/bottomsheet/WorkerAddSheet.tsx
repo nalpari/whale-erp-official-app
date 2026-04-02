@@ -53,8 +53,13 @@ export default function WorkerAddSheet() {
       isNew: true,
       iconType: 0,
     }
-    onWorkerAdd?.(newWorker, fromDate, toDate)
-    handleClose()
+    try {
+      onWorkerAdd?.(newWorker, fromDate, toDate)
+    } catch (err) {
+      console.error('[WorkerAddSheet] 근무자 추가 콜백 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const selectedEmployee = employees.find((employee) => employee.id === selectedEmployeeId)

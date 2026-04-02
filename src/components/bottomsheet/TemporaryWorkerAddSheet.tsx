@@ -51,8 +51,13 @@ export default function TemporaryWorkerAddSheet() {
       isNew: true,
       iconType: 0,
     }
-    onTempWorkerAdd?.(newWorker, fromDate, toDate)
-    handleClose()
+    try {
+      onTempWorkerAdd?.(newWorker, fromDate, toDate)
+    } catch (err) {
+      console.error('[TemporaryWorkerAddSheet] 임시 근무자 추가 ���백 실패:', err)
+    } finally {
+      handleClose()
+    }
   }
 
   const isDateMissing = !fromDate || !toDate
