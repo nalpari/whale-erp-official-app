@@ -73,6 +73,16 @@ export default function PlanTable() {
     )
   }
 
+  if (isLoading) {
+    return (
+      <div className="container">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <p>데이터를 불러오는 중입니다...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container">
       <div className="sub-tit-wrap">
@@ -94,12 +104,6 @@ export default function PlanTable() {
             <span>검색</span>
           </button>
         </div>
-
-        {isLoading && (
-          <div className="loading-wrap">
-            <p>데이터를 불러오는 중입니다...</p>
-          </div>
-        )}
 
         <div className="plan-table-wrap">
           {scheduleList.map((schedule) => {

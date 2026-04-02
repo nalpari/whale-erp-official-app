@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { WorkerEditItem } from '@/types/schedule'
+import type { WorkerEditItem, WorkerSheetEmployee } from '@/types/schedule'
 
 // 근무자 시트에 전달할 컨텍스트
 interface WorkerSheetContext {
@@ -30,8 +30,8 @@ type BottomSheetControlerState = {
   workerSearchInitial: { employeeName: string; tempWorkerName: string }
   openWorkerSearchSheet: (onSearch: (filters: { employeeName: string; tempWorkerName: string }) => void, initial?: { employeeName: string; tempWorkerName: string }) => void
   // 직원 목록 (근무자 추가/교체 시 사용)
-  workerSheetEmployees: { id: number; memberId: number | null; name: string; contractType: string; employeeNumber?: string }[]
-  setWorkerSheetEmployees: (employees: { id: number; memberId: number | null; name: string; contractType: string; employeeNumber?: string }[]) => void
+  workerSheetEmployees: WorkerSheetEmployee[]
+  setWorkerSheetEmployees: (employees: WorkerSheetEmployee[]) => void
   storeSelectSheet: boolean
   setStoreSelectSheet: (isOpen: boolean) => void
   goToOptionSheet: boolean

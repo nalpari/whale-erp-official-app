@@ -86,3 +86,12 @@ export interface WorkerEditItem {
   isNew: boolean
   iconType: number
 }
+
+// 바텀시트 직원 목록 항목
+export interface WorkerSheetEmployee {
+  id: number
+  memberId: number | null
+  name: string
+  contractType: string
+  employeeNumber?: string
+}

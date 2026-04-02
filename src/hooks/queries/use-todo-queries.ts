@@ -6,6 +6,7 @@ export const todoKeys = {
   all: ['todo'] as const,
   calendar: (params: { year: number; month: number; headOfficeId: number | null; storeId: number | null }) =>
     [...todoKeys.all, 'calendar', params] as const,
+  employeesAll: [...['todo'], 'employees'] as const,
   employees: (params: Record<string, unknown>) => [...todoKeys.all, 'employees', params] as const,
 }
 

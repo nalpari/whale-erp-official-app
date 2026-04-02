@@ -145,7 +145,7 @@ export default function PlanTableEdit() {
   const [editState, setEditState] = useState<Map<string, WorkerEditItem[]>>(new Map())
   const [initialized, setInitialized] = useState(false)
 
-  // initialEditState가 비어있지 않고 아직 초기화되지 않았으면 editState 동기화
+  // 사용자가 아직 편집하지 않았으면 서버 데이터(initialEditState)를 그대로 표시
   const effectiveEditState = (!initialized && initialEditState.size > 0) ? initialEditState : editState
 
   // 수립 페이지 필터
@@ -154,7 +154,7 @@ export default function PlanTableEdit() {
 
   // 날짜별 근무자 업데이트 헬퍼
   const updateWorkers = useCallback((date: string, updater: (workers: WorkerEditItem[]) => WorkerEditItem[]) => {
-    if (!initialized) setInitialized(true)
+    setInitialized(true)
     setEditState((prev) => {
       const base = prev.size > 0 ? prev : initialEditState
       const next = new Map(base)
@@ -162,7 +162,7 @@ export default function PlanTableEdit() {
       next.set(date, updater(current))
       return next
     })
-  }, [initialized, initialEditState])
+  }, [initialEditState])
 
   // 근무자 필드 업데이트
   const updateWorkerField = useCallback(
@@ -177,7 +177,7 @@ export default function PlanTableEdit() {
   // 근무자 추가 (기간 내 날짜에만 추가)
   const handleAddWorker = useCallback(
     (worker: WorkerEditItem, fromDate: string, toDate: string) => {
-      if (!initialized) setInitialized(true)
+      setInitialized(true)
       setEditState((prev) => {
         const base = prev.size > 0 ? prev : initialEditState
         const next = new Map(base)
@@ -189,7 +189,7 @@ export default function PlanTableEdit() {
         return next
       })
     },
-    [initialized, initialEditState],
+    [initialEditState],
   )
 
   // 근무자 교체
