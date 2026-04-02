@@ -123,6 +123,7 @@ export default function OverTimeWorkEdit({ overtimeId, initialData, isPreview = 
         onConfirm: () => router.push(`/overtime/${overtimeId}`),
       })
     } catch (error) {
+      console.error('[OverTimeWorkEdit] 저장 실패:', error)
       openAlert({ message: getErrorMessage(error, '저장에 실패했습니다.') })
     }
   }

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useOvertimeSearchStore } from '@/store/useOvertimeSearchStore'
+import { usePopupControler } from '@/store/usePopupControler'
 import { Sheet } from 'react-modal-sheet'
 
 const WORK_STATUS_OPTIONS = [
@@ -17,6 +18,7 @@ const WORK_DAY_OPTIONS = [
 ] as const
 
 export default function OverTimeSearchSheet() {
+  const openAlert = usePopupControler((s) => s.openAlert)
   const overTimeSearchSheet = useBottomSheetControler(
     (state) => state.overTimeSearchSheet,
   )
@@ -64,6 +66,7 @@ export default function OverTimeSearchSheet() {
       search()
     } catch (err) {
       console.error('[OverTimeSearchSheet] 검색 실패:', err)
+      openAlert({ message: '검색 중 오류가 발생했습니다.' })
     } finally {
       handleClose()
     }

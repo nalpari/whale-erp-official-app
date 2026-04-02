@@ -38,7 +38,7 @@ export const safeSessionGet = <T,>(key: string): T | null => {
   }
 }
 
-export const safeSessionSet = (key: string, value: unknown): void => {
+export const safeSessionSet = <T,>(key: string, value: T): void => {
   try {
     sessionStorage.setItem(key, JSON.stringify(value))
   } catch (err) {
