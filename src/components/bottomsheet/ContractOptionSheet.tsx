@@ -16,11 +16,13 @@ interface ContractOptionSheetProps {
 }
 
 export default function ContractOptionSheet({
-  year: initialYear = new Date().getFullYear(),
+  year: initialYear,
   timelyAmount: initialTimelyAmount = 0,
   weeklyHours: initialWeeklyHours = 40,
   onChange,
 }: ContractOptionSheetProps) {
+  const defaultYear = new Date().getFullYear();
+  const effectiveInitialYear = initialYear ?? defaultYear;
   const contractOptionSheet = useBottomSheetControler(
     (state) => state.contractOptionSheet
   );
@@ -28,7 +30,7 @@ export default function ContractOptionSheet({
     (state) => state.setContractOptionSheet
   );
 
-  const [year, setYear] = useState(initialYear);
+  const [year, setYear] = useState(effectiveInitialYear);
   const [timelyAmount, setTimelyAmount] = useState(initialTimelyAmount);
   const [weeklyHours, setWeeklyHours] = useState(initialWeeklyHours);
 
@@ -42,7 +44,7 @@ export default function ContractOptionSheet({
 
   // 바텀시트 열릴 때 prop 동기화 + 통상시급 미설정 시 최저시급으로 초기화
   const syncFromProps = () => {
-    setYear(initialYear);
+    setYear(effectiveInitialYear);
     setWeeklyHours(initialWeeklyHours);
     setTimelyAmount(initialTimelyAmount || minimumWage);
   };
@@ -52,7 +54,7 @@ export default function ContractOptionSheet({
   };
 
   const handleReset = () => {
-    setYear(new Date().getFullYear());
+    setYear(defaultYear);
     setTimelyAmount(minimumWage);
     setWeeklyHours(40);
   };
@@ -90,7 +92,7 @@ export default function ContractOptionSheet({
                       onChange={(e) => setYear(Number(e.target.value))}
                     >
                       {Array.from({ length: 10 }, (_, i) => {
-                        const y = new Date().getFullYear() - 2 + i;
+                        const y = defaultYear - 2 + i;
                         return (
                           <option key={y} value={y}>
                             {y}년

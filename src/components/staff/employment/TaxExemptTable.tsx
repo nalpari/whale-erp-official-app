@@ -15,24 +15,29 @@ interface TaxExemptData {
   childcareIncluded: boolean;
 }
 
+type AmountField = "mealAllowance" | "vehicleAllowance" | "childcareAllowance";
+type ToggleField = "mealIncluded" | "vehicleIncluded" | "childcareIncluded";
+
 interface TaxExemptTableProps {
   data: TaxExemptData;
-  onChange: (field: keyof TaxExemptData, value: number | boolean) => void;
+  onAmountChange: (field: AmountField, value: number) => void;
+  onToggleChange: (field: ToggleField, value: boolean) => void;
   tooltipId?: string;
 }
 
 export default function TaxExemptTable({
   data,
-  onChange,
+  onAmountChange,
+  onToggleChange,
   tooltipId = "tooltip-tax-exempt",
 }: TaxExemptTableProps) {
   const handleAmountChange = (
-    field: "mealAllowance" | "vehicleAllowance" | "childcareAllowance",
+    field: AmountField,
     value: string,
     max: number
   ) => {
     const v = Math.max(0, Number(value) || 0);
-    onChange(field, Math.min(v, max));
+    onAmountChange(field, Math.min(v, max));
   };
 
   return (
@@ -77,7 +82,7 @@ export default function TaxExemptTable({
                   className="toggle-input"
                   id="toggle-meal"
                   checked={data.mealIncluded}
-                  onChange={(e) => onChange("mealIncluded", e.target.checked)}
+                  onChange={(e) => onToggleChange("mealIncluded", e.target.checked)}
                 />
                 <label className="slider" htmlFor="toggle-meal" />
               </div>
@@ -107,7 +112,7 @@ export default function TaxExemptTable({
                   id="toggle-vehicle"
                   checked={data.vehicleIncluded}
                   onChange={(e) =>
-                    onChange("vehicleIncluded", e.target.checked)
+                    onToggleChange("vehicleIncluded", e.target.checked)
                   }
                 />
                 <label className="slider" htmlFor="toggle-vehicle" />
@@ -142,7 +147,7 @@ export default function TaxExemptTable({
                   id="toggle-childcare"
                   checked={data.childcareIncluded}
                   onChange={(e) =>
-                    onChange("childcareIncluded", e.target.checked)
+                    onToggleChange("childcareIncluded", e.target.checked)
                   }
                 />
                 <label className="slider" htmlFor="toggle-childcare" />

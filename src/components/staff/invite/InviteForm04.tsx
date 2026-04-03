@@ -1,7 +1,7 @@
 'use client'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
-import type { EmploymentContractWorkHourDto } from '@/types/employee'
+import type { EmploymentContractWorkHourDto, DayType } from '@/types/employee'
 
 const WEEKDAYS = [
   { label: '월', dayType: 'MONDAY' },
@@ -13,13 +13,19 @@ const WEEKDAYS = [
 
 const findWorkHour = (
   workHours: EmploymentContractWorkHourDto[],
-  dayType: string,
+  dayType: DayType,
 ): EmploymentContractWorkHourDto => {
   return (
     workHours.find((wh) => wh.dayType === dayType) ?? {
-      dayType: dayType as EmploymentContractWorkHourDto['dayType'],
+      dayType,
       isWork: false,
       isBreak: false,
+      workStartTime: null,
+      workEndTime: null,
+      breakStartTime: null,
+      breakEndTime: null,
+      firstSaturdayWorkDay: null,
+      firstSundayWorkDay: null,
     }
   )
 }
@@ -48,7 +54,7 @@ export default function InviteForm04() {
   const sundayData = findWorkHour(workHours, 'SUNDAY')
 
   const updateWorkHour = (
-    dayType: string,
+    dayType: DayType,
     updates: Partial<EmploymentContractWorkHourDto>,
   ) => {
     const newWorkHours = workHours.map((wh) =>
@@ -58,7 +64,7 @@ export default function InviteForm04() {
   }
 
   const openTimeFor = (
-    dayType: string,
+    dayType: DayType,
     field: 'workStartTime' | 'workEndTime' | 'breakStartTime' | 'breakEndTime',
     title: string,
   ) => {
@@ -142,7 +148,7 @@ export default function InviteForm04() {
                         setStepFour({ workHours: newWorkHours })
                       } else {
                         setStepFour({
-                          workHours: [...workHours, { dayType: day.dayType, isWork: true, isBreak: false }],
+                          workHours: [...workHours, { dayType: day.dayType, isWork: true, isBreak: false, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null }],
                         })
                       }
                     }}

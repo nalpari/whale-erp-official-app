@@ -45,7 +45,7 @@ export default function StaffInvite() {
   const stepTwo = useStaffInviteStore((s) => s.stepTwo)
   const stepFour = useStaffInviteStore((s) => s.stepFour)
 
-  const setStep = (s: number) => useStaffInviteStore.getState().setCurrentStep(s)
+  const setStep = useStaffInviteStore((s) => s.setCurrentStep)
   const { mutateAsync: createEmployee, isPending: isCreating } = useCreateEmployee()
   const openAlert = usePopupControler((s) => s.openAlert)
 

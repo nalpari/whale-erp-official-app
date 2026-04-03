@@ -12,9 +12,11 @@ interface EmployeeSearchState {
 }
 
 // TODO: 무한스크롤 또는 "더보기" 버튼으로 전환 필요 (store 브랜치의 useStoreInfiniteList 패턴 참고)
+const DEFAULT_PAGE_SIZE = 100
+
 const DEFAULT_PARAMS: EmployeeSearchParams = {
   page: 0,
-  size: 100,
+  size: DEFAULT_PAGE_SIZE,
 }
 
 export const useEmployeeSearchStore = create<EmployeeSearchState>()(

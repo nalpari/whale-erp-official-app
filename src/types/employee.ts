@@ -42,18 +42,18 @@ export type EmployeeType = 'ALL' | 'FULL_TIME' | 'PART_TIME'
 // ========== 근무 시간 DTO ==========
 
 export interface EmploymentContractWorkHourDto {
-  workHourId?: number | null
+  workHourId?: number
   dayType: DayType
   isWork: boolean
   isBreak: boolean
   everySaturdayWork?: boolean
-  firstSaturdayWorkDay?: string | null
+  firstSaturdayWorkDay: string | null
   everySundayWork?: boolean
-  firstSundayWorkDay?: string | null
-  workStartTime?: string | null // HH:mm:ss
-  workEndTime?: string | null // HH:mm:ss
-  breakStartTime?: string | null // HH:mm:ss
-  breakEndTime?: string | null // HH:mm:ss
+  firstSundayWorkDay: string | null
+  workStartTime: string | null // HH:mm:ss
+  workEndTime: string | null // HH:mm:ss
+  breakStartTime: string | null // HH:mm:ss
+  breakEndTime: string | null // HH:mm:ss
 }
 
 // ========== 직원 등록 요청 ==========
@@ -64,7 +64,7 @@ export interface PostEmployeeInfoRequest {
   franchiseOrganizationId?: number
   storeId?: number
   employeeName: string
-  mobilePhone?: string
+  mobilePhone: string
   hireDate: string // YYYY-MM-DD
 
   contractClassification: ContractClassificationType
@@ -248,16 +248,16 @@ export interface EmployeeCareerResponse {
 }
 
 export interface EmployeeCareerItem {
-  id?: number | null
+  id?: number
   companyName: string
-  workplaceType?: string | null
+  workplaceType?: string
   startDate: string
-  endDate?: string | null
-  contractClassification?: string | null
-  rank?: string | null
-  position?: string | null
-  jobDescription?: string | null
-  resignationReason?: string | null
+  endDate?: string
+  contractClassification?: string
+  rank?: string
+  position?: string
+  jobDescription?: string
+  resignationReason?: string
 }
 
 export interface SaveEmployeeCareersRequest {
@@ -281,14 +281,14 @@ export interface EmployeeCertificateResponse {
 }
 
 export interface EmployeeCertificateItem {
-  id?: number | null
+  id?: number
   certificateName: string
-  validityStartDate?: string | null
-  validityEndDate?: string | null
+  validityStartDate?: string
+  validityEndDate?: string
   acquisitionDate: string
-  issuingOrganization?: string | null
-  certificateFileId?: number | null
-  fileIndex?: number | null
+  issuingOrganization?: string
+  certificateFileId?: number
+  fileIndex?: number
 }
 
 export interface SaveEmployeeCertificatesRequest {

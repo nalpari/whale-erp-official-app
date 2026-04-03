@@ -176,6 +176,7 @@ export default function InviteForm02() {
                 className="select-form"
                 value={stepTwo.contractClassification}
                 onChange={(e) => {
+                  // select의 value는 항상 string이므로 as 캐스팅은 React 관행적 패턴
                   const val = e.target.value as ContractClassificationType
                   setStepTwo({
                     contractClassification: val,
@@ -242,6 +243,7 @@ export default function InviteForm02() {
                 className="select-form"
                 value={stepTwo.salaryCycle}
                 onChange={(e) =>
+                  // select의 value는 항상 string이므로 as 캐스팅은 React 관행적 패턴
                   setStepTwo({ salaryCycle: e.target.value as SalaryCycle })
                 }
                 disabled
@@ -258,6 +260,7 @@ export default function InviteForm02() {
                 className="select-form"
                 value={stepTwo.salaryMonth}
                 onChange={(e) =>
+                  // select의 value는 항상 string이므로 as 캐스팅은 React 관행적 패턴
                   setStepTwo({ salaryMonth: e.target.value as SalaryMonth })
                 }
               >

@@ -114,9 +114,9 @@ function createDefaultStepTwo(): StepTwoData {
 }
 
 const DEFAULT_WORK_HOURS: EmploymentContractWorkHourDto[] = [
-  { dayType: 'WEEKDAY', isWork: true, isBreak: true, workStartTime: '09:00:00', workEndTime: '18:00:00', breakStartTime: '12:00:00', breakEndTime: '13:00:00' },
-  { dayType: 'SATURDAY', isWork: false, isBreak: false, everySaturdayWork: true },
-  { dayType: 'SUNDAY', isWork: false, isBreak: false, everySundayWork: true },
+  { dayType: 'WEEKDAY', isWork: true, isBreak: true, workStartTime: '09:00:00', workEndTime: '18:00:00', breakStartTime: '12:00:00', breakEndTime: '13:00:00', firstSaturdayWorkDay: null, firstSundayWorkDay: null },
+  { dayType: 'SATURDAY', isWork: false, isBreak: false, everySaturdayWork: true, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null },
+  { dayType: 'SUNDAY', isWork: false, isBreak: false, everySundayWork: true, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null },
 ]
 
 const DEFAULT_STEP_THREE_SALARY: StepThreeSalaryData = {
@@ -230,7 +230,7 @@ export const useStaffInviteStore = create<StaffInviteState>()(
           franchiseOrganizationId: stepOne.franchiseOrganizationId ?? undefined,
           storeId: stepOne.storeId ?? undefined,
           employeeName: stepOne.employeeName,
-          mobilePhone: stepOne.mobilePhone || undefined,
+          mobilePhone: stepOne.mobilePhone,
           hireDate: stepTwo.hireDate,
           contractClassification: stepTwo.contractClassification,
           nationalPensionEnrolled: stepTwo.nationalPensionEnrolled,

@@ -22,8 +22,10 @@ export default function InviteForm03() {
   const contractLabel = CONTRACT_LABEL[contractType] ?? '포괄연봉제'
   const isPartTime = contractType === 'CNTCFWK_003'
 
-  // 최저시급 조회
-  const currentYear = new Date().getFullYear()
+  // 최저시급 조회 - 계약시작일 연도 기준
+  const currentYear = stepTwo.contractStartDate
+    ? Number(stepTwo.contractStartDate.slice(0, 4))
+    : new Date().getFullYear()
   const { data: minWageData } = useMinimumWage(currentYear)
   const minimumWage = minWageData?.minimumWage ?? 0
   const activeTimely = sal.timelyAmount || minimumWage

@@ -175,8 +175,8 @@ export async function checkEmployeeNumber(
       params: {
         employeeNumber,
         headOfficeOrganizationId,
-        ...(franchiseOrganizationId && { franchiseOrganizationId }),
-        ...(storeId && { storeId }),
+        ...(franchiseOrganizationId != null && { franchiseOrganizationId }),
+        ...(storeId != null && { storeId }),
       },
     },
   )
@@ -363,7 +363,7 @@ export async function getEmployeeListByType(
     headOfficeId: params.headOfficeId,
     employeeType: params.employeeType,
   }
-  if (params.franchiseId) {
+  if (params.franchiseId != null) {
     queryParams.franchiseId = params.franchiseId
   }
 

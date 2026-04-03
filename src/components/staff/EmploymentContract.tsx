@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "react-tooltip";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+import { usePopupControler } from "@/store/usePopupControler";
 import { useStaffInviteStore } from "@/store/useStaffInviteStore";
 import {
   useUpdateContractSalaryInfo,
@@ -33,6 +34,7 @@ export default function EmploymentContract({
   const setContractOptionSheet = useBottomSheetControler(
     (state) => state.setContractOptionSheet,
   );
+  const openAlert = usePopupControler((s) => s.openAlert);
 
   const salary = initialData?.salaryInfo;
   // 수정 경로: 기존 급여정보가 있으면 UPDATE, 없으면 CREATE
@@ -42,6 +44,9 @@ export default function EmploymentContract({
   // 계약분류 결정: 수정 경로 -> initialData, 초대 경로 -> store
   const inviteContractClassification = useStaffInviteStore(
     (s) => s.stepTwo.contractClassification,
+  );
+  const inviteContractStartDate = useStaffInviteStore(
+    (s) => s.stepTwo.contractStartDate,
   );
   const contractClassification: ContractClassificationType = isContractPath
     ? (initialData?.employmentContractHeader?.contractClassification ??
@@ -56,8 +61,13 @@ export default function EmploymentContract({
   // 초대 경로: staffInvite 스토어에서 급여 데이터 읽기
   const inviteSalary = useStaffInviteStore((s) => s.stepThreeSalary);
 
-  // 최저시급 조회
-  const currentYear = new Date().getFullYear();
+  // 최저시급 조회 - 계약시작일 연도 기준 (초대 경로: store, 수정 경로: initialData)
+  const contractStartDate = isContractPath
+    ? initialData?.employmentContractHeader?.contractStartDate
+    : inviteContractStartDate;
+  const currentYear = contractStartDate
+    ? Number(contractStartDate.slice(0, 4))
+    : new Date().getFullYear();
   const { data: minWageData } = useMinimumWage(currentYear);
   const minimumWage = minWageData?.minimumWage ?? 0;
 
@@ -187,27 +197,22 @@ export default function EmploymentContract({
   const annualAmount = monthlyTotalAmount * 12;
 
   // 비과세 항목 핸들러
-  const handleTaxExemptChange = (field: string, value: number | boolean) => {
-    switch (field) {
-      case "mealAllowance":
-        setMealAllowance(value as number);
-        break;
-      case "mealIncluded":
-        setMealIncluded(value as boolean);
-        break;
-      case "vehicleAllowance":
-        setVehicleAllowance(value as number);
-        break;
-      case "vehicleIncluded":
-        setVehicleIncluded(value as boolean);
-        break;
-      case "childcareAllowance":
-        setChildcareAllowance(value as number);
-        break;
-      case "childcareIncluded":
-        setChildcareIncluded(value as boolean);
-        break;
-    }
+  const handleTaxExemptAmountChange = (field: "mealAllowance" | "vehicleAllowance" | "childcareAllowance", value: number) => {
+    const setters = {
+      mealAllowance: setMealAllowance,
+      vehicleAllowance: setVehicleAllowance,
+      childcareAllowance: setChildcareAllowance,
+    };
+    setters[field](value);
+  };
+
+  const handleTaxExemptToggleChange = (field: "mealIncluded" | "vehicleIncluded" | "childcareIncluded", value: boolean) => {
+    const setters = {
+      mealIncluded: setMealIncluded,
+      vehicleIncluded: setVehicleIncluded,
+      childcareIncluded: setChildcareIncluded,
+    };
+    setters[field](value);
   };
 
   // 공통 급여 데이터 빌드
@@ -277,10 +282,16 @@ export default function EmploymentContract({
           // 급여정보 신규 CREATE
           await createSalary({ contractId, ...buildSalaryData() });
         }
-        alert("저장되었습니다.");
-        router.back();
+        openAlert({
+          message: "저장되었습니다.",
+          confirmText: "확인",
+          onConfirm: () => router.back(),
+        });
       } catch (error) {
-        alert(getErrorMessage(error, "저장에 실패했습니다."));
+        openAlert({
+          message: getErrorMessage(error, "저장에 실패했습니다."),
+          confirmText: "확인",
+        });
       }
     } else {
       // 직원 초대 경로: 급여 데이터를 스토어에 저장 후 이전 화면으로 복귀
@@ -403,7 +414,6 @@ export default function EmploymentContract({
                   addHolidayTime={addHolidayTime}
                   totalMonthlyTime={totalMonthlyTime}
                   isOver52={isOver52}
-                  formatAmount={formatAmount}
                   onMonthlyTimeChange={setMonthlyTime}
                   onOvertimeTimeChange={setOvertimeTime}
                   onNightTimeChange={setNightTime}
@@ -418,7 +428,6 @@ export default function EmploymentContract({
                   weeklyHours={weeklyHours}
                   activeTimelyAmount={activeTimelyAmount}
                   monthlyTime={monthlyTime}
-                  formatAmount={formatAmount}
                   onMonthlyTimeChange={setMonthlyTime}
                   weekdayHourlyWage={weekdayHourlyWage}
                   overtimeHourlyWage={overtimeHourlyWage}
@@ -441,7 +450,8 @@ export default function EmploymentContract({
                     childcareAllowance,
                     childcareIncluded,
                   }}
-                  onChange={handleTaxExemptChange}
+                  onAmountChange={handleTaxExemptAmountChange}
+                  onToggleChange={handleTaxExemptToggleChange}
                 />
               )}
 
@@ -539,7 +549,6 @@ interface ComprehensiveTableProps {
   addHolidayTime: number;
   totalMonthlyTime: number;
   isOver52: boolean;
-  formatAmount: (val: number) => string;
   onMonthlyTimeChange: (val: number) => void;
   onOvertimeTimeChange: (val: number) => void;
   onNightTimeChange: (val: number) => void;
@@ -557,7 +566,6 @@ function ComprehensiveTable({
   addHolidayTime,
   totalMonthlyTime,
   isOver52,
-  formatAmount,
   onMonthlyTimeChange,
   onOvertimeTimeChange,
   onNightTimeChange,
@@ -718,7 +726,6 @@ interface NonComprehensiveTableProps {
   weeklyHours: number;
   activeTimelyAmount: number;
   monthlyTime: number;
-  formatAmount: (val: number) => string;
   onMonthlyTimeChange: (val: number) => void;
   weekdayHourlyWage: number;
   overtimeHourlyWage: number;
@@ -733,7 +740,6 @@ function NonComprehensiveTable({
   weeklyHours,
   activeTimelyAmount,
   monthlyTime,
-  formatAmount,
   onMonthlyTimeChange,
   weekdayHourlyWage,
   overtimeHourlyWage,

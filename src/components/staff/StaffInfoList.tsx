@@ -35,7 +35,7 @@ export default function StaffInfoList() {
     ...(headOfficeId != null && { headOfficeOrganizationId: headOfficeId }),
     storeId: mounted ? selectedStore?.id : undefined,
   }
-  const { data, isLoading, isError } = useEmployeeList(params, mounted && !!effectiveHeadOfficeId)
+  const { data, isLoading, isError, refetch } = useEmployeeList(params, mounted && !!effectiveHeadOfficeId)
 
   const employeeList = data?.content ?? []
   const totalElements = data?.totalElements ?? 0
@@ -79,6 +79,7 @@ export default function StaffInfoList() {
           employeeList={employeeList}
           onDetailClick={(id) => router.push(`/staff/${id}`)}
           onContractClick={() => router.push('/contract')}
+          onRetry={() => refetch()}
         />
       </div>
     </div>
@@ -103,6 +104,7 @@ function StaffListContent({
   employeeList,
   onDetailClick,
   onContractClick,
+  onRetry,
 }: {
   mounted: boolean
   headOfficeId: number | null
@@ -111,6 +113,7 @@ function StaffListContent({
   employeeList: EmployeeListItem[]
   onDetailClick: (id: number) => void
   onContractClick: () => void
+  onRetry: () => void
 }) {
   if (!mounted) return null
   if (!headOfficeId) return <EmptyMessage text="상단에서 점포를 먼저 선택해주세요." />
@@ -118,6 +121,11 @@ function StaffListContent({
     <div className="staff-list-wrap">
       <div style={{ textAlign: 'center', padding: '40px 0', color: '#e74c3c' }}>
         직원 목록을 불러올 수 없습니다.
+        <div style={{ marginTop: '12px' }}>
+          <button className="btn-form grey" onClick={onRetry}>
+            다시 시도
+          </button>
+        </div>
       </div>
     </div>
   )

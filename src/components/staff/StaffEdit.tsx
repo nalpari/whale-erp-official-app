@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import {
   useEmployeeDetail,
@@ -88,11 +88,9 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
 
   const isResigned = workStatus === 'EMPWK_003'
 
-  // 가맹점 옵션 (선택된 본사 기반)
-  const franchiseOptions = useMemo(() => {
-    const office = headOfficeTree.find((o) => o.id === selectedHeadOfficeId)
-    return office?.franchises ?? []
-  }, [headOfficeTree, selectedHeadOfficeId])
+  // 가맹점 옵션 (선택된 본사 기반) - React Compiler가 자동 메모이제이션 처리
+  const franchiseOptions =
+    headOfficeTree.find((o) => o.id === selectedHeadOfficeId)?.franchises ?? []
 
   // 저장 버튼 활성화 조건: 근무여부, 입사일(읽기전용이므로 이미 존재)
   const canSave = !!workStatus && !!employee.hireDate
