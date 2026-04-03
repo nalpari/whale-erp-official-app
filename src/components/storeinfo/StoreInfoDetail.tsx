@@ -92,11 +92,26 @@ export default function StoreInfoDetail({ id }: { id: number }) {
     }
   }, [data, handleDelete, setOnDelete]);
 
+  if (isError) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ color: "#e74c3c", marginBottom: "16px" }}>
+            점포 정보를 불러올 수 없습니다.
+          </div>
+          <button className="btn-form outline min" onClick={() => router.back()}>
+            뒤로가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || !data) {
     return (
       <div className="container sub">
         <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
-          {isError ? "점포 정보를 불러올 수 없습니다." : "불러오는 중..."}
+          불러오는 중...
         </div>
       </div>
     );

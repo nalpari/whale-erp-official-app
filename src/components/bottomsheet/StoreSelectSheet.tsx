@@ -3,7 +3,12 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { usePlanSearchStore } from '@/store/usePlanSearchStore'
+import { usePopupControler } from '@/store/usePopupControler'
 import { useHeadOffices, useStoreOptions } from '@/hooks/queries/use-store-queries'
+import { useQueryClient } from '@tanstack/react-query'
+import { todoKeys } from '@/hooks/queries/use-todo-queries'
+import { scheduleKeys } from '@/hooks/queries/use-schedule-queries'
 import { Sheet } from 'react-modal-sheet'
 
 export default function StoreSelectSheet() {
@@ -20,6 +25,8 @@ export default function StoreSelectSheet() {
   } = useStoreStore()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const authFranchiseId = useAuthStore((state) => state.franchiseId)
+  const queryClient = useQueryClient()
+  const openAlert = usePopupControler((state) => state.openAlert)
   const hasAuthOffice = !!authHeadOfficeId
 
   // 본사 ID: auth > storeStore 순으로 fallback
@@ -53,10 +60,25 @@ export default function StoreSelectSheet() {
   }
 
   const handleSelect = () => {
-    const office = headOffices.find((o) => o.id === localOfficeId) ?? null
-    const store = storeOptions.find((s) => s.id === localStoreId) ?? null
-    setSelection(office, store)
-    handleClose()
+    try {
+      const office = headOffices.find((o) => o.id === localOfficeId) ?? null
+      const store = storeOptions.find((s) => s.id === localStoreId) ?? null
+      const prevOfficeId = selectedHeadOffice?.id ?? null
+      const nextOfficeId = office?.id ?? null
+      const prevStoreId = selectedStore?.id ?? null
+      const nextStoreId = store?.id ?? null
+      setSelection(office, store)
+      if (prevOfficeId !== nextOfficeId || prevStoreId !== nextStoreId) {
+        queryClient.removeQueries({ queryKey: todoKeys.employeesAll })
+        queryClient.removeQueries({ queryKey: scheduleKeys.all })
+        usePlanSearchStore.getState().reset()
+      }
+    } catch (err) {
+      console.error('[StoreSelectSheet] 점포 선택 실패:', err)
+      openAlert({ message: '점포 선택 중 오류가 발생했습니다. 다시 시도해주세요.' })
+    } finally {
+      handleClose()
+    }
   }
 
   const handleReset = () => {

@@ -1,23 +1,51 @@
-"use client";
-import { useBottomSheetControler } from "@/store/useBottomSheetControler";
-import { Sheet } from "react-modal-sheet";
+'use client'
+import { useState } from 'react'
+import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import { Sheet } from 'react-modal-sheet'
 
 export default function WorkerSearchSheet() {
-  const workerSearchSheet = useBottomSheetControler(
-    (state) => state.workerSearchSheet
-  );
-  const setWorkerSearchSheet = useBottomSheetControler(
-    (state) => state.setWorkerSearchSheet
-  );
+  const workerSearchSheet = useBottomSheetControler((state) => state.workerSearchSheet)
+  const closeWorkerSearchSheet = useBottomSheetControler((state) => state.closeWorkerSearchSheet)
+  const onWorkerSearch = useBottomSheetControler((state) => state.onWorkerSearch)
+  const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
+  const initial = useBottomSheetControler((state) => state.workerSearchInitial)
+
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null)
+  const [tempWorkerName, setTempWorkerName] = useState('')
+  const registeredEmployees = employees.filter(
+    (emp): emp is typeof emp & { memberId: number } => emp.memberId !== null,
+  )
 
   const handleClose = () => {
-    setWorkerSearchSheet(false);
-  };
+    closeWorkerSearchSheet()
+  }
+
+  // 바텀시트 열릴 때 기존 검색 조건 복원
+  const handleOpenStart = () => {
+    setSelectedWorkerId(initial.workerId)
+    setTempWorkerName(initial.tempWorkerName)
+  }
+
+  const handleSearch = () => {
+    try {
+      onWorkerSearch?.({ workerId: selectedWorkerId, tempWorkerName })
+    } catch (err) {
+      console.error('[WorkerSearchSheet] 검색 콜백 실행 실패:', err)
+    } finally {
+      handleClose()
+    }
+  }
+
+  const handleReset = () => {
+    setSelectedWorkerId(null)
+    setTempWorkerName('')
+  }
 
   return (
     <Sheet
       isOpen={workerSearchSheet}
       onClose={handleClose}
+      onOpenStart={handleOpenStart}
       detent="content"
       disableScrollLocking={true}
     >
@@ -28,32 +56,51 @@ export default function WorkerSearchSheet() {
             <div className="bottom-sheet-header">
               <h3>검색조건</h3>
             </div>
-            <div className=" bottom-sheet-body">
+            <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
                 <div className="sheet-data-filed">
                   <div className="filed-tit">직원명</div>
                   <div className="block">
-                    <select name="" id="" className="select-form">
-                      <option value="1">본사 정직원</option>
+                    <select
+                      className="select-form"
+                      value={selectedWorkerId ?? ''}
+                      onChange={(e) => setSelectedWorkerId(e.target.value ? Number(e.target.value) : null)}
+                    >
+                      <option value="">전체</option>
+                      {registeredEmployees.map((emp) => (
+                        <option key={emp.id} value={emp.memberId}>
+                          {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
                 <div className="sheet-data-filed">
                   <div className="filed-tit">임시 근무자명</div>
                   <div className="block">
-                    <input type="text" className="input-frame" />
+                    <input
+                      type="text"
+                      className="input-frame"
+                      placeholder="임시 근무자명"
+                      value={tempWorkerName}
+                      onChange={(e) => setTempWorkerName(e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
             </div>
             <div className="bottom-sheet-footer">
-              <button className="btn-form sky">초기화</button>
-              <button className="btn-form blue">검색</button>
+              <button className="btn-form sky" onClick={handleReset}>
+                초기화
+              </button>
+              <button className="btn-form blue" onClick={handleSearch}>
+                검색
+              </button>
             </div>
           </div>
         </Sheet.Content>
       </Sheet.Container>
       <Sheet.Backdrop onTap={handleClose} />
     </Sheet>
-  );
+  )
 }
