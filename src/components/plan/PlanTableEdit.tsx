@@ -10,7 +10,7 @@ import { useHeaderStore } from '@/store/useHeaderStore'
 import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule-queries'
 import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
-import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS, getMonday, getSunday, parseDateLocal } from '@/lib/schedule-utils'
+import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS, getMonday, getSunday, parseDateLocal, DEFAULT_WORK_START, DEFAULT_WORK_END, DEFAULT_BREAK_START, DEFAULT_BREAK_END } from '@/lib/schedule-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
 import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest, ScheduleContractType } from '@/types/schedule'
 
@@ -112,7 +112,7 @@ export default function PlanTableEdit() {
 
   const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(params, !!headOfficeId)
 
-  // API 데이터 → 초기 EditState 파생 (scheduleList 변경 시 재계산)
+  // API 데이터 → 초기 EditState 파생 (scheduleList 또는 검색 기간 변경 시 재계산)
   const initialEditState = useMemo(() => {
     const state = new Map<string, WorkerEditItem[]>()
 
@@ -134,7 +134,7 @@ export default function PlanTableEdit() {
         breakEndTime: w.breakEndTime,
         isDeleted: w.isDeleted,
         isNew: false,
-        iconType: w.iconType ?? 0,
+        iconType: (w.iconType ?? 0) as 0 | 1 | 2 | 3,
       }))
       state.set(schedule.date, workers)
     }
@@ -331,6 +331,20 @@ export default function PlanTableEdit() {
     return `${fmtDate(first)}~${fmtDate(last)}`
   }, [sortedEntries])
 
+  // 본사/점포 미선택 시 안내
+  if (mounted && (!headOfficeId || !storeId)) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ color: "#888", marginBottom: "16px" }}>점포가 선택되지 않았습니다.</div>
+          <button className="btn-form outline min" onClick={() => router.push('/plan')}>
+            점포 선택으로 이동
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (isError || isEmployeeError) {
     return (
       <div className="container sub">
@@ -416,7 +430,7 @@ export default function PlanTableEdit() {
                           <div key={`${worker.shiftId ?? worker.workerId ?? worker.workerName}-${originalIndex}`} className={`sub-item-bx ${style.wrapClass}`}>
                             <div className="plan-staff-head">
                               <div className="plan-staff-info">
-                                <span className={style.badgeClass}>{style.label}</span>
+                                {!worker.isNew && <span className={style.badgeClass}>{style.label}</span>}
                                 <span className="name">{worker.workerName}</span>
                                 <span className="time">{hours}</span>
                               </div>
@@ -449,7 +463,7 @@ export default function PlanTableEdit() {
                                       onClick={() =>
                                         openTimePicker(
                                           '근무 시작시간',
-                                          worker.workStartTime ?? '09:00',
+                                          worker.workStartTime ?? DEFAULT_WORK_START,
                                           (time) => updateWorkerField(date, originalIndex, 'workStartTime', time),
                                         )
                                       }
@@ -463,7 +477,7 @@ export default function PlanTableEdit() {
                                       onClick={() =>
                                         openTimePicker(
                                           '근무 종료시간',
-                                          worker.workEndTime ?? '18:00',
+                                          worker.workEndTime ?? DEFAULT_WORK_END,
                                           (time) => updateWorkerField(date, originalIndex, 'workEndTime', time),
                                         )
                                       }
@@ -482,7 +496,7 @@ export default function PlanTableEdit() {
                                       onClick={() =>
                                         openTimePicker(
                                           '휴게 시작시간',
-                                          worker.breakStartTime ?? '12:00',
+                                          worker.breakStartTime ?? DEFAULT_BREAK_START,
                                           (time) => updateWorkerFields(date, originalIndex, { breakStartTime: time, hasBreak: true }),
                                         )
                                       }
@@ -496,7 +510,7 @@ export default function PlanTableEdit() {
                                       onClick={() =>
                                         openTimePicker(
                                           '휴게 종료시간',
-                                          worker.breakEndTime ?? '13:00',
+                                          worker.breakEndTime ?? DEFAULT_BREAK_END,
                                           (time) => updateWorkerFields(date, originalIndex, { breakEndTime: time, hasBreak: true }),
                                         )
                                       }

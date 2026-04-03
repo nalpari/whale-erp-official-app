@@ -1,17 +1,24 @@
-import type { WorkerResponse, ScheduleContractType } from '@/types/schedule'
+import type { WorkerResponse, WorkerIconType, ScheduleContractType } from '@/types/schedule'
+
+// ── 기본 시간 상수 ──
+
+export const DEFAULT_WORK_START = '09:00'
+export const DEFAULT_WORK_END = '18:00'
+export const DEFAULT_BREAK_START = '12:00'
+export const DEFAULT_BREAK_END = '13:00'
 
 // ── 아바타 아이콘 매핑 ──
-// index 0(기본)과 1은 동일 이미지 — iconType 서버 값(0~3)과 1:1 매핑
+// iconType 서버 값(0~3) → 아바타 이미지
 const AVATAR_IMAGES = [
-  '/assets/images/layout/avatar01.svg',
   '/assets/images/layout/avatar01.svg',
   '/assets/images/layout/avatar02.svg',
   '/assets/images/layout/avatar03.svg',
+  '/assets/images/layout/avatar04.svg',
 ] as const
 
 /** iconType(0~3) → 아바타 이미지 경로 */
-export function getWorkerAvatar(iconType: number): string {
-  return AVATAR_IMAGES[iconType] ?? AVATAR_IMAGES[0]
+export function getWorkerAvatar(iconType: WorkerIconType): string {
+  return AVATAR_IMAGES[iconType]
 }
 
 // ── 계약유형 스타일 매핑 ──
@@ -34,6 +41,7 @@ export function calcWorkHours(worker: Pick<WorkerResponse, 'hasWork' | 'workStar
   const [sh, sm] = worker.workStartTime.split(':').map(Number)
   const [eh, em] = worker.workEndTime.split(':').map(Number)
   let totalMin = (eh * 60 + em) - (sh * 60 + sm)
+  // 자정을 넘는 야간 근무 보정 (예: 22:00 ~ 06:00)
   if (totalMin < 0) totalMin += 24 * 60
   if (worker.hasBreak && worker.breakStartTime && worker.breakEndTime) {
     const [bsh, bsm] = worker.breakStartTime.split(':').map(Number)
@@ -53,6 +61,7 @@ const CONTRACT_ORDER: Record<ScheduleContractType, number> = {
   '정직원': 1, '계약직': 2, '수습': 3, '파트타이머': 4, '임시근무': 5,
 }
 
+/** 근무자 정렬: 삭제된 항목 제외 후, 근무 시작시간 오름차순(미지정 시 끝으로), 동일 시간 시 계약유형 우선순위 순 */
 export function sortWorkers<T extends Pick<WorkerResponse, 'workStartTime' | 'contractType' | 'isDeleted'>>(workers: T[]): T[] {
   return [...workers]
     .filter((w) => !w.isDeleted)

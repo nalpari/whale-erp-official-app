@@ -27,9 +27,9 @@ function isInRange(minutes: number, start: number | null, end: number | null): b
 }
 
 /**
- * - 근무 범위 안 + 휴게 → "half rest" (테두리 + 흰색)
- * - 근무 범위 안 → "half" (채워진 색)
- * - 근무 범위 밖 → "half rest" (테두리 + 흰색)
+ * 30분 단위 셀의 CSS 클래스 결정:
+ * - hasWork가 true이고 근무 범위 안이면서 휴게 범위가 아닌 경우 → "half" (채워진 색)
+ * - 그 외 모든 경우 (범위 밖, 휴게 중, hasWork=false) → "half rest" (빈 셀)
  */
 function getHalfClass(
   halfStart: number,

@@ -1,4 +1,5 @@
 'use client'
+import { DEFAULT_WORK_START, DEFAULT_WORK_END, DEFAULT_BREAK_START, DEFAULT_BREAK_END } from '@/lib/schedule-utils'
 
 interface WorkScheduleFieldsProps {
   fromDate: string
@@ -71,7 +72,7 @@ export default function WorkScheduleFields({
           <div className="block">
             <button
               className="select-form al-l"
-              onClick={() => openTimePicker('근무 시작시간', workStart || '09:00', (t) => onWorkStartChange(t ?? ''))}
+              onClick={() => openTimePicker('근무 시작시간', workStart || DEFAULT_WORK_START, (t) => onWorkStartChange(t ?? ''))}
             >
               {workStart || '시작시간'}
             </button>
@@ -79,7 +80,7 @@ export default function WorkScheduleFields({
           <div className="block">
             <button
               className="select-form al-l"
-              onClick={() => openTimePicker('근무 종료시간', workEnd || '18:00', (t) => onWorkEndChange(t ?? ''))}
+              onClick={() => openTimePicker('근무 종료시간', workEnd || DEFAULT_WORK_END, (t) => onWorkEndChange(t ?? ''))}
             >
               {workEnd || '종료시간'}
             </button>
@@ -92,7 +93,7 @@ export default function WorkScheduleFields({
           <div className="block">
             <button
               className="select-form al-l"
-              onClick={() => openTimePicker('휴게 시작시간', breakStart || '12:00', (t) => onBreakStartChange(t ?? ''))}
+              onClick={() => openTimePicker('휴게 시작시간', breakStart || DEFAULT_BREAK_START, (t) => onBreakStartChange(t ?? ''))}
             >
               {breakStart || '시작시간'}
             </button>
@@ -100,7 +101,7 @@ export default function WorkScheduleFields({
           <div className="block">
             <button
               className="select-form al-l"
-              onClick={() => openTimePicker('휴게 종료시간', breakEnd || '13:00', (t) => onBreakEndChange(t ?? ''))}
+              onClick={() => openTimePicker('휴게 종료시간', breakEnd || DEFAULT_BREAK_END, (t) => onBreakEndChange(t ?? ''))}
             >
               {breakEnd || '종료시간'}
             </button>

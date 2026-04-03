@@ -1,15 +1,20 @@
 'use client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
-import { useScheduleList } from '@/hooks/queries/use-schedule-queries'
+import { usePopupControler } from '@/store/usePopupControler'
+import { useScheduleList, useUpsertSchedule, useValidateScheduleExcel, useDownloadScheduleTemplate } from '@/hooks/queries/use-schedule-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers, getMonday, getSunday } from '@/lib/schedule-utils'
+import { downloadScheduleExcel } from '@/lib/api/schedule'
+import { downloadBlob } from '@/lib/file-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
 import TimelineBar from './TimelineBar'
-import type { ScheduleSearchParams } from '@/types/schedule'
+import UploadExcelPopup from './UploadExcelPopup'
+import type { ScheduleSearchParams, ExcelValidationResponse } from '@/types/schedule'
 
 export default function PlanTable() {
   const router = useRouter()
@@ -33,6 +38,94 @@ export default function PlanTable() {
   const headOfficeId = mounted ? effectiveHeadOfficeId : null
   const storeId = mounted ? selectedStore?.id ?? undefined : undefined
 
+  const openAlert = usePopupControler((state) => state.openAlert)
+
+  // 엑셀 업로드 팝업 상태
+  const [isUploadOpen, setUploadOpen] = useState(false)
+  const [validationResult, setValidationResult] = useState<ExcelValidationResponse | null>(null)
+  const { mutateAsync: validateExcel, isPending: isValidating } = useValidateScheduleExcel()
+  const { mutateAsync: upsertSchedule, isPending: isSavingExcel } = useUpsertSchedule()
+  const { mutateAsync: downloadTemplate } = useDownloadScheduleTemplate()
+
+  const handleOpenUpload = () => {
+    if (!storeId) {
+      openAlert({ message: '점포를 먼저 선택해주세요.' })
+      return
+    }
+    setValidationResult(null)
+    setUploadOpen(true)
+  }
+
+  // 1단계: 엑셀 검증
+  const handleValidateExcel = async (file: File) => {
+    if (!storeId) return
+    try {
+      const result = await validateExcel({ storeId, file })
+      setValidationResult(result)
+    } catch (err) {
+      console.error('[PlanTable] 엑셀 검증 실패:', err)
+      setValidationResult({
+        valid: false,
+        totalRows: 0,
+        validRows: 0,
+        invalidRows: 0,
+        schedules: null,
+        errors: [{ rowNumber: 0, message: err instanceof Error ? err.message : '엑셀 검증에 실패했습니다.' }],
+      })
+    }
+  }
+
+  // 2단계: 검증 성공 데이터 저장 (replaceMode)
+  const handleSaveValidated = async () => {
+    if (!storeId || !validationResult?.valid || !validationResult.schedules) return
+    try {
+      await upsertSchedule({ storeId, data: validationResult.schedules, replaceMode: true })
+      openAlert({
+        message: '엑셀 데이터가 저장되었습니다.',
+        onConfirm: () => {
+          setUploadOpen(false)
+          setValidationResult(null)
+        },
+      })
+    } catch (err) {
+      console.error('[PlanTable] 엑셀 저장 실패:', err)
+      openAlert({ message: '엑셀 데이터 저장에 실패했습니다. 다시 시도해주세요.' })
+    }
+  }
+
+  // 샘플 템플릿 다운로드
+  const handleDownloadSample = async () => {
+    try {
+      const blob = await downloadTemplate()
+      downloadBlob(blob, '근무계획표_업로드_샘플.xlsx')
+    } catch (err) {
+      console.error('[PlanTable] 샘플 다운로드 실패:', err)
+      openAlert({ message: '샘플 파일 다운로드에 실패했습니다.' })
+    }
+  }
+
+  // 엑셀 다운로드 (현재 검색 조건 기준)
+  const handleDownloadExcel = async () => {
+    if (!storeId) {
+      openAlert({ message: '점포를 먼저 선택해주세요.' })
+      return
+    }
+    try {
+      const blob = await downloadScheduleExcel({
+        storeId,
+        startDate: searchFrom,
+        endDate: searchTo,
+        employeeName: searchEmployeeName || undefined,
+        dayOfWeek: searchDayType ?? undefined,
+      })
+      const defaultName = `근무계획표_${searchFrom}_${searchTo}.xlsx`
+      downloadBlob(blob, defaultName)
+    } catch (err) {
+      console.error('[PlanTable] 엑셀 다운로드 실패:', err)
+      openAlert({ message: '엑셀 다운로드에 실패했습니다. 다시 시도해주세요.' })
+    }
+  }
+
   const searchParams: ScheduleSearchParams = {
     officeId: headOfficeId ?? 0,
     storeId,
@@ -50,7 +143,18 @@ export default function PlanTable() {
 
   const totalCount = scheduleList.reduce((acc, s) => acc + s.workerList.filter((w) => !w.isDeleted).length, 0)
 
-  // 계획 수립 이동
+  // 본사/점포 미선택 시 안내
+  if (mounted && !headOfficeId) {
+    return (
+      <div className="container">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ color: "#888" }}>점포를 선택해주세요.</div>
+        </div>
+      </div>
+    )
+  }
+
+  // 계획 수��� 이동
   const handleGoToEdit = (editStoreId?: number | null, date?: string) => {
     const targetStoreId = editStoreId ?? selectedStore?.id
     if (targetStoreId) {
@@ -87,7 +191,17 @@ export default function PlanTable() {
     <div className="container">
       <div className="sub-tit-wrap">
         <div className="sub-tit">점포별 근무 계획표</div>
-        <div className="sub-btn-wrap">
+        <div className="sub-btn-wrap flex items-center gap-2">
+          {!!storeId && (
+            <>
+              <button className="btn-s outline-g" onClick={handleOpenUpload}>
+                엑셀 업로드
+              </button>
+              <button className="btn-s outline-g" onClick={handleDownloadExcel}>
+                엑셀 다운로드
+              </button>
+            </>
+          )}
           <button className="btn-s black" onClick={() => handleGoToEdit()}>
             <i className="plan-create"></i>
             계획 수립
@@ -165,6 +279,22 @@ export default function PlanTable() {
 
         </div>
       </div>
+
+      {isUploadOpen && (
+        <UploadExcelPopup
+          isUploading={isValidating}
+          isSaving={isSavingExcel}
+          result={validationResult}
+          onClose={() => {
+            setUploadOpen(false)
+            setValidationResult(null)
+          }}
+          onUpload={handleValidateExcel}
+          onSave={handleSaveValidated}
+          onDownloadSample={handleDownloadSample}
+          onAlert={(message) => openAlert({ message })}
+        />
+      )}
     </div>
   )
 }

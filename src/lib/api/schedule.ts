@@ -9,11 +9,11 @@ import type {
 
 const BASE_URL = '/api/v1/store-schedule'
 
-// undefined/null/빈 문자열 제거
-const cleanParams = (params: object) => {
+/** undefined/null/빈 문자열 필드를 제거하여 API 쿼리 파라미터 정리 */
+const cleanParams = <T extends object>(params: T): Partial<T> => {
   return Object.fromEntries(
     Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
-  )
+  ) as Partial<T>
 }
 
 // 목록 조회
@@ -63,19 +63,19 @@ export const downloadScheduleExcel = async (params: {
   employeeName?: string
   dayOfWeek?: string
 }): Promise<Blob> => {
-  const response = await api.get(`${BASE_URL}/excel/download`, {
+  const response = await api.get<Blob>(`${BASE_URL}/excel`, {
     params: cleanParams(params),
     responseType: 'blob',
   })
-  return response.data as Blob
+  return response.data
 }
 
 // 엑셀 템플릿 다운로드 (blob)
 export const downloadScheduleTemplate = async (): Promise<Blob> => {
-  const response = await api.get(`${BASE_URL}/excel/template`, {
+  const response = await api.get<Blob>(`${BASE_URL}/template`, {
     responseType: 'blob',
   })
-  return response.data as Blob
+  return response.data
 }
 
 // 엑셀 검증
@@ -84,9 +84,9 @@ export const validateScheduleExcel = async (
   file: File,
 ): Promise<ExcelValidationResponse> => {
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('excel', file)
   const response = await api.post<{ data: ExcelValidationResponse }>(
-    `${BASE_URL}/${storeId}/excel/validate`,
+    `${BASE_URL}/excel/${storeId}/validate`,
     formData,
   )
   return response.data.data

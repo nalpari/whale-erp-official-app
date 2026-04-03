@@ -37,7 +37,10 @@ export default function WorkerAddSheet() {
 
   const handleAdd = () => {
     const emp = employees.find((e) => e.id === selectedEmployeeId)
-    if (!emp || emp.memberId === null || !fromDate || !toDate || !workStart || !workEnd) return
+    if (!emp || emp.memberId === null || !fromDate || !toDate || !workStart || !workEnd) {
+      console.warn('[WorkerAddSheet] 유효성 검사 실��� — 필수 값 누락')
+      return
+    }
 
     const hasBreak = !!breakStart && !!breakEnd
 

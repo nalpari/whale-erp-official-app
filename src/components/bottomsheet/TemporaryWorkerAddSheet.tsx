@@ -35,7 +35,10 @@ export default function TemporaryWorkerAddSheet() {
   }
 
   const handleAdd = () => {
-    if (!tempName.trim() || !fromDate || !toDate || !workStart || !workEnd) return
+    if (!tempName.trim() || !fromDate || !toDate || !workStart || !workEnd) {
+      console.warn('[TemporaryWorkerAddSheet] 유효성 검사 실패 — 필수 값 누락')
+      return
+    }
 
     const hasBreak = !!breakStart && !!breakEnd
 

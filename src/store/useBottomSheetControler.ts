@@ -2,34 +2,32 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { WorkerEditItem, WorkerSheetEmployee, ScheduleContractType } from '@/types/schedule'
 
-// 근무자 시트에 전달할 컨텍스트
+// 근무자 교체/삭제 바텀시트에서 대상 근무자 정보와 날짜를 표시하기 위한 컨텍스트
 interface WorkerSheetContext {
   worker: WorkerEditItem | null
   date: string
 }
 
+// 바텀시트 콜백 타입 별칭
+type WorkerAddCallback = (worker: WorkerEditItem, fromDate: string, toDate: string) => void
+type WorkerReplaceCallback = (newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => void
+type WorkerSearchFilters = { employeeName: string; tempWorkerName: string }
+
 type BottomSheetControlerState = {
-  // 근무자 시트 컨텍스트 (교체/삭제용)
   workerSheetContext: WorkerSheetContext
   setWorkerSheetContext: (ctx: WorkerSheetContext) => void
-  // 근무자 추가 콜백
-  onWorkerAdd: ((worker: WorkerEditItem, fromDate: string, toDate: string) => void) | null
+  onWorkerAdd: WorkerAddCallback | null
   workerAddDefaultDates: { from: string; to: string }
-  openWorkerAddSheet: (onAdd: (worker: WorkerEditItem, fromDate: string, toDate: string) => void, defaultDates?: { from: string; to: string }) => void
-  // 임시 근무자 추가 콜백
-  onTempWorkerAdd: ((worker: WorkerEditItem, fromDate: string, toDate: string) => void) | null
-  openTempWorkerAddSheet: (onAdd: (worker: WorkerEditItem, fromDate: string, toDate: string) => void, defaultDates?: { from: string; to: string }) => void
-  // 근무자 교체 콜백
-  onWorkerReplace: ((newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => void) | null
-  openWorkerChangeSheet: (worker: WorkerEditItem, date: string, onReplace: (newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => void) => void
-  // 근무자 삭제 콜백
+  openWorkerAddSheet: (onAdd: WorkerAddCallback, defaultDates?: { from: string; to: string }) => void
+  onTempWorkerAdd: WorkerAddCallback | null
+  openTempWorkerAddSheet: (onAdd: WorkerAddCallback, defaultDates?: { from: string; to: string }) => void
+  onWorkerReplace: WorkerReplaceCallback | null
+  openWorkerChangeSheet: (worker: WorkerEditItem, date: string, onReplace: WorkerReplaceCallback) => void
   onWorkerDelete: (() => void) | null
   openWorkerDeleteSheet: (worker: WorkerEditItem, date: string, onDelete: () => void) => void
-  // 근무자 검색 콜백
-  onWorkerSearch: ((filters: { employeeName: string; tempWorkerName: string }) => void) | null
-  workerSearchInitial: { employeeName: string; tempWorkerName: string }
-  openWorkerSearchSheet: (onSearch: (filters: { employeeName: string; tempWorkerName: string }) => void, initial?: { employeeName: string; tempWorkerName: string }) => void
-  // 직원 목록 (근무자 추가/교체 시 사용)
+  onWorkerSearch: ((filters: WorkerSearchFilters) => void) | null
+  workerSearchInitial: WorkerSearchFilters
+  openWorkerSearchSheet: (onSearch: (filters: WorkerSearchFilters) => void, initial?: WorkerSearchFilters) => void
   workerSheetEmployees: WorkerSheetEmployee[]
   setWorkerSheetEmployees: (employees: WorkerSheetEmployee[]) => void
   storeSelectSheet: boolean

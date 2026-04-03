@@ -4,8 +4,9 @@ import {
   upsertSchedule,
   deleteSchedule,
   deleteWorker,
+  validateScheduleExcel,
+  downloadScheduleTemplate,
 } from '@/lib/api/schedule'
-import { getErrorMessage } from '@/lib/api'
 import type { ScheduleSearchParams, ScheduleRequest } from '@/types/schedule'
 
 export const scheduleKeys = {
@@ -36,7 +37,6 @@ export const useUpsertSchedule = () => {
     },
     onError: (err) => {
       console.error('[useUpsertSchedule] mutation 실패:', err)
-      alert(getErrorMessage(err, '저장에 실패했습니다.'))
     },
   })
 }
@@ -52,7 +52,6 @@ export const useDeleteSchedule = () => {
     },
     onError: (err) => {
       console.error('[useDeleteSchedule] mutation 실패:', err)
-      alert(getErrorMessage(err, '삭제에 실패했습니다.'))
     },
   })
 }
@@ -72,7 +71,27 @@ export const useDeleteWorker = () => {
     },
     onError: (err) => {
       console.error('[useDeleteWorker] mutation 실패:', err)
-      alert(getErrorMessage(err, '근무자 삭제에 실패했습니다.'))
+    },
+  })
+}
+
+// 엑셀 파일 검증
+export const useValidateScheduleExcel = () => {
+  return useMutation({
+    mutationFn: ({ storeId, file }: { storeId: number; file: File }) =>
+      validateScheduleExcel(storeId, file),
+    onError: (err) => {
+      console.error('[useValidateScheduleExcel] mutation 실패:', err)
+    },
+  })
+}
+
+// 엑셀 샘플 템플릿 다운로드
+export const useDownloadScheduleTemplate = () => {
+  return useMutation({
+    mutationFn: () => downloadScheduleTemplate(),
+    onError: (err) => {
+      console.error('[useDownloadScheduleTemplate] mutation 실패:', err)
     },
   })
 }

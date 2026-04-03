@@ -25,7 +25,10 @@ export default function WorkerChangeSheet() {
   const handleReplace = () => {
     if (selectedId === null) return
     const emp = employees.find((e) => e.id === selectedId)
-    if (!emp || emp.memberId === null) return
+    if (!emp || emp.memberId === null) {
+      console.warn('[WorkerChangeSheet] 유효성 검사 실패 — 직원 정보 누락')
+      return
+    }
     try {
       onWorkerReplace?.(emp.memberId, emp.name, emp.contractType)
     } catch (err) {
