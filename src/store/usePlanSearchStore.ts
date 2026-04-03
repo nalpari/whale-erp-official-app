@@ -8,8 +8,8 @@ interface PlanSearchState {
   storeId: number | null
   employeeName: string
   dayType: string | null
-  from: string
-  to: string
+  from: string | null
+  to: string | null
   hasSearched: boolean
   setField: <K extends keyof PlanSearchFields>(key: K, value: PlanSearchFields[K]) => void
   setFields: (fields: Partial<PlanSearchFields>) => void
@@ -30,8 +30,8 @@ export const usePlanSearchStore = create<PlanSearchState>()(
       storeId: null,
       employeeName: '',
       dayType: null,
-      from: '',
-      to: '',
+      from: null,
+      to: null,
       hasSearched: false,
       setField: (key, value) => set({ [key]: value }, false, `planSearch/set-${key}`),
       setFields: (fields) => set(fields, false, 'planSearch/setFields'),

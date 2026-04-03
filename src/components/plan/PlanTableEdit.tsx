@@ -99,16 +99,17 @@ export default function PlanTableEdit() {
     storeId: storeId ?? undefined,
   }, !!headOfficeId && !!storeId)
 
-  // 직원 목록을 바텀시트 store에 동기화 (빈 목록도 반영하여 stale 방지)
-  useEffect(() => {
-    setWorkerSheetEmployees(employeeList.map((e) => ({
+  // 직원 목록 매핑 (바텀시트 오픈 시점에 lazily 전달)
+  const mappedEmployees = useMemo(
+    () => employeeList.map((e) => ({
       id: e.employeeInfoId,
       memberId: e.memberId,
       name: e.employeeName,
       contractType: toContractType(e.contractType),
       employeeNumber: e.employeeNumber,
-    })))
-  }, [employeeList, setWorkerSheetEmployees])
+    })),
+    [employeeList],
+  )
 
   // 검색 조건: date 쿼리 파라미터가 있으면 해당 날짜만, 없으면 목록 검색 조건 상속
   const params: ScheduleSearchParams = useMemo(() => ({
@@ -399,7 +400,7 @@ export default function PlanTableEdit() {
           <span><b>{dateRangeText}</b></span>
         </div>
         <div className="pay-head-btn-wrap">
-          <button className="pay-head-btn" onClick={() => openWorkerAddSheet(handleAddWorker, { from: editDate ?? searchFrom, to: editDate ?? searchTo })}>
+          <button className="pay-head-btn" onClick={() => { setWorkerSheetEmployees(mappedEmployees); openWorkerAddSheet(handleAddWorker, { from: editDate ?? searchFrom, to: editDate ?? searchTo }) }}>
             <i className="invite"></i>직원추가
           </button>
           <button className="pay-head-btn" onClick={() => openTempWorkerAddSheet(handleAddWorker, { from: editDate ?? searchFrom, to: editDate ?? searchTo })}>
@@ -413,13 +414,16 @@ export default function PlanTableEdit() {
             </div>
             <button
               className={`search-btn${hasWorkerFilter ? ' filtered' : ''}`}
-              onClick={() => openWorkerSearchSheet(
-                ({ workerId, tempWorkerName }) => {
-                  setFilterWorkerId(workerId)
-                  setFilterTempName(tempWorkerName)
-                },
-                { workerId: filterWorkerId, tempWorkerName: filterTempName },
-              )}
+              onClick={() => {
+                setWorkerSheetEmployees(mappedEmployees)
+                openWorkerSearchSheet(
+                  ({ workerId, tempWorkerName }) => {
+                    setFilterWorkerId(workerId)
+                    setFilterTempName(tempWorkerName)
+                  },
+                  { workerId: filterWorkerId, tempWorkerName: filterTempName },
+                )
+              }}
             >
               <i className="icon-search"></i>
               <span>검색</span>
@@ -460,11 +464,12 @@ export default function PlanTableEdit() {
                                 <div className="flex g8">
                                   <button
                                     className="change_staff"
-                                    onClick={() =>
+                                    onClick={() => {
+                                      setWorkerSheetEmployees(mappedEmployees)
                                       openWorkerChangeSheet(worker, date, (newWorkerId, newWorkerName, newContractType) =>
                                         handleReplaceWorker(date, originalIndex, newWorkerId, newWorkerName, newContractType),
                                       )
-                                    }
+                                    }}
                                   />
                                   <button
                                     className="delete_staff"
