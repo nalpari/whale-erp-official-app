@@ -55,7 +55,7 @@ export default function ContractOptionSheet({
 
   const handleReset = () => {
     setYear(defaultYear);
-    setTimelyAmount(minimumWage);
+    setTimelyAmount(0);
     setWeeklyHours(40);
   };
 

@@ -76,10 +76,10 @@ export default function EmploymentContract({
   // ContractOptionSheet 값 (계약년도, 통상시급, 주단위 근무시간)
   const [year, setYear] = useState<number>(currentYear);
   const [timelyAmount, setTimelyAmount] = useState<number>(
-    salary?.timelySalary ?? (isEditMode ? 0 : inviteSalary.timelyAmount),
+    salary?.timelySalary ?? (isContractPath ? 0 : inviteSalary.timelyAmount),
   );
   const [weeklyHours, setWeeklyHours] = useState<number>(
-    isEditMode ? 40 : inviteSalary.weeklyHours,
+    isContractPath ? 40 : inviteSalary.weeklyHours,
   );
 
   // 통상시급이 0이면 최저시급을 표시/계산에 사용
@@ -87,47 +87,47 @@ export default function EmploymentContract({
 
   // 근무시간 입력값
   const [monthlyTime, setMonthlyTime] = useState<number>(
-    salary?.monthlyTime ?? (isEditMode ? 0 : inviteSalary.monthlyTime),
+    salary?.monthlyTime ?? (isContractPath ? 0 : inviteSalary.monthlyTime),
   );
   const [overtimeTime, setOvertimeTime] = useState<number>(
     salary?.monthlyOvertimeAllowanceTime ??
-      (isEditMode ? 0 : inviteSalary.overtimeTime),
+      (isContractPath ? 0 : inviteSalary.overtimeTime),
   );
   const [nightTime, setNightTime] = useState<number>(
     salary?.monthlyNightAllowanceTime ??
-      (isEditMode ? 0 : inviteSalary.nightTime),
+      (isContractPath ? 0 : inviteSalary.nightTime),
   );
   const [holidayTime, setHolidayTime] = useState<number>(
     salary?.monthlyHolidayAllowanceTime ??
-      (isEditMode ? 0 : inviteSalary.holidayTime),
+      (isContractPath ? 0 : inviteSalary.holidayTime),
   );
   const [addHolidayTime, setAddHolidayTime] = useState<number>(
     salary?.monthlyAddHolidayAllowanceTime ??
-      (isEditMode ? 0 : inviteSalary.addHolidayTime),
+      (isContractPath ? 0 : inviteSalary.addHolidayTime),
   );
 
   // 비과세 항목
   const [mealAllowance, setMealAllowance] = useState<number>(
-    salary?.mealAllowance ?? (isEditMode ? 0 : inviteSalary.mealAllowance),
+    salary?.mealAllowance ?? (isContractPath ? 0 : inviteSalary.mealAllowance),
   );
   const [mealIncluded, setMealIncluded] = useState<boolean>(
-    isEditMode ? (salary?.mealAllowance ?? 0) > 0 : inviteSalary.mealIncluded,
+    isContractPath ? (salary?.mealAllowance ?? 0) > 0 : inviteSalary.mealIncluded,
   );
   const [vehicleAllowance, setVehicleAllowance] = useState<number>(
     salary?.vehicleAllowance ??
-      (isEditMode ? 0 : inviteSalary.vehicleAllowance),
+      (isContractPath ? 0 : inviteSalary.vehicleAllowance),
   );
   const [vehicleIncluded, setVehicleIncluded] = useState<boolean>(
-    isEditMode
+    isContractPath
       ? (salary?.vehicleAllowance ?? 0) > 0
       : inviteSalary.vehicleIncluded,
   );
   const [childcareAllowance, setChildcareAllowance] = useState<number>(
     salary?.childcareAllowance ??
-      (isEditMode ? 0 : inviteSalary.childcareAllowance),
+      (isContractPath ? 0 : inviteSalary.childcareAllowance),
   );
   const [childcareIncluded, setChildcareIncluded] = useState<boolean>(
-    isEditMode
+    isContractPath
       ? (salary?.childcareAllowance ?? 0) > 0
       : inviteSalary.childcareIncluded,
   );
@@ -135,15 +135,15 @@ export default function EmploymentContract({
   // 추가근무시급 (비포괄연봉제 / 파트타임) -- 초기값은 최저시급
   const [weekdayHourlyWage, setWeekdayHourlyWage] = useState<number>(
     salary?.weekDayAllowanceAmount ??
-      (isEditMode ? 0 : inviteSalary.weekdayHourlyWage),
+      (isContractPath ? 0 : inviteSalary.weekdayHourlyWage),
   );
   const [overtimeHourlyWage, setOvertimeHourlyWage] = useState<number>(
     salary?.overtimeDayAllowanceAmount ??
-      (isEditMode ? 0 : inviteSalary.overtimeHourlyWage),
+      (isContractPath ? 0 : inviteSalary.overtimeHourlyWage),
   );
   const [holidayHourlyWage, setHolidayHourlyWage] = useState<number>(
     salary?.holidayAllowanceTimeAmount ??
-      (isEditMode ? 0 : inviteSalary.holidayHourlyWage),
+      (isContractPath ? 0 : inviteSalary.holidayHourlyWage),
   );
 
   // 시급 활성값: 계약분류에 따라 fallback 다르게 적용
@@ -155,7 +155,7 @@ export default function EmploymentContract({
 
   // 상여금 상태
   const [bonuses, setBonuses] = useState<ContractBonus[]>(
-    salary?.bonuses ?? (isEditMode ? [] : inviteSalary.bonuses),
+    salary?.bonuses ?? (isContractPath ? [] : inviteSalary.bonuses),
   );
   const { mutateAsync: updateSalary, isPending: isUpdating } =
     useUpdateContractSalaryInfo();

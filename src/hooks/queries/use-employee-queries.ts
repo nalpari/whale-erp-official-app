@@ -161,9 +161,8 @@ export const useUpdateEmployeeWithFiles = () => {
       data: UpdateEmployeeInfoRequest
       files: EmployeeFiles
     }) => updateEmployeeWithFiles(id, data, files),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(variables.id) })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: employeeKeys.all })
     },
   })
 }

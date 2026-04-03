@@ -41,6 +41,7 @@ export default function StaffDetail() {
           await sendEmailMutation.mutateAsync(employeeId)
           openAlert({ message: '전송되었습니다.', confirmText: '확인' })
         } catch (error) {
+          // Alert.tsx에서 에러 시 closeAlert 안 함 — 후속 alert 정상 표시
           openAlert({ message: getErrorMessage(error, '전송에 실패했습니다.'), confirmText: '확인' })
         }
       },
