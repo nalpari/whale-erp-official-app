@@ -312,12 +312,14 @@ export async function getMinimumWageList(): Promise<MinimumWageInfo[]> {
   const currentYear = new Date().getFullYear()
   const nextYear = currentYear + 1
   const result: MinimumWageInfo[] = []
+  let lastError: unknown
 
   try {
     const currentWage = await getMinimumWage(currentYear)
     result.push({ year: currentYear, minimumWage: currentWage })
   } catch (err) {
     console.error('[getMinimumWageList] 현재년도 최저시급 조회 실패:', err)
+    lastError = err
   }
 
   try {
@@ -325,6 +327,11 @@ export async function getMinimumWageList(): Promise<MinimumWageInfo[]> {
     result.push({ year: nextYear, minimumWage: nextWage })
   } catch (err) {
     console.error('[getMinimumWageList] 다음년도 최저시급 조회 실패:', err)
+    lastError = err
+  }
+
+  if (result.length === 0 && lastError) {
+    throw lastError
   }
 
   return result

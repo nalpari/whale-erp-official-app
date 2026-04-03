@@ -306,7 +306,7 @@ export default function InviteForm04() {
           </div>
           {sundayData.isWork && (
             <div className="data-filed">
-              <div className="filed-tit sub">브레이크타임</div>
+              <div className="filed-tit sub">휴게시간</div>
               <div>
                 <div className="block mb8">
                   <button

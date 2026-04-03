@@ -92,8 +92,10 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
   const franchiseOptions =
     headOfficeTree.find((o) => o.id === selectedHeadOfficeId)?.franchises ?? []
 
-  // 저장 버튼 활성화 조건: 근무여부 + 본사 선택
-  const canSave = !!workStatus && !!employee.hireDate && !!selectedHeadOfficeId
+  // 저장 버튼 활성화 조건: 근무여부 + 조직 필수값
+  const hasRequiredOrganization =
+    !!selectedHeadOfficeId && (workplaceType !== 'FRANCHISE' || !!selectedFranchiseId)
+  const canSave = !!workStatus && !!employee.hireDate && hasRequiredOrganization
 
   const handleWorkStatusChange = (status: string) => {
     setWorkStatus(status)
