@@ -26,7 +26,7 @@ export default function StaffDetail() {
   const params = useParams()
   const employeeId = params.id ? Number(params.id) : null
 
-  const { data: employee, isLoading } = useEmployeeDetail(employeeId)
+  const { data: employee, isLoading, isError } = useEmployeeDetail(employeeId)
   const memberId = employee?.memberId ?? null
   const { data: careers } = useEmployeeCareers(memberId)
   const { data: certificates } = useEmployeeCertificates(memberId)
@@ -75,6 +75,21 @@ export default function StaffDetail() {
     } catch (error) {
       alert(getErrorMessage(error, '파일 다운로드에 실패했습니다.'))
     }
+  }
+
+  if (isError) {
+    return (
+      <div className="container sub">
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#e74c3c' }}>
+          직원 정보를 불러올 수 없습니다.
+          <div style={{ marginTop: '12px' }}>
+            <button className="btn-form grey" onClick={() => router.push('/staff')}>
+              목록으로 돌아가기
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -475,10 +490,14 @@ export default function StaffDetail() {
                             <span> ({cert.validityStartDate}~{cert.validityEndDate})</span>
                           )}
                         </div>
-                        {cert.certificateFileId && cert.certificateFileName && (
+                        {cert.certificateFileId != null && cert.certificateFileName && (
                           <button
                             className="down-btn"
-                            onClick={() => handleFileDownload(cert.certificateFileId!)}
+                            onClick={() => {
+                              if (cert.certificateFileId != null) {
+                                handleFileDownload(cert.certificateFileId)
+                              }
+                            }}
                           >
                             {cert.certificateFileName}
                           </button>

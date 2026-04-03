@@ -7,6 +7,7 @@ import { useStoreStore } from '@/store/useStoreStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useEmployeeList } from '@/hooks/queries/use-employee-queries'
 import { useMounted } from '@/hooks/use-mounted'
+import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import type { EmployeeListItem } from '@/types/employee'
 
 const AVATAR_IMAGES = [
@@ -28,7 +29,7 @@ export default function StaffInfoList() {
   const setStaffSearchSheet = useBottomSheetControler(
     (state) => state.setStaffSearchSheet,
   )
-  const { searchParams } = useEmployeeSearchStore()
+  const searchParams = useEmployeeSearchStore((state) => state.searchParams)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
@@ -53,7 +54,10 @@ export default function StaffInfoList() {
         <div className="sub-btn-wrap">
           <button
             className="btn-s black"
-            onClick={() => router.push('/staff/invite')}
+            onClick={() => {
+              useStaffInviteStore.getState().reset()
+              router.push('/staff/invite')
+            }}
           >
             <i className="invite"></i>
             직원 초대

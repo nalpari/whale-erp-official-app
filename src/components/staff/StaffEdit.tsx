@@ -8,9 +8,14 @@ import {
   useCheckEmployeeNumber,
   useEmployeeCommonCode,
 } from '@/hooks/queries/use-employee-queries'
+import { useCommonCodeHierarchy } from '@/hooks/queries/use-common-code-queries'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getErrorMessage } from '@/lib/api'
-import type { EmployeeWorkStatus, EmployeeFiles } from '@/types/employee'
+import type {
+  EmployeeWorkStatus,
+  EmployeeFiles,
+  EmployeeInfoDetailResponse,
+} from '@/types/employee'
 
 const WORK_STATUS_OPTIONS: { label: string; value: EmployeeWorkStatus }[] = [
   { label: '근무', value: 'EMPWK_001' },
@@ -18,71 +23,56 @@ const WORK_STATUS_OPTIONS: { label: string; value: EmployeeWorkStatus }[] = [
   { label: '퇴사', value: 'EMPWK_003' },
 ]
 
-const CONTRACT_CLASSIFICATION_OPTIONS = [
-  { label: '선택', value: '' },
-  { label: '정직원', value: 'CNTCFWK_001' },
-  { label: '계약직', value: 'CNTCFWK_002' },
-  { label: '파트타이머', value: 'CNTCFWK_003' },
-]
-
-export default function StaffEdit() {
+/**
+ * 폼 영역을 별도 컴포넌트로 분리하여 employee 데이터를 prop으로 받는다.
+ * 이렇게 하면 useState 초기값에서 employee를 직접 참조할 수 있어
+ * isInitialized 패턴(렌더 중 setState)을 제거하고 React Compiler와 호환된다.
+ */
+function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
   const router = useRouter()
-  const params = useParams()
-  const employeeId = params.id ? Number(params.id) : null
+  const employeeId = employee.id
   const headOfficeId = useAuthStore((state) => state.headOfficeId)
 
-  const { data: employee, isLoading } = useEmployeeDetail(employeeId)
   const { data: commonCode } = useEmployeeCommonCode(headOfficeId ?? undefined)
-  const updateMutation = useUpdateEmployee()
-  const updateWithFilesMutation = useUpdateEmployeeWithFiles()
-  const checkNumberMutation = useCheckEmployeeNumber()
+  const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK')
+  const { mutateAsync: updateEmployee } = useUpdateEmployee()
+  const { mutateAsync: updateEmployeeWithFiles } = useUpdateEmployeeWithFiles()
+  const { mutateAsync: checkEmployeeNumber } = useCheckEmployeeNumber()
 
   const employeeClassifications = commonCode?.codeMemoContent?.EMPLOYEE ?? []
   const rankClassifications = commonCode?.codeMemoContent?.RANK ?? []
   const positionClassifications = commonCode?.codeMemoContent?.POSITION ?? []
 
-  // 폼 상태
-  const [workStatus, setWorkStatus] = useState<string>('')
-  const [employeeNumber, setEmployeeNumber] = useState('')
-  const [employeeClassification, setEmployeeClassification] = useState('')
-  const [contractClassification, setContractClassification] = useState('')
-  const [rank, setRank] = useState('')
-  const [position, setPosition] = useState('')
-  const [hireDate, setHireDate] = useState('')
-  const [resignationDate, setResignationDate] = useState('')
-  const [resignationReason, setResignationReason] = useState('')
-  const [memo, setMemo] = useState('')
-  const [isInitialized, setIsInitialized] = useState(false)
+  // 폼 상태 - employee prop에서 초기값 직접 설정
+  const [workStatus, setWorkStatus] = useState<string>(employee.workStatus || 'EMPWK_001')
+  const [employeeNumber, setEmployeeNumber] = useState(employee.employeeNumber || '')
+  const [employeeClassification, setEmployeeClassification] = useState(
+    employee.employeeClassification || '',
+  )
+  const [contractClassification, setContractClassification] = useState(
+    employee.contractClassification || '',
+  )
+  const [rank, setRank] = useState(employee.rank || '')
+  const [position, setPosition] = useState(employee.position || '')
+  const [hireDate, setHireDate] = useState(employee.hireDate || '')
+  const [resignationDate, setResignationDate] = useState(employee.resignationDate || '')
+  const [resignationReason, setResignationReason] = useState(employee.resignationReason || '')
+  const [memo, setMemo] = useState(employee.memo || '')
 
   // 파일 상태
   const [files, setFiles] = useState<EmployeeFiles>({})
   const hasFiles = Object.values(files).some((f) => f != null)
-
-  // employee 로딩 완료 시 폼 초기화 (한 번만)
-  if (employee && !isInitialized) {
-    setWorkStatus(employee.workStatus || 'EMPWK_001')
-    setEmployeeNumber(employee.employeeNumber || '')
-    setEmployeeClassification(employee.employeeClassification || '')
-    setContractClassification(employee.contractClassification || '')
-    setRank(employee.rank || '')
-    setPosition(employee.position || '')
-    setHireDate(employee.hireDate || '')
-    setResignationDate(employee.resignationDate || '')
-    setResignationReason(employee.resignationReason || '')
-    setMemo(employee.memo || '')
-    setIsInitialized(true)
-  }
 
   const isResigned = workStatus === 'EMPWK_003'
 
   const handleCheckEmployeeNumber = async () => {
     if (!employeeNumber || !headOfficeId) return
     try {
-      const result = await checkNumberMutation.mutateAsync({
+      const result = await checkEmployeeNumber({
         employeeNumber,
         headOfficeOrganizationId: headOfficeId,
-        franchiseOrganizationId: employee?.franchiseOrganizationId,
-        storeId: employee?.storeId,
+        franchiseOrganizationId: employee.franchiseOrganizationId,
+        storeId: employee.storeId,
       })
       if (result.isDuplicate) {
         alert('이미 사용 중인 사번입니다.')
@@ -95,7 +85,6 @@ export default function StaffEdit() {
   }
 
   const handleSave = async () => {
-    if (!employeeId) return
     if (!hireDate) {
       alert('입사일은 필수 입력입니다.')
       return
@@ -113,42 +102,22 @@ export default function StaffEdit() {
       rank: rank || null,
       position: position || null,
       hireDate,
-      resignationDate: isResigned ? (resignationDate || null) : null,
-      resignationReason: isResigned ? (resignationReason || null) : null,
+      resignationDate: isResigned ? resignationDate || null : null,
+      resignationReason: isResigned ? resignationReason || null : null,
       memo: memo || null,
     }
 
     try {
       if (hasFiles) {
-        await updateWithFilesMutation.mutateAsync({ id: employeeId, data, files })
+        await updateEmployeeWithFiles({ id: employeeId, data, files })
       } else {
-        await updateMutation.mutateAsync({ id: employeeId, data })
+        await updateEmployee({ id: employeeId, data })
       }
       alert('저장되었습니다.')
       router.push(`/staff/${employeeId}`)
     } catch (error) {
       alert(getErrorMessage(error, '저장에 실패했습니다.'))
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="container sub">
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-          불러오는 중...
-        </div>
-      </div>
-    )
-  }
-
-  if (!employee) {
-    return (
-      <div className="container sub">
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-          직원 정보를 찾을 수 없습니다.
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -395,9 +364,10 @@ export default function StaffEdit() {
                     value={contractClassification}
                     onChange={(e) => setContractClassification(e.target.value)}
                   >
-                    {CONTRACT_CLASSIFICATION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                    <option value="">선택</option>
+                    {contractClassifications.map((item) => (
+                      <option key={item.code} value={item.code}>
+                        {item.name}
                       </option>
                     ))}
                   </select>
@@ -532,4 +502,50 @@ export default function StaffEdit() {
       </div>
     </>
   )
+}
+
+export default function StaffEdit() {
+  const router = useRouter()
+  const params = useParams()
+  const employeeId = params.id ? Number(params.id) : null
+
+  const { data: employee, isLoading, isError } = useEmployeeDetail(employeeId)
+
+  if (isError) {
+    return (
+      <div className="container sub">
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#e74c3c' }}>
+          직원 정보를 불러올 수 없습니다.
+          <div style={{ marginTop: '12px' }}>
+            <button className="btn-form grey" onClick={() => router.back()}>
+              뒤로 가기
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container sub">
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+          불러오는 중...
+        </div>
+      </div>
+    )
+  }
+
+  if (!employee) {
+    return (
+      <div className="container sub">
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+          직원 정보를 찾을 수 없습니다.
+        </div>
+      </div>
+    )
+  }
+
+  // key={employee.id}로 employee 데이터가 변경되면 폼을 리마운트하여 초기화
+  return <StaffEditForm key={employee.id} employee={employee} />
 }

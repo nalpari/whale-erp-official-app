@@ -10,7 +10,7 @@ export type WorkplaceType = 'HEAD_OFFICE' | 'FRANCHISE'
 export type ContractClassificationType = 'CNTCFWK_001' | 'CNTCFWK_002' | 'CNTCFWK_003'
 
 // 급여 주기
-// SLRCC_001: 월급제, SLRCC_002: 시급제
+// SLRCC_001: 월급, SLRCC_002: 시급
 export type SalaryCycle = 'SLRCC_001' | 'SLRCC_002'
 
 // 급여 지급 월

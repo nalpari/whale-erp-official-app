@@ -109,7 +109,6 @@ export default function BottomSheetControler() {
       staffSearchSheet ||
       contractOptionSheet ||
       partStaffPaySheet ||
-      bonusPaySheet ||
       contractSearchSheet ||
       fullTimerSearchSheet ||
       paymentConditionSheet ||
@@ -148,7 +147,6 @@ export default function BottomSheetControler() {
     staffSearchSheet,
     contractOptionSheet,
     partStaffPaySheet,
-    bonusPaySheet,
     contractSearchSheet,
     fullTimerSearchSheet,
     paymentConditionSheet,

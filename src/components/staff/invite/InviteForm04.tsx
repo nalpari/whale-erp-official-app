@@ -141,65 +141,81 @@ export default function InviteForm04() {
         {/* 토요일 */}
         <div className="sub-item-bx">
           <div className="data-filed">
-            <div className="store-img-list-tit">토요일</div>
-            <div>
-              <div className="block mb8">
+            <div className="tit-head">
+              <div className="store-img-list-tit">토요일</div>
+              <div className="auto-right">
                 <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  className={`radio-btn block blue${saturdayData.isWork ? ' act' : ''}`}
+                  onClick={() => updateWorkHour('SATURDAY', { isWork: !saturdayData.isWork })}
                 >
-                  {formatTime(saturdayData.workStartTime)}
-                </button>
-              </div>
-              <div className="block">
-                <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
-                >
-                  {formatTime(saturdayData.workEndTime)}
+                  {saturdayData.isWork ? '근무' : '휴무'}
                 </button>
               </div>
             </div>
-          </div>
-          <div className="data-filed">
-            <div className="filed-tit sub">휴게시간</div>
-            <div>
-              <div className="block mb8">
-                <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
-                >
-                  {formatTime(saturdayData.breakStartTime)}
-                </button>
+            {saturdayData.isWork && (
+              <div>
+                <div className="block mb8">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(saturdayData.workStartTime)}
+                  </button>
+                </div>
+                <div className="block">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(saturdayData.workEndTime)}
+                  </button>
+                </div>
               </div>
-              <div className="block">
+            )}
+          </div>
+          {saturdayData.isWork && (
+            <div className="data-filed">
+              <div className="filed-tit sub">휴게시간</div>
+              <div>
+                <div className="block mb8">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(saturdayData.breakStartTime)}
+                  </button>
+                </div>
+                <div className="block">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(saturdayData.breakEndTime)}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {saturdayData.isWork && (
+            <div className="data-filed">
+              <div className="filed-tit sub">격주근무 여부</div>
+              <div className="flex g8">
                 <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  className={`radio-btn block blue${saturdayData.everySaturdayWork ? ' act' : ''}`}
+                  onClick={() => updateWorkHour('SATURDAY', { everySaturdayWork: true })}
                 >
-                  {formatTime(saturdayData.breakEndTime)}
+                  매주 근무
+                </button>
+                <button
+                  className={`radio-btn block blue${!saturdayData.everySaturdayWork ? ' act' : ''}`}
+                  onClick={() => updateWorkHour('SATURDAY', { everySaturdayWork: false })}
+                >
+                  격주 근무
                 </button>
               </div>
             </div>
-          </div>
-          <div className="data-filed">
-            <div className="filed-tit sub">격주근무 여부</div>
-            <div className="flex g8">
-              <button
-                className={`radio-btn block blue${saturdayData.everySaturdayWork ? ' act' : ''}`}
-                onClick={() => updateWorkHour('SATURDAY', { everySaturdayWork: true })}
-              >
-                매주 근무
-              </button>
-              <button
-                className={`radio-btn block blue${!saturdayData.everySaturdayWork ? ' act' : ''}`}
-                onClick={() => updateWorkHour('SATURDAY', { everySaturdayWork: false })}
-              >
-                격주 근무
-              </button>
-            </div>
-          </div>
-          {!saturdayData.everySaturdayWork && (
+          )}
+          {saturdayData.isWork && !saturdayData.everySaturdayWork && (
             <div className="data-filed">
               <div className="filed-tit sub">격주근무 시작일</div>
               <div className="block">
@@ -223,65 +239,81 @@ export default function InviteForm04() {
         {/* 일요일 */}
         <div className="sub-item-bx">
           <div className="data-filed">
-            <div className="store-img-list-tit">일요일</div>
-            <div>
-              <div className="block mb8">
+            <div className="tit-head">
+              <div className="store-img-list-tit">일요일</div>
+              <div className="auto-right">
                 <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  className={`radio-btn block blue${sundayData.isWork ? ' act' : ''}`}
+                  onClick={() => updateWorkHour('SUNDAY', { isWork: !sundayData.isWork })}
                 >
-                  {formatTime(sundayData.workStartTime)}
-                </button>
-              </div>
-              <div className="block">
-                <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
-                >
-                  {formatTime(sundayData.workEndTime)}
+                  {sundayData.isWork ? '근무' : '휴무'}
                 </button>
               </div>
             </div>
-          </div>
-          <div className="data-filed">
-            <div className="filed-tit sub">브레이크타임</div>
-            <div>
-              <div className="block mb8">
-                <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
-                >
-                  {formatTime(sundayData.breakStartTime)}
-                </button>
+            {sundayData.isWork && (
+              <div>
+                <div className="block mb8">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(sundayData.workStartTime)}
+                  </button>
+                </div>
+                <div className="block">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(sundayData.workEndTime)}
+                  </button>
+                </div>
               </div>
-              <div className="block">
+            )}
+          </div>
+          {sundayData.isWork && (
+            <div className="data-filed">
+              <div className="filed-tit sub">브레이크타임</div>
+              <div>
+                <div className="block mb8">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(sundayData.breakStartTime)}
+                  </button>
+                </div>
+                <div className="block">
+                  <button
+                    className="select-form al-l"
+                    onClick={() => setTimeSelectSheet(true)}
+                  >
+                    {formatTime(sundayData.breakEndTime)}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {sundayData.isWork && (
+            <div className="data-filed">
+              <div className="filed-tit sub">격주근무 여부</div>
+              <div className="flex g8">
                 <button
-                  className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  className={`radio-btn block blue${sundayData.everySundayWork ? ' act' : ''}`}
+                  onClick={() => updateWorkHour('SUNDAY', { everySundayWork: true })}
                 >
-                  {formatTime(sundayData.breakEndTime)}
+                  매주 근무
+                </button>
+                <button
+                  className={`radio-btn block blue${!sundayData.everySundayWork ? ' act' : ''}`}
+                  onClick={() => updateWorkHour('SUNDAY', { everySundayWork: false })}
+                >
+                  격주 근무
                 </button>
               </div>
             </div>
-          </div>
-          <div className="data-filed">
-            <div className="filed-tit sub">격주근무 여부</div>
-            <div className="flex g8">
-              <button
-                className={`radio-btn block blue${sundayData.everySundayWork ? ' act' : ''}`}
-                onClick={() => updateWorkHour('SUNDAY', { everySundayWork: true })}
-              >
-                매주 근무
-              </button>
-              <button
-                className={`radio-btn block blue${!sundayData.everySundayWork ? ' act' : ''}`}
-                onClick={() => updateWorkHour('SUNDAY', { everySundayWork: false })}
-              >
-                격주 근무
-              </button>
-            </div>
-          </div>
-          {!sundayData.everySundayWork && (
+          )}
+          {sundayData.isWork && !sundayData.everySundayWork && (
             <div className="data-filed">
               <div className="filed-tit sub">격주근무 시작일</div>
               <div className="block">

@@ -33,11 +33,19 @@ export default function ContractOptionSheet({
   const [weeklyHours, setWeeklyHours] = useState(initialWeeklyHours);
 
   const { data: minimumWageData, isLoading: isMinWageLoading } = useMinimumWage(year);
+  const minimumWage = minimumWageData?.minimumWage ?? 0;
   const minimumWageLabel = isMinWageLoading
     ? '...'
-    : minimumWageData?.minimumWage
-      ? `${minimumWageData.minimumWage.toLocaleString('ko-KR')}원`
+    : minimumWage
+      ? `${minimumWage.toLocaleString('ko-KR')}원`
       : '-';
+
+  // 바텀시트 열릴 때 prop 동기화 + 통상시급 미설정 시 최저시급으로 초기화
+  const syncFromProps = () => {
+    setYear(initialYear);
+    setWeeklyHours(initialWeeklyHours);
+    setTimelyAmount(initialTimelyAmount || minimumWage);
+  };
 
   const handleClose = () => {
     setContractOptionSheet(false);
@@ -45,7 +53,7 @@ export default function ContractOptionSheet({
 
   const handleReset = () => {
     setYear(new Date().getFullYear());
-    setTimelyAmount(0);
+    setTimelyAmount(minimumWage);
     setWeeklyHours(40);
   };
 
@@ -58,6 +66,7 @@ export default function ContractOptionSheet({
     <Sheet
       isOpen={contractOptionSheet}
       onClose={handleClose}
+      onOpenEnd={syncFromProps}
       detent="content"
       disableScrollLocking={true}
     >

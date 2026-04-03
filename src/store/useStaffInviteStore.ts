@@ -8,6 +8,7 @@ import type {
   EmploymentContractWorkHourDto,
   PostEmployeeInfoRequest,
 } from '@/types/employee'
+import type { ContractBonus } from '@/types/contract'
 
 // Step 1: 기본 정보
 interface StepOneData {
@@ -36,18 +37,45 @@ interface StepTwoData {
   hireDate: string
 }
 
+// Step 3: 급여 정보 (초대 경로에서 EmploymentContract 입력값을 유지)
+export interface StepThreeSalaryData {
+  timelyAmount: number
+  weeklyHours: number
+  monthlyTime: number
+  overtimeTime: number
+  nightTime: number
+  holidayTime: number
+  addHolidayTime: number
+  mealAllowance: number
+  mealIncluded: boolean
+  vehicleAllowance: number
+  vehicleIncluded: boolean
+  childcareAllowance: number
+  childcareIncluded: boolean
+  // 추가근무시급 (비포괄연봉제 / 파트타임)
+  weekdayHourlyWage: number
+  overtimeHourlyWage: number
+  holidayHourlyWage: number
+  // 상여금
+  bonuses: ContractBonus[]
+}
+
 // Step 4: 근무 시간
 interface StepFourData {
   workHours: EmploymentContractWorkHourDto[]
 }
 
 interface StaffInviteState {
+  currentStep: number
   stepOne: StepOneData
   stepTwo: StepTwoData
+  stepThreeSalary: StepThreeSalaryData
   stepFour: StepFourData
 
+  setCurrentStep: (step: number) => void
   setStepOne: (data: Partial<StepOneData>) => void
   setStepTwo: (data: Partial<StepTwoData>) => void
+  setStepThreeSalary: (data: Partial<StepThreeSalaryData>) => void
   setStepFour: (data: Partial<StepFourData>) => void
   reset: () => void
   toPostRequest: () => PostEmployeeInfoRequest | null
@@ -62,20 +90,27 @@ const DEFAULT_STEP_ONE: StepOneData = {
   mobilePhone: '',
 }
 
-const DEFAULT_STEP_TWO: StepTwoData = {
-  contractClassification: 'CNTCFWK_001',
-  nationalPensionEnrolled: true,
-  healthInsuranceEnrolled: true,
-  employmentInsuranceEnrolled: true,
-  workersCompensationEnrolled: true,
-  salaryCycle: 'SLRCC_002',
-  salaryMonth: 'SLRCF_002',
-  salaryDay: 5,
-  contractStartDate: '',
-  contractEndDate: '',
-  noEndDate: false,
-  jobDescription: '',
-  hireDate: '',
+function getToday(): string {
+  return new Date().toISOString().split('T')[0]
+}
+
+function createDefaultStepTwo(): StepTwoData {
+  const today = getToday()
+  return {
+    contractClassification: 'CNTCFWK_001',
+    nationalPensionEnrolled: true,
+    healthInsuranceEnrolled: true,
+    employmentInsuranceEnrolled: true,
+    workersCompensationEnrolled: true,
+    salaryCycle: 'SLRCC_001',
+    salaryMonth: 'SLRCF_002',
+    salaryDay: 5,
+    contractStartDate: today,
+    contractEndDate: '',
+    noEndDate: false,
+    jobDescription: '',
+    hireDate: today,
+  }
 }
 
 const DEFAULT_WORK_HOURS: EmploymentContractWorkHourDto[] = [
@@ -83,6 +118,26 @@ const DEFAULT_WORK_HOURS: EmploymentContractWorkHourDto[] = [
   { dayType: 'SATURDAY', isWork: false, isBreak: false, everySaturdayWork: true },
   { dayType: 'SUNDAY', isWork: false, isBreak: false, everySundayWork: true },
 ]
+
+const DEFAULT_STEP_THREE_SALARY: StepThreeSalaryData = {
+  timelyAmount: 0,
+  weeklyHours: 40,
+  monthlyTime: 0,
+  overtimeTime: 0,
+  nightTime: 0,
+  holidayTime: 0,
+  addHolidayTime: 0,
+  mealAllowance: 0,
+  mealIncluded: false,
+  vehicleAllowance: 0,
+  vehicleIncluded: false,
+  childcareAllowance: 0,
+  childcareIncluded: false,
+  weekdayHourlyWage: 0,
+  overtimeHourlyWage: 0,
+  holidayHourlyWage: 0,
+  bonuses: [],
+}
 
 const DEFAULT_STEP_FOUR: StepFourData = {
   workHours: DEFAULT_WORK_HOURS,
@@ -93,9 +148,14 @@ const NO_END_DATE_VALUE = '9999-12-31'
 export const useStaffInviteStore = create<StaffInviteState>()(
   devtools(
     (set, get) => ({
+      currentStep: 1,
       stepOne: { ...DEFAULT_STEP_ONE },
-      stepTwo: { ...DEFAULT_STEP_TWO },
+      stepTwo: createDefaultStepTwo(),
+      stepThreeSalary: { ...DEFAULT_STEP_THREE_SALARY },
       stepFour: { ...DEFAULT_STEP_FOUR },
+
+      setCurrentStep: (step) =>
+        set({ currentStep: step }, false, 'setCurrentStep'),
 
       setStepOne: (data) =>
         set(
@@ -111,6 +171,13 @@ export const useStaffInviteStore = create<StaffInviteState>()(
           'setStepTwo',
         ),
 
+      setStepThreeSalary: (data) =>
+        set(
+          (state) => ({ stepThreeSalary: { ...state.stepThreeSalary, ...data } }),
+          false,
+          'setStepThreeSalary',
+        ),
+
       setStepFour: (data) =>
         set(
           (state) => ({ stepFour: { ...state.stepFour, ...data } }),
@@ -121,8 +188,10 @@ export const useStaffInviteStore = create<StaffInviteState>()(
       reset: () =>
         set(
           {
+            currentStep: 1,
             stepOne: { ...DEFAULT_STEP_ONE },
-            stepTwo: { ...DEFAULT_STEP_TWO },
+            stepTwo: createDefaultStepTwo(),
+            stepThreeSalary: { ...DEFAULT_STEP_THREE_SALARY },
             stepFour: { ...DEFAULT_STEP_FOUR },
           },
           false,

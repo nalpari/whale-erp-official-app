@@ -1,11 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import InviteForm01 from './invite/InviteForm01'
 import InviteForm02 from './invite/InviteForm02'
 import InviteForm03 from './invite/InviteForm03'
 import InviteForm04 from './invite/InviteForm04'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
+import { usePopupControler } from '@/store/usePopupControler'
 import { useCreateEmployee } from '@/hooks/queries/use-employee-queries'
 import { getErrorMessage } from '@/lib/api'
 
@@ -22,7 +22,7 @@ function isStepValid(step: number, stepOne: StepOneData, stepTwo: StepTwoData, s
     if (stepOne.mobilePhone.replace(/[^0-9]/g, '').length < 10) return false
   }
   if (step === 2) {
-    if (!stepTwo.hireDate && !stepTwo.contractStartDate) return false
+    if (!stepTwo.hireDate) return false
     if (!stepTwo.contractStartDate) return false
     if (!stepTwo.noEndDate && !stepTwo.contractEndDate) return false
     if (!stepTwo.jobDescription.trim()) return false
@@ -40,13 +40,14 @@ function isStepValid(step: number, stepOne: StepOneData, stepTwo: StepTwoData, s
 
 export default function StaffInvite() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
-  const { stepOne, stepTwo, stepFour, toPostRequest, reset } = useStaffInviteStore()
-  const createMutation = useCreateEmployee()
+  const step = useStaffInviteStore((s) => s.currentStep)
+  const stepOne = useStaffInviteStore((s) => s.stepOne)
+  const stepTwo = useStaffInviteStore((s) => s.stepTwo)
+  const stepFour = useStaffInviteStore((s) => s.stepFour)
 
-  useEffect(() => {
-    return () => { reset() }
-  }, [reset])
+  const setStep = (s: number) => useStaffInviteStore.getState().setCurrentStep(s)
+  const { mutateAsync: createEmployee, isPending: isCreating } = useCreateEmployee()
+  const openAlert = usePopupControler((s) => s.openAlert)
 
   const canGoNext = isStepValid(step, stepOne, stepTwo, stepFour)
   const canInvite = isStepValid(1, stepOne, stepTwo, stepFour)
@@ -63,19 +64,28 @@ export default function StaffInvite() {
     setStep(step - 1)
   }
 
-  const handleInvite = async () => {
+  const handleInvite = () => {
+    const { toPostRequest } = useStaffInviteStore.getState()
     const request = toPostRequest()
     if (!request) return
-    if (!confirm(`${request.employeeName}님에게 초대 카카오톡을 발송할까요?`)) return
 
-    try {
-      await createMutation.mutateAsync(request)
-      alert('직원 초대가 완료되었습니다.')
-      reset()
-      router.push('/staff')
-    } catch (error) {
-      alert(getErrorMessage(error, '직원 초대에 실패했습니다.'))
-    }
+    openAlert({
+      message: `${request.employeeName}님에게 초대 카카오톡을 발송할까요?`,
+      confirmText: '초대하기',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await createEmployee(request)
+          useStaffInviteStore.getState().reset()
+          router.push('/staff')
+        } catch (error) {
+          openAlert({
+            message: getErrorMessage(error, '직원 초대에 실패했습니다.'),
+            confirmText: '확인',
+          })
+        }
+      },
+    })
   }
 
   return (
@@ -94,9 +104,9 @@ export default function StaffInvite() {
             <button
               className="btn-form block blue"
               onClick={handleInvite}
-              disabled={!canInvite}
+              disabled={!canInvite || isCreating}
             >
-              초대하기
+              {isCreating ? '초대 중...' : '초대하기'}
             </button>
           </div>
         )}

@@ -1,17 +1,13 @@
 'use client'
+import { useState } from 'react'
 import { Tooltip } from 'react-tooltip'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
+import { useCommonCodeHierarchy } from '@/hooks/queries/use-common-code-queries'
 import type { ContractClassificationType, SalaryCycle, SalaryMonth } from '@/types/employee'
 
-const CONTRACT_CLASSIFICATION_OPTIONS: { label: string; value: ContractClassificationType }[] = [
-  { label: '포괄연봉제', value: 'CNTCFWK_001' },
-  { label: '비포괄연봉제', value: 'CNTCFWK_002' },
-  { label: '파트타임', value: 'CNTCFWK_003' },
-]
-
 const SALARY_CYCLE_OPTIONS: { label: string; value: SalaryCycle }[] = [
-  { label: '월급', value: 'SLRCC_002' },
-  { label: '시급', value: 'SLRCC_001' },
+  { label: '월급', value: 'SLRCC_001' },
+  { label: '시급', value: 'SLRCC_002' },
 ]
 
 const SALARY_MONTH_OPTIONS: { label: string; value: SalaryMonth }[] = [
@@ -29,6 +25,9 @@ const JOB_DESCRIPTION_OPTIONS = [
 
 export default function InviteForm02() {
   const { stepTwo, setStepTwo } = useStaffInviteStore()
+  const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK')
+  const [isCustomInput, setIsCustomInput] = useState(false)
+  const [customText, setCustomText] = useState('')
 
   const selectedJobs = stepTwo.jobDescription
     ? stepTwo.jobDescription.split(',').map((s) => s.trim()).filter(Boolean)
@@ -39,6 +38,24 @@ export default function InviteForm02() {
       ? selectedJobs.filter((j) => j !== job)
       : [...selectedJobs, job]
     setStepTwo({ jobDescription: newJobs.join(', ') })
+  }
+
+  const toggleCustomInput = () => {
+    if (isCustomInput) {
+      // 직접입력 → 버튼 선택 모드: 직접입력 텍스트 초기화 + jobDescription 클리어
+      setIsCustomInput(false)
+      setCustomText('')
+      setStepTwo({ jobDescription: '' })
+    } else {
+      // 버튼 선택 → 직접입력 모드: 기존 버튼 선택값 초기화
+      setIsCustomInput(true)
+      setStepTwo({ jobDescription: '' })
+    }
+  }
+
+  const handleCustomTextChange = (text: string) => {
+    setCustomText(text)
+    setStepTwo({ jobDescription: text })
   }
 
   return (
@@ -74,7 +91,7 @@ export default function InviteForm02() {
                   type="date"
                   className="date-picker-input"
                   value={stepTwo.contractStartDate}
-                  onChange={(e) => setStepTwo({ contractStartDate: e.target.value })}
+                  onChange={(e) => setStepTwo({ contractStartDate: e.target.value, hireDate: e.target.value })}
                 />
               </div>
               <span>~</span>
@@ -101,21 +118,29 @@ export default function InviteForm02() {
               {JOB_DESCRIPTION_OPTIONS.map((job) => (
                 <button
                   key={job}
-                  className={`radio-btn block blue${selectedJobs.includes(job) ? ' act' : ''}`}
-                  onClick={() => toggleJobDescription(job)}
+                  className={`radio-btn block blue${!isCustomInput && selectedJobs.includes(job) ? ' act' : ''}`}
+                  onClick={() => { if (!isCustomInput) toggleJobDescription(job) }}
                 >
                   {job}
                 </button>
               ))}
+              <button
+                className={`radio-btn block blue${isCustomInput ? ' act' : ''}`}
+                onClick={toggleCustomInput}
+              >
+                직접입력
+              </button>
             </div>
-            <div className="block">
-              <textarea
-                className="textarea-form"
-                placeholder="업무 내용을 직접 입력해주세요."
-                value={stepTwo.jobDescription}
-                onChange={(e) => setStepTwo({ jobDescription: e.target.value })}
-              ></textarea>
-            </div>
+            {isCustomInput && (
+              <div className="block">
+                <textarea
+                  className="textarea-form"
+                  placeholder="업무 내용을 직접 입력해주세요."
+                  value={customText}
+                  onChange={(e) => handleCustomTextChange(e.target.value)}
+                ></textarea>
+              </div>
+            )}
           </div>
         </div>
 
@@ -149,15 +174,17 @@ export default function InviteForm02() {
               <select
                 className="select-form"
                 value={stepTwo.contractClassification}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const val = e.target.value as ContractClassificationType
                   setStepTwo({
-                    contractClassification: e.target.value as ContractClassificationType,
+                    contractClassification: val,
+                    salaryCycle: val === 'CNTCFWK_003' ? 'SLRCC_002' : 'SLRCC_001',
                   })
-                }
+                }}
               >
-                {CONTRACT_CLASSIFICATION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                {contractClassifications.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.name}
                   </option>
                 ))}
               </select>
@@ -216,6 +243,7 @@ export default function InviteForm02() {
                 onChange={(e) =>
                   setStepTwo({ salaryCycle: e.target.value as SalaryCycle })
                 }
+                disabled
               >
                 {SALARY_CYCLE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>

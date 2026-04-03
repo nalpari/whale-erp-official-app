@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useEmployeeSearchStore } from '@/store/useEmployeeSearchStore'
 import { useEmployeeCommonCode } from '@/hooks/queries/use-employee-queries'
+import { useCommonCodeHierarchy } from '@/hooks/queries/use-common-code-queries'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { Sheet } from 'react-modal-sheet'
@@ -22,12 +23,6 @@ const MEMBER_STATUS_OPTIONS = [
   { label: '회원탈퇴', value: '회원탈퇴' },
 ]
 
-const CONTRACT_CLASSIFICATION_OPTIONS = [
-  { label: '선택', value: '' },
-  { label: '정직원', value: 'CNTCFWK_001' },
-  { label: '계약직', value: 'CNTCFWK_002' },
-  { label: '파트타이머', value: 'CNTCFWK_003' },
-]
 
 export default function StaffSearchSheet() {
   const staffSearchSheet = useBottomSheetControler(
@@ -36,13 +31,16 @@ export default function StaffSearchSheet() {
   const setStaffSearchSheet = useBottomSheetControler(
     (state) => state.setStaffSearchSheet,
   )
-  const { searchParams, setSearchParams, search, reset } = useEmployeeSearchStore()
+  const setSearchParams = useEmployeeSearchStore((state) => state.setSearchParams)
+  const searchAction = useEmployeeSearchStore((state) => state.search)
+  const resetAction = useEmployeeSearchStore((state) => state.reset)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const effectiveHeadOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? undefined
 
   const { data: commonCode } = useEmployeeCommonCode(effectiveHeadOfficeId)
   const employeeClassifications = commonCode?.codeMemoContent?.EMPLOYEE ?? []
+  const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK')
 
   // 로컬 필터 상태 — 스토어 값을 초기값으로 사용
   const [workStatus, setWorkStatus] = useState<EmployeeWorkStatus | undefined>(undefined)
@@ -56,8 +54,9 @@ export default function StaffSearchSheet() {
   const [healthCheckExpiryFrom, setHealthCheckExpiryFrom] = useState('')
   const [healthCheckExpiryTo, setHealthCheckExpiryTo] = useState('')
 
-  // 바텀시트 열릴 때 스토어 값으로 동기화 (key 리마운트 방식)
+  // 바텀시트 열릴 때 스토어 값으로 동기화
   const syncFromStore = () => {
+    const { searchParams } = useEmployeeSearchStore.getState()
     setWorkStatus(searchParams.workStatus)
     setEmployeeName(searchParams.employeeName ?? '')
     setEmployeeClassification(searchParams.employeeClassification ?? '')
@@ -87,12 +86,12 @@ export default function StaffSearchSheet() {
       healthCheckExpiryFrom: healthCheckExpiryFrom || undefined,
       healthCheckExpiryTo: healthCheckExpiryTo || undefined,
     })
-    search()
+    searchAction()
     handleClose()
   }
 
   const handleReset = () => {
-    reset()
+    resetAction()
     handleClose()
   }
 
@@ -166,9 +165,10 @@ export default function StaffSearchSheet() {
                       value={contractClassification}
                       onChange={(e) => setContractClassification(e.target.value)}
                     >
-                      {CONTRACT_CLASSIFICATION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      <option value="">선택</option>
+                      {contractClassifications.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.name}
                         </option>
                       ))}
                     </select>
