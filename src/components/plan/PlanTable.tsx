@@ -23,11 +23,15 @@ export default function PlanTable() {
   const searchDayType = usePlanSearchStore((s) => s.dayType)
   const storeFrom = usePlanSearchStore((s) => s.from)
   const storeTo = usePlanSearchStore((s) => s.to)
+  const hasSearched = usePlanSearchStore((s) => s.hasSearched)
+  const defaultFrom = getMonday()
+  const defaultTo = getSunday()
   // store가 빈 값(초기 상태)이면 이번 주로 폴백 — stale 날짜 방지
-  const searchFrom = storeFrom || getMonday()
-  const searchTo = storeTo || getSunday()
-  // 기간/직원명/요일 등 검색 조건이 하나라도 있으면 하이라이트
-  const hasFilter = !!(storeFrom || storeTo || searchEmployeeName || searchDayType)
+  const searchFrom = storeFrom || defaultFrom
+  const searchTo = storeTo || defaultTo
+  const hasCustomDateRange = searchFrom !== defaultFrom || searchTo !== defaultTo
+  // 기본 조회 기간은 필터로 보지 않고, 사용자가 적용한 추가 조건만 하이라이트
+  const hasFilter = hasSearched && !!(searchEmployeeName || searchDayType || hasCustomDateRange)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOfficeId = useStoreStore((state) => state.selectedHeadOffice?.id ?? null)
   const selectedStoreId = useStoreStore((state) => state.selectedStore?.id ?? null)
@@ -58,7 +62,10 @@ export default function PlanTable() {
 
   // 1단계: 엑셀 검증
   const handleValidateExcel = async (file: File) => {
-    if (!storeId) return
+    if (!storeId) {
+      openAlert({ message: '점포를 먼저 선택해주세요.' })
+      return
+    }
     try {
       const result = await validateExcel({ storeId, file })
       setValidationResult(result)
@@ -77,7 +84,14 @@ export default function PlanTable() {
 
   // 2단계: 검증 성공 데이터 저장 (replaceMode)
   const handleSaveValidated = async () => {
-    if (!storeId || !validationResult?.valid || !validationResult.schedules) return
+    if (!storeId) {
+      openAlert({ message: '점포를 먼저 선택해주세요.' })
+      return
+    }
+    if (!validationResult?.valid || !validationResult.schedules) {
+      openAlert({ message: '검증이 완료된 엑셀 파일만 저장할 수 있습니다.' })
+      return
+    }
     try {
       await upsertSchedule({ storeId, data: validationResult.schedules, replaceMode: true })
       openAlert({
@@ -154,7 +168,17 @@ export default function PlanTable() {
     )
   }
 
-  // 계획 수��� 이동
+  if (mounted && !storeId) {
+    return (
+      <div className="container">
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ color: "#888" }}>점포를 선택해주세요.</div>
+        </div>
+      </div>
+    )
+  }
+
+  // 계획 수립/수정 페이지 이동
   const handleGoToEdit = (editStoreId?: number | null, date?: string) => {
     const targetStoreId = editStoreId ?? selectedStoreId
     if (!targetStoreId) {

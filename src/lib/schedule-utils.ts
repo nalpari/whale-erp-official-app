@@ -3,11 +3,15 @@ import type { WorkerResponse, WorkerIconType, ScheduleContractType } from '@/typ
 // ── 계약유형 검증 ──
 
 const VALID_CONTRACT_TYPES: readonly ScheduleContractType[] = ['정직원', '계약직', '수습', '파트타이머', '임시근무']
+const SORT_LAST_TIME = '99:99'
 
 /** 서버 응답 문자열을 ScheduleContractType으로 안전하게 변환 (유효하지 않으면 기본값 '정직원') */
 export function toContractType(value: string | undefined | null): ScheduleContractType {
   if (value && (VALID_CONTRACT_TYPES as readonly string[]).includes(value)) {
     return value as ScheduleContractType
+  }
+  if (value) {
+    console.warn('[toContractType] 알 수 없는 계약 유형입니다. 기본값 정직원으로 대체합니다:', value)
   }
   return '정직원'
 }
@@ -78,8 +82,8 @@ export function sortWorkers<T extends Pick<WorkerResponse, 'workStartTime' | 'co
   return [...workers]
     .filter((w) => !w.isDeleted)
     .sort((a, b) => {
-      const timeA = a.workStartTime ?? '99:99'
-      const timeB = b.workStartTime ?? '99:99'
+      const timeA = a.workStartTime ?? SORT_LAST_TIME
+      const timeB = b.workStartTime ?? SORT_LAST_TIME
       if (timeA !== timeB) return timeA.localeCompare(timeB)
       return (CONTRACT_ORDER[a.contractType] ?? 99) - (CONTRACT_ORDER[b.contractType] ?? 99)
     })

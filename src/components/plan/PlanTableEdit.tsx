@@ -34,6 +34,14 @@ function createDateRange(from: string, to: string) {
   return dates
 }
 
+function navigateToPlanList(router: ReturnType<typeof useRouter>) {
+  try {
+    router.push(PLAN_LIST_PATH)
+  } catch (err) {
+    console.error('[PlanTableEdit] 목록 이동 실패:', err)
+  }
+}
+
 export default function PlanTableEdit() {
   const router = useRouter()
   const queryParams = useSearchParams()
@@ -74,7 +82,7 @@ export default function PlanTableEdit() {
         message: '입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?',
         confirmText: '이동',
         cancelText: '취소',
-        onConfirm: () => router.push(PLAN_LIST_PATH),
+        onConfirm: () => navigateToPlanList(router),
       })
     })
     return () => {
@@ -279,7 +287,7 @@ export default function PlanTableEdit() {
       await upsertSchedule({ storeId, data: requests })
       openAlert({
         message: '근무 계획이 저장되었습니다.',
-        onConfirm: () => router.push(PLAN_LIST_PATH),
+        onConfirm: () => navigateToPlanList(router),
       })
     } catch (err) {
       console.error('[PlanTableEdit] 근무 계획 저장 실패:', err)
@@ -295,7 +303,7 @@ export default function PlanTableEdit() {
       message: '입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?',
       confirmText: '이동',
       cancelText: '취소',
-      onConfirm: () => router.push(PLAN_LIST_PATH),
+      onConfirm: () => navigateToPlanList(router),
     })
   }
 
@@ -317,16 +325,12 @@ export default function PlanTableEdit() {
       return sorted.filter((w) => {
         const isEmployee = !!w.workerId
         const isTemp = !w.workerId
+        const matchesEmployee =
+          filterWorkerId !== null && isEmployee && w.workerId === filterWorkerId
+        const matchesTempWorker =
+          !!filterTempName && isTemp && w.workerName.includes(filterTempName)
 
-        if (filterWorkerId !== null && (!isEmployee || w.workerId !== filterWorkerId)) {
-          return false
-        }
-
-        if (filterTempName && (!isTemp || !w.workerName.includes(filterTempName))) {
-          return false
-        }
-
-        return true
+        return matchesEmployee || matchesTempWorker
       })
     },
     [filterWorkerId, filterTempName],

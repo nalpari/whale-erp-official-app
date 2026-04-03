@@ -12,6 +12,8 @@ interface WorkerSheetContext {
 type WorkerAddCallback = (worker: WorkerEditItem, fromDate: string, toDate: string) => void
 type WorkerReplaceCallback = (newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => void
 type WorkerSearchFilters = { workerId: number | null; tempWorkerName: string }
+// 점포 영업시간 시트의 "--:--" 선택이 null을 전달하므로 nullable 유지
+type TimeSelectCallback = (time: string | null) => void
 
 type BottomSheetControlerState = {
   workerSheetContext: WorkerSheetContext
@@ -80,8 +82,8 @@ type BottomSheetControlerState = {
   setTimePickerSheet: (isOpen: boolean) => void
   timePickerTitle: string
   timePickerValue: string
-  onTimeSelect: ((time: string | null) => void) | null
-  openTimePicker: (title: string, currentValue: string, onSelect: (time: string | null) => void) => void
+  onTimeSelect: TimeSelectCallback | null
+  openTimePicker: (title: string, currentValue: string, onSelect: TimeSelectCallback) => void
 }
 
 export const useBottomSheetControler = create<BottomSheetControlerState>()(
@@ -249,7 +251,7 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
       timePickerTitle: '',
       timePickerValue: '',
       onTimeSelect: null,
-      openTimePicker: (title: string, currentValue: string, onSelect: (time: string | null) => void) =>
+      openTimePicker: (title: string, currentValue: string, onSelect: TimeSelectCallback) =>
         set(
           { timePickerSheet: true, timePickerTitle: title, timePickerValue: currentValue, onTimeSelect: onSelect },
           false,

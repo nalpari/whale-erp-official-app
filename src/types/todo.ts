@@ -1,3 +1,5 @@
+import type { ScheduleContractType } from '@/types/schedule'
+
 export interface CalendarDayData {
   day: number;
   totalCount: number;
@@ -48,7 +50,7 @@ export interface EmployeeOption {
   memberId: number | null;
   employeeNumber: string;
   employeeName: string;
-  contractType?: string;
+  contractType?: ScheduleContractType;
   headOfficeName: string;
   franchiseName: string | null;
   storeName: string | null;
