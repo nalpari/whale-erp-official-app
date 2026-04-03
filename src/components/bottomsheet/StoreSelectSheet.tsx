@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { useHeadOffices, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { useQueryClient } from '@tanstack/react-query'
 import { todoKeys } from '@/hooks/queries/use-todo-queries'
@@ -60,10 +61,17 @@ export default function StoreSelectSheet() {
     try {
       const office = headOffices.find((o) => o.id === localOfficeId) ?? null
       const store = storeOptions.find((s) => s.id === localStoreId) ?? null
+      const prevOfficeId = selectedHeadOffice?.id ?? null
+      const nextOfficeId = office?.id ?? null
+      const prevStoreId = selectedStore?.id ?? null
+      const nextStoreId = store?.id ?? null
       setSelection(office, store)
       // 본사/점포 변경 시 관련 캐시 모두 무효화
       queryClient.removeQueries({ queryKey: todoKeys.employeesAll })
       queryClient.removeQueries({ queryKey: scheduleKeys.all })
+      if (prevOfficeId !== nextOfficeId || prevStoreId !== nextStoreId) {
+        usePlanSearchStore.getState().reset()
+      }
     } catch (err) {
       console.error('[StoreSelectSheet] 점포 선택 실패:', err)
     } finally {
