@@ -59,8 +59,13 @@ export default function AddressSearchPop() {
       new window.daum.Postcode({
         oncomplete: (data: DaumPostcodeResult) => {
           const fullAddress = data.roadAddress || data.address;
-          onAddressSelect?.(fullAddress);
-          handleClose();
+          try {
+            onAddressSelect?.(fullAddress);
+          } catch (err) {
+            console.error("[AddressSearchPop] 주소 선택 콜백 실패:", err);
+          } finally {
+            handleClose();
+          }
         },
         width: "100%",
         height: "100%",

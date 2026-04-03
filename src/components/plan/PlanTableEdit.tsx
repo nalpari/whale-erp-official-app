@@ -130,28 +130,49 @@ export default function PlanTableEdit() {
     return state
   }, [scheduleList, params.from, params.to])
 
-  // EditState: 사용자 편집 상태 (초기값은 API 데이터 기반)
-  const [editState, setEditState] = useState<Map<string, WorkerEditItem[]>>(new Map())
-  const [initialized, setInitialized] = useState(false)
+  const editScopeKey = `${storeId ?? 'none'}:${params.from}:${params.to}:${editDate ?? 'range'}`
+  const [editSession, setEditSession] = useState<{
+    scopeKey: string
+    data: Map<string, WorkerEditItem[]>
+    initialized: boolean
+  }>({
+    scopeKey: editScopeKey,
+    data: new Map(),
+    initialized: false,
+  })
+  const scopedEditSession =
+    editSession.scopeKey === editScopeKey
+      ? editSession
+      : { scopeKey: editScopeKey, data: new Map<string, WorkerEditItem[]>(), initialized: false }
 
   // 사용자가 아직 편집하지 않았으면 서버 데이터(initialEditState)를 그대로 표시
-  const effectiveEditState = (!initialized && initialEditState.size > 0) ? initialEditState : editState
+  const effectiveEditState =
+    !scopedEditSession.initialized && initialEditState.size > 0
+      ? initialEditState
+      : scopedEditSession.data
 
   // 수립 페이지 필터
-  const [filterEmployeeName, setFilterEmployeeName] = useState('')
+  const [filterWorkerId, setFilterWorkerId] = useState<number | null>(null)
   const [filterTempName, setFilterTempName] = useState('')
 
   // 날짜별 근무자 업데이트 헬퍼
   const updateWorkers = useCallback((date: string, updater: (workers: WorkerEditItem[]) => WorkerEditItem[]) => {
-    setInitialized(true)
-    setEditState((prev) => {
-      const base = prev.size > 0 ? prev : initialEditState
+    setEditSession((prev) => {
+      const currentSession =
+        prev.scopeKey === editScopeKey
+          ? prev
+          : { scopeKey: editScopeKey, data: new Map<string, WorkerEditItem[]>(), initialized: false }
+      const base = currentSession.data.size > 0 ? currentSession.data : initialEditState
       const next = new Map(base)
       const current = next.get(date) ?? []
       next.set(date, updater(current))
-      return next
+      return {
+        scopeKey: editScopeKey,
+        data: next,
+        initialized: true,
+      }
     })
-  }, [initialEditState])
+  }, [editScopeKey, initialEditState])
 
   // 근무자 필드 업데이트
   const updateWorkerField = useCallback(
@@ -176,19 +197,26 @@ export default function PlanTableEdit() {
   // 근무자 추가 (기간 내 날짜에만 추가)
   const handleAddWorker = useCallback(
     (worker: WorkerEditItem, fromDate: string, toDate: string) => {
-      setInitialized(true)
-      setEditState((prev) => {
-        const base = prev.size > 0 ? prev : initialEditState
+      setEditSession((prev) => {
+        const currentSession =
+          prev.scopeKey === editScopeKey
+            ? prev
+            : { scopeKey: editScopeKey, data: new Map<string, WorkerEditItem[]>(), initialized: false }
+        const base = currentSession.data.size > 0 ? currentSession.data : initialEditState
         const next = new Map(base)
         for (const [date, workers] of next) {
           if (date >= fromDate && date <= toDate) {
             next.set(date, [...workers, { ...worker }])
           }
         }
-        return next
+        return {
+          scopeKey: editScopeKey,
+          data: next,
+          initialized: true,
+        }
       })
     },
-    [initialEditState],
+    [editScopeKey, initialEditState],
   )
 
   // 근무자 교체
@@ -278,33 +306,30 @@ export default function PlanTableEdit() {
   )
 
   // 검색 필터 적용 여부
-  const hasWorkerFilter = !!(filterEmployeeName || filterTempName)
+  const hasWorkerFilter = filterWorkerId !== null || !!filterTempName
 
   // 검색 필터
   const filterWorkers = useCallback(
     (workers: WorkerEditItem[]) => {
       const sorted = sortWorkers(workers)
-      if (!filterEmployeeName && !filterTempName) return sorted
+      if (filterWorkerId === null && !filterTempName) return sorted
 
       return sorted.filter((w) => {
         const isEmployee = !!w.workerId
         const isTemp = !w.workerId
 
-        // 직원명 필터: 등록된 직원 대상 (workerId가 있는 근무자)
-        if (filterEmployeeName && isEmployee) {
-          return w.workerName === filterEmployeeName
+        if (filterWorkerId !== null && (!isEmployee || w.workerId !== filterWorkerId)) {
+          return false
         }
-        // 임시근무자명 필터: workerId 없는 임시근무만 대상
-        if (filterTempName && isTemp) {
-          return w.workerName.includes(filterTempName)
+
+        if (filterTempName && (!isTemp || !w.workerName.includes(filterTempName))) {
+          return false
         }
-        // 필터 대상이 아닌 유형은 필터가 해당 유형만 걸렸을 때 숨김
-        if (filterEmployeeName && isTemp) return !filterTempName // 임시 필터 없으면 표시
-        if (filterTempName && isEmployee) return !filterEmployeeName // 직원 필터 없으면 표시
+
         return true
       })
     },
-    [filterEmployeeName, filterTempName],
+    [filterWorkerId, filterTempName],
   )
 
   const totalCount = sortedEntries.reduce(
@@ -385,11 +410,11 @@ export default function PlanTableEdit() {
             <button
               className={`search-btn${hasWorkerFilter ? ' filtered' : ''}`}
               onClick={() => openWorkerSearchSheet(
-                ({ employeeName, tempWorkerName }) => {
-                  setFilterEmployeeName(employeeName)
+                ({ workerId, tempWorkerName }) => {
+                  setFilterWorkerId(workerId)
                   setFilterTempName(tempWorkerName)
                 },
-                { employeeName: filterEmployeeName, tempWorkerName: filterTempName },
+                { workerId: filterWorkerId, tempWorkerName: filterTempName },
               )}
             >
               <i className="icon-search"></i>

@@ -10,8 +10,11 @@ export default function WorkerSearchSheet() {
   const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
   const initial = useBottomSheetControler((state) => state.workerSearchInitial)
 
-  const [selectedEmployeeName, setSelectedEmployeeName] = useState('')
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null)
   const [tempWorkerName, setTempWorkerName] = useState('')
+  const registeredEmployees = employees.filter(
+    (emp): emp is typeof emp & { memberId: number } => emp.memberId !== null,
+  )
 
   const handleClose = () => {
     setWorkerSearchSheet(false)
@@ -19,13 +22,13 @@ export default function WorkerSearchSheet() {
 
   // 바텀시트 열릴 때 기존 검색 조건 복원
   const handleOpenStart = () => {
-    setSelectedEmployeeName(initial.employeeName)
+    setSelectedWorkerId(initial.workerId)
     setTempWorkerName(initial.tempWorkerName)
   }
 
   const handleSearch = () => {
     try {
-      onWorkerSearch?.({ employeeName: selectedEmployeeName, tempWorkerName })
+      onWorkerSearch?.({ workerId: selectedWorkerId, tempWorkerName })
     } catch (err) {
       console.error('[WorkerSearchSheet] 검색 콜백 실행 실패:', err)
     } finally {
@@ -34,7 +37,7 @@ export default function WorkerSearchSheet() {
   }
 
   const handleReset = () => {
-    setSelectedEmployeeName('')
+    setSelectedWorkerId(null)
     setTempWorkerName('')
   }
 
@@ -60,12 +63,12 @@ export default function WorkerSearchSheet() {
                   <div className="block">
                     <select
                       className="select-form"
-                      value={selectedEmployeeName}
-                      onChange={(e) => setSelectedEmployeeName(e.target.value)}
+                      value={selectedWorkerId ?? ''}
+                      onChange={(e) => setSelectedWorkerId(e.target.value ? Number(e.target.value) : null)}
                     >
                       <option value="">전체</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.name}>
+                      {registeredEmployees.map((emp) => (
+                        <option key={emp.id} value={emp.memberId}>
                           {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}
                         </option>
                       ))}

@@ -79,10 +79,11 @@ export default function TodoContents() {
         });
       } catch (err) {
         console.error('[TodoContents] 월별 데이터 조회 실패:', { year: y, month: m }, err);
+        openAlert({ message: "일정을 불러오지 못했습니다. 다시 시도해주세요." });
         return [];
       }
     },
-    [headOfficeId, storeId]
+    [headOfficeId, openAlert, storeId]
   );
 
   // 날짜 변경
@@ -111,7 +112,14 @@ export default function TodoContents() {
         message: "해당 할 일을 삭제하시겠습니까?",
         confirmText: "삭제",
         cancelText: "취소",
-        onConfirm: () => deleteTodos([todoId]),
+        onConfirm: async () => {
+          try {
+            await deleteTodos([todoId]);
+          } catch (err) {
+            console.error("[TodoContents] 삭제 실패:", err);
+            openAlert({ message: "삭제에 실패했습니다. 다시 시도해주세요." });
+          }
+        },
       });
     },
     [openAlert, deleteTodos]

@@ -4,6 +4,7 @@ import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { usePlanSearchStore } from '@/store/usePlanSearchStore'
 import { Sheet } from 'react-modal-sheet'
 import { DAY_OPTIONS, getMonday, getSunday } from '@/lib/schedule-utils'
+import './css/date-input-fix.scss'
 
 export default function PlanTableSearchSheet() {
   const planSearchSheet = useBottomSheetControler((state) => state.planSearchSheet)

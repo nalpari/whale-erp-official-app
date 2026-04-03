@@ -11,7 +11,7 @@ interface WorkerSheetContext {
 // 바텀시트 콜백 타입 별칭
 type WorkerAddCallback = (worker: WorkerEditItem, fromDate: string, toDate: string) => void
 type WorkerReplaceCallback = (newWorkerId: number, newWorkerName: string, newContractType: ScheduleContractType) => void
-type WorkerSearchFilters = { employeeName: string; tempWorkerName: string }
+type WorkerSearchFilters = { workerId: number | null; tempWorkerName: string }
 
 type BottomSheetControlerState = {
   workerSheetContext: WorkerSheetContext
@@ -104,12 +104,12 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
       openWorkerDeleteSheet: (worker, date, onDelete) =>
         set({ workerDeleteSheet: true, workerSheetContext: { worker, date }, onWorkerDelete: onDelete }, false, 'bottomSheet/openWorkerDelete'),
       onWorkerSearch: null,
-      workerSearchInitial: { employeeName: '', tempWorkerName: '' },
+      workerSearchInitial: { workerId: null, tempWorkerName: '' },
       openWorkerSearchSheet: (onSearch, initial) =>
         set({
           workerSearchSheet: true,
           onWorkerSearch: onSearch,
-          workerSearchInitial: initial ?? { employeeName: '', tempWorkerName: '' },
+          workerSearchInitial: initial ?? { workerId: null, tempWorkerName: '' },
         }, false, 'bottomSheet/openWorkerSearch'),
       workerSheetEmployees: [],
       setWorkerSheetEmployees: (employees) =>

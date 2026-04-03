@@ -1,5 +1,6 @@
 'use client'
 import { DEFAULT_WORK_START, DEFAULT_WORK_END, DEFAULT_BREAK_START, DEFAULT_BREAK_END } from '@/lib/schedule-utils'
+import './css/date-input-fix.scss'
 
 interface WorkScheduleFieldsProps {
   fromDate: string
