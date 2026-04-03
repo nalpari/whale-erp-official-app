@@ -9,8 +9,8 @@ import 'swiper/css'
 import 'swiper/css/pagination'
 
 export default function TimeSelectSheet() {
-  const timePickerSheet = useBottomSheetControler((state) => state.timePickerSheet)
-  const setTimePickerSheet = useBottomSheetControler((state) => state.setTimePickerSheet)
+  const timeSelectSheet = useBottomSheetControler((state) => state.timeSelectSheet)
+  const setTimeSelectSheet = useBottomSheetControler((state) => state.setTimeSelectSheet)
   const timePickerTitle = useBottomSheetControler((state) => state.timePickerTitle)
   const timePickerValue = useBottomSheetControler((state) => state.timePickerValue)
   const onTimeSelect = useBottomSheetControler((state) => state.onTimeSelect)
@@ -44,7 +44,7 @@ export default function TimeSelectSheet() {
   }, [timePickerValue])
 
   const handleClose = () => {
-    setTimePickerSheet(false)
+    setTimeSelectSheet(false)
   }
 
   const handleSave = () => {
@@ -61,7 +61,7 @@ export default function TimeSelectSheet() {
 
   return (
     <Sheet
-      isOpen={timePickerSheet}
+      isOpen={timeSelectSheet}
       onClose={handleClose}
       onOpenStart={handleOpenStart}
       detent="content"
