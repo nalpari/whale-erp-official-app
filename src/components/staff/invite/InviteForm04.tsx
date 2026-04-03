@@ -11,7 +11,6 @@ const WEEKDAYS = [
   { label: '금', dayType: 'FRIDAY' },
 ] as const
 
-/** workHours 배열에서 특정 dayType의 데이터를 찾거나 기본값 반환 */
 const findWorkHour = (
   workHours: EmploymentContractWorkHourDto[],
   dayType: string,
@@ -25,15 +24,20 @@ const findWorkHour = (
   )
 }
 
-/** HH:mm:ss → HH:mm 표시 */
 const formatTime = (time?: string | null) => {
   if (!time) return '시간 선택'
   return time.slice(0, 5)
 }
 
+/** HH:mm → HH:mm:ss */
+const toTimeString = (time: string | null): string | null => {
+  if (!time) return null
+  return time.length === 5 ? `${time}:00` : time
+}
+
 export default function InviteForm04() {
-  const setTimeSelectSheet = useBottomSheetControler(
-    (state) => state.setTimeSelectSheet,
+  const openTimePicker = useBottomSheetControler(
+    (state) => state.openTimePicker,
   )
   const { stepFour, setStepFour } = useStaffInviteStore()
   const { workHours } = stepFour
@@ -50,6 +54,18 @@ export default function InviteForm04() {
       wh.dayType === dayType ? { ...wh, ...updates } : wh,
     )
     setStepFour({ workHours: newWorkHours })
+  }
+
+  const openTimeFor = (
+    dayType: string,
+    field: 'workStartTime' | 'workEndTime' | 'breakStartTime' | 'breakEndTime',
+    title: string,
+  ) => {
+    const wh = findWorkHour(workHours, dayType)
+    const current = wh[field] ? formatTime(wh[field]) : ''
+    openTimePicker(title, current, (time) => {
+      updateWorkHour(dayType, { [field]: toTimeString(time) })
+    })
   }
 
   return (
@@ -69,7 +85,7 @@ export default function InviteForm04() {
               <div className="block mb8">
                 <button
                   className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  onClick={() => openTimeFor('WEEKDAY', 'workStartTime', '평일 시작시간')}
                 >
                   {formatTime(weekdayData.workStartTime)}
                 </button>
@@ -77,7 +93,7 @@ export default function InviteForm04() {
               <div className="block">
                 <button
                   className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  onClick={() => openTimeFor('WEEKDAY', 'workEndTime', '평일 종료시간')}
                 >
                   {formatTime(weekdayData.workEndTime)}
                 </button>
@@ -90,7 +106,7 @@ export default function InviteForm04() {
               <div className="block mb8">
                 <button
                   className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  onClick={() => openTimeFor('WEEKDAY', 'breakStartTime', '평일 휴게 시작')}
                 >
                   {formatTime(weekdayData.breakStartTime)}
                 </button>
@@ -98,7 +114,7 @@ export default function InviteForm04() {
               <div className="block">
                 <button
                   className="select-form al-l"
-                  onClick={() => setTimeSelectSheet(true)}
+                  onClick={() => openTimeFor('WEEKDAY', 'breakEndTime', '평일 휴게 종료')}
                 >
                   {formatTime(weekdayData.breakEndTime)}
                 </button>
@@ -157,7 +173,7 @@ export default function InviteForm04() {
                 <div className="block mb8">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SATURDAY', 'workStartTime', '토요일 시작시간')}
                   >
                     {formatTime(saturdayData.workStartTime)}
                   </button>
@@ -165,7 +181,7 @@ export default function InviteForm04() {
                 <div className="block">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SATURDAY', 'workEndTime', '토요일 종료시간')}
                   >
                     {formatTime(saturdayData.workEndTime)}
                   </button>
@@ -180,7 +196,7 @@ export default function InviteForm04() {
                 <div className="block mb8">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SATURDAY', 'breakStartTime', '토요일 휴게 시작')}
                   >
                     {formatTime(saturdayData.breakStartTime)}
                   </button>
@@ -188,7 +204,7 @@ export default function InviteForm04() {
                 <div className="block">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SATURDAY', 'breakEndTime', '토요일 휴게 종료')}
                   >
                     {formatTime(saturdayData.breakEndTime)}
                   </button>
@@ -255,7 +271,7 @@ export default function InviteForm04() {
                 <div className="block mb8">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SUNDAY', 'workStartTime', '일요일 시작시간')}
                   >
                     {formatTime(sundayData.workStartTime)}
                   </button>
@@ -263,7 +279,7 @@ export default function InviteForm04() {
                 <div className="block">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SUNDAY', 'workEndTime', '일요일 종료시간')}
                   >
                     {formatTime(sundayData.workEndTime)}
                   </button>
@@ -278,7 +294,7 @@ export default function InviteForm04() {
                 <div className="block mb8">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SUNDAY', 'breakStartTime', '일요일 휴게 시작')}
                   >
                     {formatTime(sundayData.breakStartTime)}
                   </button>
@@ -286,7 +302,7 @@ export default function InviteForm04() {
                 <div className="block">
                   <button
                     className="select-form al-l"
-                    onClick={() => setTimeSelectSheet(true)}
+                    onClick={() => openTimeFor('SUNDAY', 'breakEndTime', '일요일 휴게 종료')}
                   >
                     {formatTime(sundayData.breakEndTime)}
                   </button>
