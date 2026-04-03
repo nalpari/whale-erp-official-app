@@ -82,7 +82,7 @@ export default function PlanTableEdit() {
   }, [setTitle, setOnBack, openAlert, router, editDate])
 
   // 직원 목록 API 연동
-  const { data: employeeList = [], isError: isEmployeeError, refetch: refetchEmployees } = useEmployeeOptions({
+  const { data: employeeList = [], isLoading: isEmployeeLoading, isError: isEmployeeError, refetch: refetchEmployees } = useEmployeeOptions({
     purpose: 'BROAD',
     headOfficeId: headOfficeId ?? undefined,
     franchiseId: authFranchiseId ?? undefined,
@@ -122,19 +122,8 @@ export default function PlanTableEdit() {
 
     for (const schedule of scheduleList) {
       const workers: WorkerEditItem[] = schedule.workerList.map((w) => ({
-        shiftId: w.shiftId,
-        workerId: w.workerId,
-        workerName: w.workerName,
-        contractType: w.contractType,
-        hasWork: w.hasWork,
-        workStartTime: w.workStartTime,
-        workEndTime: w.workEndTime,
-        hasBreak: w.hasBreak,
-        breakStartTime: w.breakStartTime,
-        breakEndTime: w.breakEndTime,
-        isDeleted: w.isDeleted,
+        ...w,
         isNew: false,
-        iconType: (w.iconType ?? 0) as 0 | 1 | 2 | 3,
       }))
       state.set(schedule.date, workers)
     }
@@ -253,6 +242,10 @@ export default function PlanTableEdit() {
   // 저장 (mutateAsync + try/catch 전용)
   const handleSave = async () => {
     if (isUpserting) return
+    if (!storeId) {
+      openAlert({ message: '점포가 선택되지 않았습니다.' })
+      return
+    }
     const requests = buildRequests()
     try {
       await upsertSchedule({ storeId, data: requests })
@@ -359,7 +352,7 @@ export default function PlanTableEdit() {
     )
   }
 
-  if (isLoading) {
+  if (isLoading || isEmployeeLoading) {
     return (
       <div className="container sub">
         <div style={{ padding: "40px 0", textAlign: "center" }}>

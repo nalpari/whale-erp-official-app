@@ -4,15 +4,19 @@ import type { ExcelValidationResponse } from '@/types/schedule'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ACCEPT_EXTENSIONS = '.xlsx,.xls'
+const VALID_MIME_TYPES = [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'application/vnd.ms-excel', // .xls
+]
 
 interface UploadExcelPopupProps {
   isUploading: boolean
   isSaving: boolean
   result: ExcelValidationResponse | null
   onClose: () => void
-  onUpload: (file: File) => void
-  onSave: () => void
-  onDownloadSample: () => void
+  onUpload: (file: File) => void | Promise<void>
+  onSave: () => void | Promise<void>
+  onDownloadSample: () => void | Promise<void>
   onAlert: (message: string) => void
 }
 
@@ -42,17 +46,46 @@ export default function UploadExcelPopup({
       return
     }
 
+    if (!VALID_MIME_TYPES.includes(file.type)) {
+      onAlert('엑셀 파일(.xlsx, .xls)만 업로드할 수 있습니다.')
+      e.target.value = ''
+      return
+    }
+
     setFileName(file.name)
     setSelectedFile(file)
     e.target.value = ''
   }
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
       onAlert('엑셀 파일을 선택해주세요.')
       return
     }
-    onUpload(selectedFile)
+    try {
+      await onUpload(selectedFile)
+    } catch (err) {
+      console.error('[UploadExcelPopup] 업로드 콜백 실패:', err)
+      onAlert('파일 업로드 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      await onSave()
+    } catch (err) {
+      console.error('[UploadExcelPopup] 저장 콜백 실패:', err)
+      onAlert('저장 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleDownloadSample = async () => {
+    try {
+      await onDownloadSample()
+    } catch (err) {
+      console.error('[UploadExcelPopup] 샘플 다운로드 콜백 실패:', err)
+      onAlert('샘플 다운로드 중 오류가 발생했습니다.')
+    }
   }
 
   return (
@@ -88,7 +121,7 @@ export default function UploadExcelPopup({
               </button>
               <button
                 className="btn-s outline-g"
-                onClick={onDownloadSample}
+                onClick={handleDownloadSample}
                 disabled={isProcessing}
               >
                 샘플
@@ -160,7 +193,7 @@ export default function UploadExcelPopup({
           {result?.valid && (
             <button
               className="btn-form block blue"
-              onClick={onSave}
+              onClick={handleSave}
               disabled={isProcessing}
             >
               {isSaving ? '저장 중...' : '저장'}

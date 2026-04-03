@@ -120,6 +120,7 @@ Login supports multi-authority (조직) selection:
 - **SCSS**: 복잡한 컴포넌트 스타일 (7-1 패턴)
 - **Tailwind CSS 4**: 유틸리티 클래스
 - **기존 CSS/Sass 파일 수정 금지**: pub 프로젝트 코드 참조 시에도 새로운 스타일은 Tailwind 또는 컴포넌트 내 인라인 스타일로 처리
+- **`src/styles/` 디렉토리 수정 절대 금지**: `src/styles/` 하위의 모든 SCSS 파일(abstracts, base, components, layout)은 어떤 상황에서도 수정하지 않는다. 스타일 변경이 필요하면 Tailwind 유틸리티 클래스 또는 컴포넌트 내 인라인 스타일로 처리한다.
 
 # Code Conventions
 

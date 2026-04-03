@@ -157,11 +157,13 @@ export default function PlanTable() {
   // 계획 수��� 이동
   const handleGoToEdit = (editStoreId?: number | null, date?: string) => {
     const targetStoreId = editStoreId ?? selectedStore?.id
-    if (targetStoreId) {
-      const params = new URLSearchParams({ storeId: String(targetStoreId) })
-      if (date) params.set('date', date)
-      router.push(`/plan/edit?${params.toString()}`)
+    if (!targetStoreId) {
+      openAlert({ message: '점포를 먼저 선택해주세요.' })
+      return
     }
+    const params = new URLSearchParams({ storeId: String(targetStoreId) })
+    if (date) params.set('date', date)
+    router.push(`/plan/edit?${params.toString()}`)
   }
 
   if (isError) {

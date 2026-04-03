@@ -18,7 +18,7 @@ const AVATAR_IMAGES = [
 
 /** iconType(0~3) → 아바타 이미지 경로 */
 export function getWorkerAvatar(iconType: WorkerIconType): string {
-  return AVATAR_IMAGES[iconType]
+  return AVATAR_IMAGES[iconType] ?? AVATAR_IMAGES[0]
 }
 
 // ── 계약유형 스타일 매핑 ──
