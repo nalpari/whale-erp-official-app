@@ -1,5 +1,17 @@
 import type { WorkerResponse, WorkerIconType, ScheduleContractType } from '@/types/schedule'
 
+// ── 계약유형 검증 ──
+
+const VALID_CONTRACT_TYPES: readonly ScheduleContractType[] = ['정직원', '계약직', '수습', '파트타이머', '임시근무']
+
+/** 서버 응답 문자열을 ScheduleContractType으로 안전하게 변환 (유효하지 않으면 기본값 '정직원') */
+export function toContractType(value: string | undefined | null): ScheduleContractType {
+  if (value && (VALID_CONTRACT_TYPES as readonly string[]).includes(value)) {
+    return value as ScheduleContractType
+  }
+  return '정직원'
+}
+
 // ── 기본 시간 상수 ──
 
 export const DEFAULT_WORK_START = '09:00'

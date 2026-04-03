@@ -8,7 +8,7 @@ import { getWorkerAvatar, getContractStyle } from '@/lib/schedule-utils'
 export default function WorkerChangeSheet() {
   const workerChangeSheet = useBottomSheetControler((state) => state.workerChangeSheet)
   const setWorkerChangeSheet = useBottomSheetControler((state) => state.setWorkerChangeSheet)
-  const context = useBottomSheetControler((state) => state.workerSheetContext)
+  const worker = useBottomSheetControler((state) => state.workerSheetContext.worker)
   const onWorkerReplace = useBottomSheetControler((state) => state.onWorkerReplace)
   const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
 
@@ -38,7 +38,6 @@ export default function WorkerChangeSheet() {
     }
   }
 
-  const worker = context.worker
   const badge = worker ? getContractStyle(worker.contractType) : null
 
   return (

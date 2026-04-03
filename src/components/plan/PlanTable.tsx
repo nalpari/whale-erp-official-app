@@ -29,14 +29,14 @@ export default function PlanTable() {
   // 기간/직원명/요일 등 검색 조건이 하나라도 있으면 하이라이트
   const hasFilter = !!(storeFrom || storeTo || searchEmployeeName || searchDayType)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
-  const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
-  const selectedStore = useStoreStore((state) => state.selectedStore)
+  const selectedHeadOfficeId = useStoreStore((state) => state.selectedHeadOffice?.id ?? null)
+  const selectedStoreId = useStoreStore((state) => state.selectedStore?.id ?? null)
   const mounted = useMounted()
 
   // 본사 ID: 점포 선택 바텀시트 > authStore 순 fallback, hydration 전에는 null
-  const effectiveHeadOfficeId = selectedHeadOffice?.id ?? authHeadOfficeId ?? null
+  const effectiveHeadOfficeId = selectedHeadOfficeId ?? authHeadOfficeId ?? null
   const headOfficeId = mounted ? effectiveHeadOfficeId : null
-  const storeId = mounted ? selectedStore?.id ?? undefined : undefined
+  const storeId = mounted ? selectedStoreId ?? undefined : undefined
 
   const openAlert = usePopupControler((state) => state.openAlert)
 
@@ -156,7 +156,7 @@ export default function PlanTable() {
 
   // 계획 수��� 이동
   const handleGoToEdit = (editStoreId?: number | null, date?: string) => {
-    const targetStoreId = editStoreId ?? selectedStore?.id
+    const targetStoreId = editStoreId ?? selectedStoreId
     if (!targetStoreId) {
       openAlert({ message: '점포를 먼저 선택해주세요.' })
       return

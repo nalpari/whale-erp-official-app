@@ -10,9 +10,11 @@ import { useHeaderStore } from '@/store/useHeaderStore'
 import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule-queries'
 import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
-import { getContractStyle, calcWorkHours, sortWorkers, DAY_LABELS, getMonday, getSunday, parseDateLocal, DEFAULT_WORK_START, DEFAULT_WORK_END, DEFAULT_BREAK_START, DEFAULT_BREAK_END } from '@/lib/schedule-utils'
+import { getContractStyle, calcWorkHours, sortWorkers, toContractType, DAY_LABELS, getMonday, getSunday, parseDateLocal, DEFAULT_WORK_START, DEFAULT_WORK_END, DEFAULT_BREAK_START, DEFAULT_BREAK_END } from '@/lib/schedule-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
 import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest, ScheduleContractType } from '@/types/schedule'
+
+const PLAN_LIST_PATH = '/plan'
 
 function createDateRange(from: string, to: string) {
   if (!from || !to || from > to) return []
@@ -42,8 +44,8 @@ export default function PlanTableEdit() {
   const searchFrom = storeFrom || getMonday()
   const searchTo = storeTo || getSunday()
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
-  const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
-  const selectedStore = useStoreStore((state) => state.selectedStore)
+  const selectedHeadOfficeId = useStoreStore((state) => state.selectedHeadOffice?.id ?? null)
+  const selectedStoreId = useStoreStore((state) => state.selectedStore?.id ?? null)
   const mounted = useMounted()
   const openWorkerAddSheet = useBottomSheetControler((state) => state.openWorkerAddSheet)
   const openTempWorkerAddSheet = useBottomSheetControler((state) => state.openTempWorkerAddSheet)
@@ -59,9 +61,9 @@ export default function PlanTableEdit() {
   const { mutateAsync: upsertSchedule, isPending: isUpserting } = useUpsertSchedule()
 
   // 본사 ID: 점포 선택 바텀시트 > authStore 순 fallback
-  const effectiveHeadOfficeId = selectedHeadOffice?.id ?? authHeadOfficeId ?? null
+  const effectiveHeadOfficeId = selectedHeadOfficeId ?? authHeadOfficeId ?? null
   const headOfficeId = mounted ? effectiveHeadOfficeId : null
-  const storeId = mounted ? (selectedStore?.id ?? urlStoreId) : urlStoreId
+  const storeId = mounted ? (selectedStoreId ?? urlStoreId) : urlStoreId
   const authFranchiseId = useAuthStore((state) => state.franchiseId)
 
   // 헤더 제목 설정
@@ -72,7 +74,7 @@ export default function PlanTableEdit() {
         message: '입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?',
         confirmText: '이동',
         cancelText: '취소',
-        onConfirm: () => router.push('/plan'),
+        onConfirm: () => router.push(PLAN_LIST_PATH),
       })
     })
     return () => {
@@ -89,17 +91,15 @@ export default function PlanTableEdit() {
     storeId: storeId ?? undefined,
   }, !!headOfficeId)
 
-  // 직원 목록을 바텀시트 store에 동기화
+  // 직원 목록을 바텀시트 store에 동기화 (빈 목록도 반영하여 stale 방지)
   useEffect(() => {
-    if (employeeList.length > 0) {
-      setWorkerSheetEmployees(employeeList.map((e) => ({
-        id: e.employeeInfoId,
-        memberId: e.memberId,
-        name: e.employeeName,
-        contractType: (e.contractType ?? '정직원') as ScheduleContractType,
-        employeeNumber: e.employeeNumber,
-      })))
-    }
+    setWorkerSheetEmployees(employeeList.map((e) => ({
+      id: e.employeeInfoId,
+      memberId: e.memberId,
+      name: e.employeeName,
+      contractType: toContractType(e.contractType),
+      employeeNumber: e.employeeNumber,
+    })))
   }, [employeeList, setWorkerSheetEmployees])
 
   // 검색 조건: date 쿼리 파라미터가 있으면 해당 날짜만, 없으면 목록 검색 조건 상속
@@ -229,7 +229,7 @@ export default function PlanTableEdit() {
           iconType: w.iconType,
           isDeleted: w.isDeleted,
         }
-        if (w.workerId) {
+        if (w.workerId !== null) {
           return { ...base, workerId: w.workerId }
         }
         return { ...base, tempWorkerName: w.workerName }
@@ -251,7 +251,7 @@ export default function PlanTableEdit() {
       await upsertSchedule({ storeId, data: requests })
       openAlert({
         message: '근무 계획이 저장되었습니다.',
-        onConfirm: () => router.push('/plan'),
+        onConfirm: () => router.push(PLAN_LIST_PATH),
       })
     } catch (err) {
       console.error('[PlanTableEdit] 근무 계획 저장 실패:', err)
@@ -267,7 +267,7 @@ export default function PlanTableEdit() {
       message: '입력한 내용을 저장하지 않았습니다. 점포별 근무 계획표로 이동하시겠습니까?',
       confirmText: '이동',
       cancelText: '취소',
-      onConfirm: () => router.push('/plan'),
+      onConfirm: () => router.push(PLAN_LIST_PATH),
     })
   }
 
@@ -330,7 +330,7 @@ export default function PlanTableEdit() {
       <div className="container sub">
         <div style={{ padding: "40px 0", textAlign: "center" }}>
           <div style={{ color: "#888", marginBottom: "16px" }}>점포가 선택되지 않았습니다.</div>
-          <button className="btn-form outline min" onClick={() => router.push('/plan')}>
+          <button className="btn-form outline min" onClick={() => router.push(PLAN_LIST_PATH)}>
             점포 선택으로 이동
           </button>
         </div>
