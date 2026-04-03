@@ -6,12 +6,12 @@ import { getWorkerAvatar, getContractStyle } from '@/lib/schedule-utils'
 
 export default function WorkerDeleteSheet() {
   const workerDeleteSheet = useBottomSheetControler((state) => state.workerDeleteSheet)
-  const setWorkerDeleteSheet = useBottomSheetControler((state) => state.setWorkerDeleteSheet)
+  const closeWorkerDeleteSheet = useBottomSheetControler((state) => state.closeWorkerDeleteSheet)
   const context = useBottomSheetControler((state) => state.workerSheetContext)
   const onWorkerDelete = useBottomSheetControler((state) => state.onWorkerDelete)
 
   const handleClose = () => {
-    setWorkerDeleteSheet(false)
+    closeWorkerDeleteSheet()
   }
 
   const handleDelete = () => {

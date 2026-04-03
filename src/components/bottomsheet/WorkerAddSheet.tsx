@@ -7,7 +7,7 @@ import type { WorkerEditItem } from '@/types/schedule'
 
 export default function WorkerAddSheet() {
   const workerAddSheet = useBottomSheetControler((state) => state.workerAddSheet)
-  const setWorkerAddSheet = useBottomSheetControler((state) => state.setWorkerAddSheet)
+  const closeWorkerAddSheet = useBottomSheetControler((state) => state.closeWorkerAddSheet)
   const onWorkerAdd = useBottomSheetControler((state) => state.onWorkerAdd)
   const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
   const openTimePicker = useBottomSheetControler((state) => state.openTimePicker)
@@ -22,7 +22,7 @@ export default function WorkerAddSheet() {
   const [breakEnd, setBreakEnd] = useState('')
 
   const handleClose = () => {
-    setWorkerAddSheet(false)
+    closeWorkerAddSheet()
   }
 
   const handleOpenStart = () => {

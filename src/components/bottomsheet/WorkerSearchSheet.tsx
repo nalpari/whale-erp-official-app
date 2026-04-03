@@ -5,7 +5,7 @@ import { Sheet } from 'react-modal-sheet'
 
 export default function WorkerSearchSheet() {
   const workerSearchSheet = useBottomSheetControler((state) => state.workerSearchSheet)
-  const setWorkerSearchSheet = useBottomSheetControler((state) => state.setWorkerSearchSheet)
+  const closeWorkerSearchSheet = useBottomSheetControler((state) => state.closeWorkerSearchSheet)
   const onWorkerSearch = useBottomSheetControler((state) => state.onWorkerSearch)
   const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
   const initial = useBottomSheetControler((state) => state.workerSearchInitial)
@@ -17,7 +17,7 @@ export default function WorkerSearchSheet() {
   )
 
   const handleClose = () => {
-    setWorkerSearchSheet(false)
+    closeWorkerSearchSheet()
   }
 
   // 바텀시트 열릴 때 기존 검색 조건 복원

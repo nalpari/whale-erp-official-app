@@ -7,7 +7,7 @@ import type { WorkerEditItem } from '@/types/schedule'
 
 export default function TemporaryWorkerAddSheet() {
   const temporaryWorkerAddSheet = useBottomSheetControler((state) => state.temporaryWorkerAddSheet)
-  const setTemporaryWorkerAddSheet = useBottomSheetControler((state) => state.setTemporaryWorkerAddSheet)
+  const closeTemporaryWorkerAddSheet = useBottomSheetControler((state) => state.closeTemporaryWorkerAddSheet)
   const onTempWorkerAdd = useBottomSheetControler((state) => state.onTempWorkerAdd)
   const openTimePicker = useBottomSheetControler((state) => state.openTimePicker)
   const defaultDates = useBottomSheetControler((state) => state.workerAddDefaultDates)
@@ -21,7 +21,7 @@ export default function TemporaryWorkerAddSheet() {
   const [breakEnd, setBreakEnd] = useState('')
 
   const handleClose = () => {
-    setTemporaryWorkerAddSheet(false)
+    closeTemporaryWorkerAddSheet()
   }
 
   const handleOpenStart = () => {

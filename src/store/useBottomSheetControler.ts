@@ -66,14 +66,19 @@ type BottomSheetControlerState = {
   setPlanSearchSheet: (isOpen: boolean) => void
   workerChangeSheet: boolean
   setWorkerChangeSheet: (isOpen: boolean) => void
+  closeWorkerChangeSheet: () => void
   workerDeleteSheet: boolean
   setWorkerDeleteSheet: (isOpen: boolean) => void
+  closeWorkerDeleteSheet: () => void
   workerAddSheet: boolean
   setWorkerAddSheet: (isOpen: boolean) => void
+  closeWorkerAddSheet: () => void
   temporaryWorkerAddSheet: boolean
   setTemporaryWorkerAddSheet: (isOpen: boolean) => void
+  closeTemporaryWorkerAddSheet: () => void
   workerSearchSheet: boolean
   setWorkerSearchSheet: (isOpen: boolean) => void
+  closeWorkerSearchSheet: () => void
   deductionAddSheet: boolean
   setDeductionAddSheet: (isOpen: boolean) => void
   photoUploadSheet: boolean
@@ -203,6 +208,12 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           false,
           'bottomSheet/setWorkerChange',
         ),
+      closeWorkerChangeSheet: () =>
+        set(
+          { workerChangeSheet: false, onWorkerReplace: null, workerSheetContext: { worker: null, date: '' } },
+          false,
+          'bottomSheet/closeWorkerChange',
+        ),
       workerDeleteSheet: false,
       setWorkerDeleteSheet: (isOpen: boolean) =>
         set(
@@ -210,9 +221,21 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           false,
           'bottomSheet/setWorkerDelete',
         ),
+      closeWorkerDeleteSheet: () =>
+        set(
+          { workerDeleteSheet: false, onWorkerDelete: null, workerSheetContext: { worker: null, date: '' } },
+          false,
+          'bottomSheet/closeWorkerDelete',
+        ),
       workerAddSheet: false,
       setWorkerAddSheet: (isOpen: boolean) =>
         set({ workerAddSheet: isOpen }, false, 'bottomSheet/setWorkerAdd'),
+      closeWorkerAddSheet: () =>
+        set(
+          { workerAddSheet: false, onWorkerAdd: null, workerAddDefaultDates: { from: '', to: '' } },
+          false,
+          'bottomSheet/closeWorkerAdd',
+        ),
       temporaryWorkerAddSheet: false,
       setTemporaryWorkerAddSheet: (isOpen: boolean) =>
         set(
@@ -220,12 +243,24 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           false,
           'bottomSheet/setTemporaryWorkerAdd',
         ),
+      closeTemporaryWorkerAddSheet: () =>
+        set(
+          { temporaryWorkerAddSheet: false, onTempWorkerAdd: null, workerAddDefaultDates: { from: '', to: '' } },
+          false,
+          'bottomSheet/closeTemporaryWorkerAdd',
+        ),
       workerSearchSheet: false,
       setWorkerSearchSheet: (isOpen: boolean) =>
         set(
           { workerSearchSheet: isOpen },
           false,
           'bottomSheet/setWorkerSearch',
+        ),
+      closeWorkerSearchSheet: () =>
+        set(
+          { workerSearchSheet: false, onWorkerSearch: null, workerSearchInitial: { workerId: null, tempWorkerName: '' } },
+          false,
+          'bottomSheet/closeWorkerSearch',
         ),
       deductionAddSheet: false,
       setDeductionAddSheet: (isOpen: boolean) =>

@@ -7,7 +7,7 @@ import { getWorkerAvatar, getContractStyle } from '@/lib/schedule-utils'
 
 export default function WorkerChangeSheet() {
   const workerChangeSheet = useBottomSheetControler((state) => state.workerChangeSheet)
-  const setWorkerChangeSheet = useBottomSheetControler((state) => state.setWorkerChangeSheet)
+  const closeWorkerChangeSheet = useBottomSheetControler((state) => state.closeWorkerChangeSheet)
   const worker = useBottomSheetControler((state) => state.workerSheetContext.worker)
   const onWorkerReplace = useBottomSheetControler((state) => state.onWorkerReplace)
   const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
@@ -15,7 +15,7 @@ export default function WorkerChangeSheet() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const handleClose = () => {
-    setWorkerChangeSheet(false)
+    closeWorkerChangeSheet()
   }
 
   const handleOpenStart = () => {

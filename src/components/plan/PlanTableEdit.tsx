@@ -12,7 +12,7 @@ import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers, toContractType, DAY_LABELS, getMonday, getSunday, parseDateLocal, DEFAULT_WORK_START, DEFAULT_WORK_END, DEFAULT_BREAK_START, DEFAULT_BREAK_END } from '@/lib/schedule-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
-import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest, ScheduleContractType } from '@/types/schedule'
+import type { ScheduleSearchParams, WorkerEditItem, ScheduleRequest, WorkerRequest, ScheduleContractType, ScheduleEmployeeOption } from '@/types/schedule'
 
 const PLAN_LIST_PATH = '/plan'
 
@@ -39,6 +39,7 @@ function navigateToPlanList(router: ReturnType<typeof useRouter>) {
     router.push(PLAN_LIST_PATH)
   } catch (err) {
     console.error('[PlanTableEdit] 목록 이동 실패:', err)
+    window.location.href = PLAN_LIST_PATH
   }
 }
 
@@ -100,8 +101,9 @@ export default function PlanTableEdit() {
   }, !!headOfficeId && !!storeId)
 
   // 직원 목록 매핑 (바텀시트 오픈 시점에 lazily 전달)
+  // API 응답에는 contractType이 포함되므로 schedule 전용 타입으로 narrowing
   const mappedEmployees = useMemo(
-    () => employeeList.map((e) => ({
+    () => (employeeList as ScheduleEmployeeOption[]).map((e) => ({
       id: e.employeeInfoId,
       memberId: e.memberId,
       name: e.employeeName,

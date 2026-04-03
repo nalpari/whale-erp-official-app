@@ -1,5 +1,12 @@
+import type { EmployeeOption } from '@/types/todo'
+
 // 근무 계획표 계약 유형
 export type ScheduleContractType = '정직원' | '계약직' | '수습' | '파트타이머' | '임시근무'
+
+// schedule 화면 전용 직원 옵션 (API 응답에 contractType 포함)
+export interface ScheduleEmployeeOption extends EmployeeOption {
+  contractType: ScheduleContractType
+}
 
 // 아바타 아이콘 인덱스 (0~3, getWorkerAvatar 참조)
 export type WorkerIconType = 0 | 1 | 2 | 3
