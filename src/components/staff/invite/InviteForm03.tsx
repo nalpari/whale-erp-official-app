@@ -3,14 +3,13 @@ import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import { useMinimumWage } from '@/hooks/queries/use-contract-queries'
+import { OVERTIME_RATE, NIGHT_RATE, HOLIDAY_RATE, ADD_HOLIDAY_RATE, formatAmount } from '@/lib/constants'
 
 const CONTRACT_LABEL: Record<string, string> = {
   CNTCFWK_001: '포괄연봉제',
   CNTCFWK_002: '비포괄연봉제',
   CNTCFWK_003: '파트타임',
 }
-
-const formatAmount = (val: number) => val.toLocaleString('ko-KR')
 
 export default function InviteForm03() {
   const router = useRouter()
@@ -31,10 +30,10 @@ export default function InviteForm03() {
 
   // 급여 계산
   const baseAmount = activeTimely * sal.monthlyTime
-  const overtimeAmount = Math.round(activeTimely * 1.5 * sal.overtimeTime)
-  const nightAmount = Math.round(activeTimely * 0.5 * sal.nightTime)
-  const holidayAmount = Math.round(activeTimely * 1.5 * sal.holidayTime)
-  const addHolidayAmount = Math.round(activeTimely * 2.0 * sal.addHolidayTime)
+  const overtimeAmount = Math.round(activeTimely * OVERTIME_RATE * sal.overtimeTime)
+  const nightAmount = Math.round(activeTimely * NIGHT_RATE * sal.nightTime)
+  const holidayAmount = Math.round(activeTimely * HOLIDAY_RATE * sal.holidayTime)
+  const addHolidayAmount = Math.round(activeTimely * ADD_HOLIDAY_RATE * sal.addHolidayTime)
   const nonTaxTotal =
     (sal.mealIncluded ? sal.mealAllowance : 0) +
     (sal.vehicleIncluded ? sal.vehicleAllowance : 0) +
@@ -174,11 +173,11 @@ export default function InviteForm03() {
                 </tr>
                 <tr>
                   <td className="tit">연장근무시급</td>
-                  <td className="al-r">{formatAmount(sal.overtimeHourlyWage || Math.round(activeTimely * 1.5))}원</td>
+                  <td className="al-r">{formatAmount(sal.overtimeHourlyWage || Math.round(activeTimely * OVERTIME_RATE))}원</td>
                 </tr>
                 <tr>
                   <td className="tit">휴일근무시급</td>
-                  <td className="al-r">{formatAmount(sal.holidayHourlyWage || Math.round(activeTimely * 1.5))}원</td>
+                  <td className="al-r">{formatAmount(sal.holidayHourlyWage || Math.round(activeTimely * HOLIDAY_RATE))}원</td>
                 </tr>
               </tbody>
             </table>

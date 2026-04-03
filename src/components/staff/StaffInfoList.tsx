@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useEmployeeList } from '@/hooks/queries/use-employee-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
+import { isHealthCheckExpired } from '@/lib/constants'
 import type { EmployeeListItem } from '@/types/employee'
 
 const AVATAR_IMAGES = [
@@ -15,14 +16,6 @@ const AVATAR_IMAGES = [
   '/assets/images/layout/avatar02.svg',
   '/assets/images/layout/avatar03.svg',
 ]
-
-/** 건강진단 만료일이 오늘 기준으로 경과했는지 판별 */
-const isHealthCheckExpired = (expiryDate?: string) => {
-  if (!expiryDate) return false
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return new Date(expiryDate) < today
-}
 
 export default function StaffInfoList() {
   const router = useRouter()
@@ -42,7 +35,7 @@ export default function StaffInfoList() {
     ...(headOfficeId != null && { headOfficeOrganizationId: headOfficeId }),
     storeId: mounted ? selectedStore?.id : undefined,
   }
-  const { data, isLoading } = useEmployeeList(params, mounted && !!effectiveHeadOfficeId)
+  const { data, isLoading, isError } = useEmployeeList(params, mounted && !!effectiveHeadOfficeId)
 
   const employeeList = data?.content ?? []
   const totalElements = data?.totalElements ?? 0
@@ -82,6 +75,7 @@ export default function StaffInfoList() {
           mounted={mounted}
           headOfficeId={effectiveHeadOfficeId}
           isLoading={isLoading}
+          isError={isError}
           employeeList={employeeList}
           onDetailClick={(id) => router.push(`/staff/${id}`)}
           onContractClick={() => router.push('/contract')}
@@ -105,6 +99,7 @@ function StaffListContent({
   mounted,
   headOfficeId,
   isLoading,
+  isError,
   employeeList,
   onDetailClick,
   onContractClick,
@@ -112,12 +107,20 @@ function StaffListContent({
   mounted: boolean
   headOfficeId: number | null
   isLoading: boolean
+  isError: boolean
   employeeList: EmployeeListItem[]
   onDetailClick: (id: number) => void
   onContractClick: () => void
 }) {
   if (!mounted) return null
   if (!headOfficeId) return <EmptyMessage text="상단에서 점포를 먼저 선택해주세요." />
+  if (isError) return (
+    <div className="staff-list-wrap">
+      <div style={{ textAlign: 'center', padding: '40px 0', color: '#e74c3c' }}>
+        직원 목록을 불러올 수 없습니다.
+      </div>
+    </div>
+  )
   if (isLoading) return <EmptyMessage text="불러오는 중..." />
   if (employeeList.length === 0) return <EmptyMessage text="검색 결과가 없습니다." />
 

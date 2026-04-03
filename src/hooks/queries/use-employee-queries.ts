@@ -60,6 +60,7 @@ export const useEmployeeList = (params: EmployeeSearchParams, enabled = true) =>
     queryKey: employeeKeys.list(params),
     queryFn: () => getEmployeeList(params),
     enabled,
+    staleTime: 30 * 1000,
   })
 }
 

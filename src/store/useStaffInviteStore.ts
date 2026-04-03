@@ -198,6 +198,7 @@ export const useStaffInviteStore = create<StaffInviteState>()(
           'reset',
         ),
 
+      // TODO: 급여 정보(stepThreeSalary)는 계약 생성 후 별도 API로 저장하므로 toPostRequest에 포함하지 않음
       toPostRequest: (): PostEmployeeInfoRequest | null => {
         const { stepOne, stepTwo, stepFour } = get()
 
@@ -226,10 +227,10 @@ export const useStaffInviteStore = create<StaffInviteState>()(
         return {
           workplaceType: stepOne.workplaceType,
           headOfficeOrganizationId: stepOne.headOfficeOrganizationId,
-          franchiseOrganizationId: stepOne.franchiseOrganizationId,
-          storeId: stepOne.storeId,
+          franchiseOrganizationId: stepOne.franchiseOrganizationId ?? undefined,
+          storeId: stepOne.storeId ?? undefined,
           employeeName: stepOne.employeeName,
-          mobilePhone: stepOne.mobilePhone || null,
+          mobilePhone: stepOne.mobilePhone || undefined,
           hireDate: stepTwo.hireDate,
           contractClassification: stepTwo.contractClassification,
           nationalPensionEnrolled: stepTwo.nationalPensionEnrolled,
@@ -241,7 +242,7 @@ export const useStaffInviteStore = create<StaffInviteState>()(
           salaryDay: stepTwo.salaryDay,
           contractStartDate: stepTwo.contractStartDate,
           contractEndDate,
-          jobDescription: stepTwo.jobDescription || null,
+          jobDescription: stepTwo.jobDescription || undefined,
           workHours: stepFour.workHours,
         }
       },

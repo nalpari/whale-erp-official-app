@@ -34,13 +34,13 @@ export default function BonusPaySheet() {
     // 스토어에 상여금 저장
     const bonuses = []
     if (fullAttendanceOn && fullAttendance > 0) {
-      bonuses.push({ bonusType: '만근상여', amount: fullAttendance })
+      bonuses.push({ bonusCode: 'BONUS_FULL_ATTENDANCE', bonusType: '만근상여', amount: fullAttendance })
     }
     if (positionBonusOn && positionBonus > 0) {
-      bonuses.push({ bonusType: '직책상여', amount: positionBonus })
+      bonuses.push({ bonusCode: 'BONUS_POSITION', bonusType: '직책상여', amount: positionBonus })
     }
     if (incentiveOn && incentive > 0) {
-      bonuses.push({ bonusType: '인센티브', amount: incentive })
+      bonuses.push({ bonusCode: 'BONUS_INCENTIVE', bonusType: '인센티브', amount: incentive })
     }
     useStaffInviteStore.getState().setStepThreeSalary({ bonuses })
     setBonusPaySheet(false)

@@ -7,3 +7,20 @@ export const OWNER_CODE = {
   HEAD_OFFICE: "PRGRP_002_001",
   FRANCHISE: "PRGRP_002_002",
 } as const
+
+/** 수당 배율 상수 */
+export const OVERTIME_RATE = 1.5
+export const NIGHT_RATE = 0.5
+export const HOLIDAY_RATE = 1.5
+export const ADD_HOLIDAY_RATE = 2.0
+
+/** 금액을 한국 원화 형식으로 포맷 (예: 1,234,567) */
+export const formatAmount = (val: number) => val.toLocaleString('ko-KR')
+
+/** 건강진단 만료일이 오늘 기준으로 경과했는지 판별 */
+export const isHealthCheckExpired = (date?: string | null) => {
+  if (!date) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return new Date(date) < today
+}

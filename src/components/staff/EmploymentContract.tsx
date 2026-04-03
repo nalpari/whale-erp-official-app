@@ -13,6 +13,7 @@ import {
 import { getErrorMessage } from "@/lib/api";
 import ContractOptionSheet from "@/components/bottomsheet/ContractOptionSheet";
 import TaxExemptTable from "@/components/staff/employment/TaxExemptTable";
+import { OVERTIME_RATE, NIGHT_RATE, HOLIDAY_RATE, ADD_HOLIDAY_RATE, formatAmount } from "@/lib/constants";
 import type { ContractDetail, ContractBonus } from "@/types/contract";
 import type { ContractClassificationType } from "@/types/employee";
 
@@ -154,10 +155,10 @@ export default function EmploymentContract({
   const baseAmount = activeTimelyAmount * monthlyTime;
 
   // 포괄연봉제: 모든 수당 포함
-  const overtimeAmount = activeTimelyAmount * 1.5 * overtimeTime;
-  const nightAmount = activeTimelyAmount * 0.5 * nightTime;
-  const holidayAmount = activeTimelyAmount * 1.5 * holidayTime;
-  const addHolidayAmount = activeTimelyAmount * 2.0 * addHolidayTime;
+  const overtimeAmount = activeTimelyAmount * OVERTIME_RATE * overtimeTime;
+  const nightAmount = activeTimelyAmount * NIGHT_RATE * nightTime;
+  const holidayAmount = activeTimelyAmount * HOLIDAY_RATE * holidayTime;
+  const addHolidayAmount = activeTimelyAmount * ADD_HOLIDAY_RATE * addHolidayTime;
 
   const nonTaxTotal =
     (mealIncluded ? mealAllowance : 0) +
@@ -184,8 +185,6 @@ export default function EmploymentContract({
 
   const monthlyTotalAmount = calcMonthlyTotal();
   const annualAmount = monthlyTotalAmount * 12;
-
-  const formatAmount = (val: number) => val.toLocaleString("ko-KR");
 
   // 비과세 항목 핸들러
   const handleTaxExemptChange = (field: string, value: number | boolean) => {
@@ -222,19 +221,19 @@ export default function EmploymentContract({
     ...(isComprehensive && {
       monthlyOvertimeAllowanceTime: overtimeTime,
       monthlyOvertimeAllowanceAmount: Math.round(
-        activeTimelyAmount * 1.5 * overtimeTime,
+        activeTimelyAmount * OVERTIME_RATE * overtimeTime,
       ),
       monthlyNightAllowanceTime: nightTime,
       monthlyNightAllowanceAmount: Math.round(
-        activeTimelyAmount * 0.5 * nightTime,
+        activeTimelyAmount * NIGHT_RATE * nightTime,
       ),
       monthlyHolidayAllowanceTime: holidayTime,
       monthlyHolidayAllowanceAmount: Math.round(
-        activeTimelyAmount * 1.5 * holidayTime,
+        activeTimelyAmount * HOLIDAY_RATE * holidayTime,
       ),
       monthlyAddHolidayAllowanceTime: addHolidayTime,
       monthlyAddHolidayAllowanceAmount: Math.round(
-        activeTimelyAmount * 2.0 * addHolidayTime,
+        activeTimelyAmount * ADD_HOLIDAY_RATE * addHolidayTime,
       ),
     }),
     // 비과세 (포괄/비포괄만)
@@ -306,6 +305,25 @@ export default function EmploymentContract({
       });
       router.back();
     }
+  };
+
+  const handleReset = () => {
+    setTimelyAmount(0);
+    setWeeklyHours(40);
+    setMonthlyTime(0);
+    setOvertimeTime(0);
+    setNightTime(0);
+    setHolidayTime(0);
+    setAddHolidayTime(0);
+    setMealAllowance(0);
+    setMealIncluded(false);
+    setVehicleAllowance(0);
+    setVehicleIncluded(false);
+    setChildcareAllowance(0);
+    setChildcareIncluded(false);
+    setWeekdayHourlyWage(0);
+    setOvertimeHourlyWage(0);
+    setHolidayHourlyWage(0);
   };
 
   const handleOptionChange = (values: {
@@ -465,24 +483,7 @@ export default function EmploymentContract({
                 {!isPartTime && (
                   <button
                     className="btn-form sky block brd"
-                    onClick={() => {
-                      setTimelyAmount(0)
-                      setWeeklyHours(40)
-                      setMonthlyTime(0)
-                      setOvertimeTime(0)
-                      setNightTime(0)
-                      setHolidayTime(0)
-                      setAddHolidayTime(0)
-                      setMealAllowance(0)
-                      setMealIncluded(false)
-                      setVehicleAllowance(0)
-                      setVehicleIncluded(false)
-                      setChildcareAllowance(0)
-                      setChildcareIncluded(false)
-                      setWeekdayHourlyWage(0)
-                      setOvertimeHourlyWage(0)
-                      setHolidayHourlyWage(0)
-                    }}
+                    onClick={handleReset}
                   >
                     다시계산
                   </button>
@@ -637,7 +638,7 @@ function ComprehensiveTable({
             </td>
             <td>
               {formatAmount(
-                Math.round(activeTimelyAmount * 1.5 * overtimeTime),
+                Math.round(activeTimelyAmount * OVERTIME_RATE * overtimeTime),
               )}
             </td>
           </tr>
@@ -656,7 +657,7 @@ function ComprehensiveTable({
               </div>
             </td>
             <td>
-              {formatAmount(Math.round(activeTimelyAmount * 0.5 * nightTime))}
+              {formatAmount(Math.round(activeTimelyAmount * NIGHT_RATE * nightTime))}
             </td>
           </tr>
           <tr>
@@ -674,7 +675,7 @@ function ComprehensiveTable({
               </div>
             </td>
             <td>
-              {formatAmount(Math.round(activeTimelyAmount * 1.5 * holidayTime))}
+              {formatAmount(Math.round(activeTimelyAmount * HOLIDAY_RATE * holidayTime))}
             </td>
           </tr>
           <tr>
@@ -693,7 +694,7 @@ function ComprehensiveTable({
             </td>
             <td>
               {formatAmount(
-                Math.round(activeTimelyAmount * 2.0 * addHolidayTime),
+                Math.round(activeTimelyAmount * ADD_HOLIDAY_RATE * addHolidayTime),
               )}
             </td>
           </tr>

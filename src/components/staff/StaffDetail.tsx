@@ -10,21 +10,16 @@ import {
   useDeleteEmployee,
   useWithdrawEmployeeMember,
 } from '@/hooks/queries/use-employee-queries'
+import { usePopupControler } from '@/store/usePopupControler'
+import { isHealthCheckExpired } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/api'
 import { downloadFile } from '@/lib/api/file'
-
-/** 건강진단 만료일이 오늘 기준으로 경과했는지 판별 */
-const isExpired = (date?: string | null) => {
-  if (!date) return false
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return new Date(date) < today
-}
 
 export default function StaffDetail() {
   const router = useRouter()
   const params = useParams()
   const employeeId = params.id ? Number(params.id) : null
+  const openAlert = usePopupControler((s) => s.openAlert)
 
   const { data: employee, isLoading, isError } = useEmployeeDetail(employeeId)
   const memberId = employee?.memberId ?? null
@@ -35,45 +30,66 @@ export default function StaffDetail() {
   const deleteMutation = useDeleteEmployee()
   const withdrawMutation = useWithdrawEmployeeMember()
 
-  const handleSendInvite = async () => {
+  const handleSendInvite = () => {
     if (!employeeId) return
-    if (!confirm('직원 회원 가입 요청을 전송하시겠습니까?')) return
-    try {
-      await sendEmailMutation.mutateAsync(employeeId)
-      alert('전송되었습니다.')
-    } catch (error) {
-      alert(getErrorMessage(error, '전송에 실패했습니다.'))
-    }
+    openAlert({
+      message: '직원 회원 가입 요청을 전송하시겠습니까?',
+      confirmText: '전송',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await sendEmailMutation.mutateAsync(employeeId)
+          openAlert({ message: '전송되었습니다.', confirmText: '확인' })
+        } catch (error) {
+          openAlert({ message: getErrorMessage(error, '전송에 실패했습니다.'), confirmText: '확인' })
+        }
+      },
+    })
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!employeeId) return
-    if (!confirm('해당 직원을 삭제하시겠습니까?\n삭제하면 더 이상 매장정보에 접근할 수 없습니다.')) return
-    try {
-      await deleteMutation.mutateAsync(employeeId)
-      alert('삭제되었습니다.')
-      router.push('/staff')
-    } catch (error) {
-      alert(getErrorMessage(error, '삭제에 실패했습니다.'))
-    }
+    openAlert({
+      message: '해당 직원을 삭제하시겠습니까?\n삭제하면 더 이상 매장정보에 접근할 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await deleteMutation.mutateAsync(employeeId)
+          openAlert({
+            message: '삭제되었습니다.',
+            confirmText: '확인',
+            onConfirm: () => router.push('/staff'),
+          })
+        } catch (error) {
+          openAlert({ message: getErrorMessage(error, '삭제에 실패했습니다.'), confirmText: '확인' })
+        }
+      },
+    })
   }
 
-  const handleWithdraw = async () => {
+  const handleWithdraw = () => {
     if (!employeeId) return
-    if (!confirm('해당 직원을 탈퇴 처리하시겠습니까?\n탈퇴 처리하면 로그인 할 수 없습니다.')) return
-    try {
-      await withdrawMutation.mutateAsync(employeeId)
-      alert('탈퇴 처리되었습니다.')
-    } catch (error) {
-      alert(getErrorMessage(error, '탈퇴 처리에 실패했습니다.'))
-    }
+    openAlert({
+      message: '해당 직원을 탈퇴 처리하시겠습니까?\n탈퇴 처리하면 로그인 할 수 없습니다.',
+      confirmText: '탈퇴 처리',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await withdrawMutation.mutateAsync(employeeId)
+          openAlert({ message: '탈퇴 처리되었습니다.', confirmText: '확인' })
+        } catch (error) {
+          openAlert({ message: getErrorMessage(error, '탈퇴 처리에 실패했습니다.'), confirmText: '확인' })
+        }
+      },
+    })
   }
 
   const handleFileDownload = async (fileId: number) => {
     try {
       await downloadFile(fileId)
     } catch (error) {
-      alert(getErrorMessage(error, '파일 다운로드에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '파일 다운로드에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
@@ -120,7 +136,7 @@ export default function StaffDetail() {
   const isInviteCompleted = !!employee.memberId
   const inviteStatusText = isInviteCompleted ? '초대완료' : '초대요청'
   const healthExpiryDate = healthDoc?.expiryDate ?? null
-  const healthExpired = isExpired(healthExpiryDate)
+  const healthExpired = isHealthCheckExpired(healthExpiryDate)
 
   return (
     <div className="container sub">

@@ -39,7 +39,8 @@ export default function InviteForm04() {
   const openTimePicker = useBottomSheetControler(
     (state) => state.openTimePicker,
   )
-  const { stepFour, setStepFour } = useStaffInviteStore()
+  const stepFour = useStaffInviteStore((s) => s.stepFour)
+  const setStepFour = useStaffInviteStore((s) => s.setStepFour)
   const { workHours } = stepFour
 
   const weekdayData = findWorkHour(workHours, 'WEEKDAY')

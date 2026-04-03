@@ -9,6 +9,7 @@ import {
 } from '@/hooks/queries/use-employee-queries'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { useAuthStore } from '@/store/useAuthStore'
+import { usePopupControler } from '@/store/usePopupControler'
 import { getErrorMessage } from '@/lib/api'
 import { downloadFile } from '@/lib/api/file'
 import type {
@@ -47,6 +48,7 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
   const router = useRouter()
   const employeeId = employee.id
   const headOfficeId = useAuthStore((state) => state.headOfficeId)
+  const openAlert = usePopupControler((s) => s.openAlert)
 
   const { data: commonCode } = useEmployeeCommonCode(headOfficeId ?? undefined)
   const { mutateAsync: updateEmployee, isPending: isSaving } = useUpdateEmployee()
@@ -136,7 +138,7 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
       await downloadFile(fileId)
     } catch (error) {
       console.error('[StaffEdit] 파일 다운로드 실패:', error)
-      alert(getErrorMessage(error, '파일 다운로드에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '파일 다운로드에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
@@ -146,20 +148,23 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
     const data = {
       workplaceType,
       headOfficeOrganizationId: selectedHeadOfficeId,
-      franchiseOrganizationId: workplaceType === 'FRANCHISE' ? selectedFranchiseId : null,
-      storeId: selectedStoreId ?? null,
-      workStatus: workStatus || null,
+      franchiseOrganizationId: workplaceType === 'FRANCHISE' ? selectedFranchiseId ?? undefined : undefined,
+      storeId: selectedStoreId ?? undefined,
+      workStatus: workStatus || undefined,
       hireDate: employee.hireDate ?? '',
-      resignationDate: isResigned ? resignationDate || null : null,
-      resignationReason: isResigned ? resignationReason || null : null,
+      resignationDate: isResigned ? resignationDate || undefined : undefined,
+      resignationReason: isResigned ? resignationReason || undefined : undefined,
     }
 
     try {
       await updateEmployee({ id: employeeId, data })
-      alert('저장되었습니다.')
-      router.push(`/staff/${employeeId}`)
+      openAlert({
+        message: '저장되었습니다.',
+        confirmText: '확인',
+        onConfirm: () => router.push(`/staff/${employeeId}`),
+      })
     } catch (error) {
-      alert(getErrorMessage(error, '저장에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '저장에 실패했습니다.'), confirmText: '확인' })
     }
   }
 

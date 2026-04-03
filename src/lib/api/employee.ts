@@ -92,8 +92,8 @@ export async function getEmployeeList(
       contractClassification: item.contractClassification,
       contractClassificationName: item.contractClassificationName,
       hireDate: item.hireDate,
-      healthCheckExpiryDate: item.healthCheckExpiryDate ?? undefined,
-      memo: item.memo ?? undefined,
+      healthCheckExpiryDate: item.healthCheckExpiryDate ?? null,
+      memo: item.memo ?? null,
     })),
     totalElements: apiData.totalElements,
     totalPages: apiData.totalPages,
@@ -318,15 +318,15 @@ export async function getMinimumWageList(): Promise<MinimumWageInfo[]> {
   try {
     const currentWage = await getMinimumWage(currentYear)
     result.push({ year: currentYear, minimumWage: currentWage })
-  } catch {
-    // 현재년도 최저시급 조회 실패 시 무시
+  } catch (err) {
+    console.error('[getMinimumWageList] 현재년도 최저시급 조회 실패:', err)
   }
 
   try {
     const nextWage = await getMinimumWage(nextYear)
     result.push({ year: nextYear, minimumWage: nextWage })
-  } catch {
-    // 다음년도 최저시급 미등록 시 무시
+  } catch (err) {
+    console.error('[getMinimumWageList] 다음년도 최저시급 조회 실패:', err)
   }
 
   return result
@@ -348,7 +348,8 @@ export async function getEmployeeCommonCode(
       { params },
     )
     return response.data.data
-  } catch {
+  } catch (err) {
+    console.error('[getEmployeeCommonCode] 공통코드 조회 실패:', err)
     return null
   }
 }

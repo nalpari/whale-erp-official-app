@@ -61,10 +61,10 @@ export interface EmploymentContractWorkHourDto {
 export interface PostEmployeeInfoRequest {
   workplaceType: WorkplaceType
   headOfficeOrganizationId: number
-  franchiseOrganizationId?: number | null
-  storeId?: number | null
+  franchiseOrganizationId?: number
+  storeId?: number
   employeeName: string
-  mobilePhone?: string | null
+  mobilePhone?: string
   hireDate: string // YYYY-MM-DD
 
   contractClassification: ContractClassificationType
@@ -77,7 +77,7 @@ export interface PostEmployeeInfoRequest {
   salaryDay: number
   contractStartDate: string // YYYY-MM-DD
   contractEndDate: string // YYYY-MM-DD
-  jobDescription?: string | null
+  jobDescription?: string
 
   workHours: EmploymentContractWorkHourDto[]
 }
@@ -86,51 +86,51 @@ export interface PostEmployeeInfoRequest {
 
 export interface EmployeeInfoDetailResponse {
   id: number
-  memberId?: number | null
-  memberLoginId?: string | null
-  memberAuthorityNames?: string[] | null
-  currentBpAuthorityId?: number | null
-  memberCreatedAt?: string | null
+  memberId: number | null
+  memberLoginId: string | null
+  memberAuthorityNames: string[] | null
+  currentBpAuthorityId: number | null
+  memberCreatedAt: string | null
   workplaceType: WorkplaceType
   headOfficeOrganizationId: number
-  headOfficeOrganizationName?: string | null
-  franchiseOrganizationId?: number | null
-  franchiseOrganizationName?: string | null
-  storeId?: number | null
-  storeName?: string | null
+  headOfficeOrganizationName: string | null
+  franchiseOrganizationId: number | null
+  franchiseOrganizationName: string | null
+  storeId: number | null
+  storeName: string | null
   employeeName: string
   employeeNumber: string
-  workStatus?: string | null
-  workStatusName?: string | null
-  birthDate?: string | null
-  mobilePhone?: string | null
-  emergencyContact?: string | null
-  email?: string | null
-  zipCode?: string | null
-  address?: string | null
-  addressDetail?: string | null
-  employeeClassification?: string | null
-  employeeClassificationName?: string | null
-  contractClassification?: string | null
-  contractClassificationName?: string | null
-  rank?: string | null
-  rankName?: string | null
-  position?: string | null
-  positionName?: string | null
-  hireDate?: string | null
-  resignationDate?: string | null
-  resignationReason?: string | null
-  salaryBank?: string | null
-  salaryAccountNumber?: string | null
-  salaryAccountHolder?: string | null
-  memo?: string | null
-  iconType?: number | null
-  isEmailSend?: boolean | null
-  emailSendDate?: string | null
-  createdAt?: string | null
-  updatedAt?: string | null
-  createdByName?: string | null
-  updatedByName?: string | null
+  workStatus: string | null
+  workStatusName: string | null
+  birthDate: string | null
+  mobilePhone: string | null
+  emergencyContact: string | null
+  email: string | null
+  zipCode: string | null
+  address: string | null
+  addressDetail: string | null
+  employeeClassification: string | null
+  employeeClassificationName: string | null
+  contractClassification: string | null
+  contractClassificationName: string | null
+  rank: string | null
+  rankName: string | null
+  position: string | null
+  positionName: string | null
+  hireDate: string | null
+  resignationDate: string | null
+  resignationReason: string | null
+  salaryBank: string | null
+  salaryAccountNumber: string | null
+  salaryAccountHolder: string | null
+  memo: string | null
+  iconType: number | null
+  isEmailSend: boolean | null
+  emailSendDate: string | null
+  createdAt: string | null
+  updatedAt: string | null
+  createdByName: string | null
+  updatedByName: string | null
 }
 
 // ========== 직원 목록 ==========
@@ -158,8 +158,8 @@ export interface EmployeeListItem {
   rowNumber: number
   workStatus: string | null
   workStatusName: string | null
-  memberId?: number | null
-  isEmailSend?: boolean | null
+  memberId: number | null
+  isEmailSend: boolean | null
   memberStatus: string
   headOfficeName: string
   franchiseName: string | null
@@ -170,8 +170,8 @@ export interface EmployeeListItem {
   contractClassification: string | null
   contractClassificationName: string | null
   hireDate: string
-  healthCheckExpiryDate?: string
-  memo?: string
+  healthCheckExpiryDate: string | null
+  memo: string | null
 }
 
 export type EmployeeListResponse = PaginatedResponse<EmployeeListItem>
@@ -181,7 +181,7 @@ export type EmployeeListResponse = PaginatedResponse<EmployeeListItem>
 export interface EmployeeInfoResponse {
   employeeId: number
   employeeName: string
-  mobilePhone?: string | null
+  mobilePhone: string | null
   hireDate: string
   workplaceType: WorkplaceType
 }
@@ -189,40 +189,40 @@ export interface EmployeeInfoResponse {
 // ========== 직원 수정 요청 ==========
 
 export interface UpdateEmployeeInfoRequest {
-  workplaceType?: WorkplaceType | null
-  headOfficeOrganizationId?: number | null
-  franchiseOrganizationId?: number | null
-  storeId?: number | null
-  employeeNumber?: string | null
-  workStatus?: string | null
-  birthDate?: string | null
-  mobilePhone?: string | null
-  emergencyContact?: string | null
-  email?: string | null
-  zipCode?: string | null
-  address?: string | null
-  addressDetail?: string | null
-  employeeClassification?: string | null
-  contractClassification?: string | null
-  rank?: string | null
-  position?: string | null
+  workplaceType?: WorkplaceType
+  headOfficeOrganizationId?: number
+  franchiseOrganizationId?: number
+  storeId?: number
+  employeeNumber?: string
+  workStatus?: string
+  birthDate?: string
+  mobilePhone?: string
+  emergencyContact?: string
+  email?: string
+  zipCode?: string
+  address?: string
+  addressDetail?: string
+  employeeClassification?: string
+  contractClassification?: string
+  rank?: string
+  position?: string
   hireDate: string // 필수
-  resignationDate?: string | null
-  resignationReason?: string | null
-  salaryBank?: string | null
-  salaryAccountNumber?: string | null
-  salaryAccountHolder?: string | null
-  memo?: string | null
-  iconType?: number | null
+  resignationDate?: string
+  resignationReason?: string
+  salaryBank?: string
+  salaryAccountNumber?: string
+  salaryAccountHolder?: string
+  memo?: string
+  iconType?: number
 }
 
 // ========== 파일 업로드 ==========
 
 export interface EmployeeFiles {
-  residentRegistrationFile?: File | null
-  familyRelationFile?: File | null
-  healthCheckFile?: File | null
-  resumeFile?: File | null
+  residentRegistrationFile?: File
+  familyRelationFile?: File
+  healthCheckFile?: File
+  resumeFile?: File
 }
 
 // ========== 경력 정보 ==========
@@ -231,20 +231,20 @@ export interface EmployeeCareerResponse {
   id: number
   memberId: number
   companyName: string
-  workplaceType?: string | null
-  workplaceTypeName?: string | null
+  workplaceType: string | null
+  workplaceTypeName: string | null
   startDate: string
-  endDate?: string | null
-  contractClassification?: string | null
-  contractClassificationName?: string | null
-  rank?: string | null
-  rankName?: string | null
-  position?: string | null
-  positionName?: string | null
-  jobDescription?: string | null
-  resignationReason?: string | null
-  createdAt?: string | null
-  updatedAt?: string | null
+  endDate: string | null
+  contractClassification: string | null
+  contractClassificationName: string | null
+  rank: string | null
+  rankName: string | null
+  position: string | null
+  positionName: string | null
+  jobDescription: string | null
+  resignationReason: string | null
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 export interface EmployeeCareerItem {
@@ -270,14 +270,14 @@ export interface EmployeeCertificateResponse {
   id: number
   memberId: number
   certificateName: string
-  validityStartDate?: string | null
-  validityEndDate?: string | null
+  validityStartDate: string | null
+  validityEndDate: string | null
   acquisitionDate: string
-  issuingOrganization?: string | null
-  certificateFileId?: number | null
-  certificateFileName?: string | null
-  createdAt?: string | null
-  updatedAt?: string | null
+  issuingOrganization: string | null
+  certificateFileId: number | null
+  certificateFileName: string | null
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 export interface EmployeeCertificateItem {
@@ -310,7 +310,7 @@ export interface MemberDocument {
 // ========== 로그인 정보 ==========
 
 export interface UpdateEmployeeLoginInfoRequest {
-  partnerOfficeAuthorityId?: number | null
+  partnerOfficeAuthorityId?: number
 }
 
 // ========== 최저시급 ==========

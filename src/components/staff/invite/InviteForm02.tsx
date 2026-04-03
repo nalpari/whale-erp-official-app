@@ -24,7 +24,8 @@ const JOB_DESCRIPTION_OPTIONS = [
 ]
 
 export default function InviteForm02() {
-  const { stepTwo, setStepTwo } = useStaffInviteStore()
+  const stepTwo = useStaffInviteStore((s) => s.stepTwo)
+  const setStepTwo = useStaffInviteStore((s) => s.setStepTwo)
   const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK')
   const [isCustomInput, setIsCustomInput] = useState(false)
   const [customText, setCustomText] = useState('')

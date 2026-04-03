@@ -108,8 +108,9 @@ export default function ContractOptionSheet({
                     <input
                       type="number"
                       className="input-frame al-r"
+                      min="0"
                       value={timelyAmount}
-                      onChange={(e) => setTimelyAmount(Number(e.target.value))}
+                      onChange={(e) => setTimelyAmount(Math.max(0, Number(e.target.value)))}
                     />
                   </div>
                   <div className="filed-guide">

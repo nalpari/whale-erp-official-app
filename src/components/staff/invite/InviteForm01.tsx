@@ -4,7 +4,8 @@ import { useHeadOffices, useHeadOfficeTree, useStoreOptions } from '@/hooks/quer
 import type { WorkplaceType } from '@/types/employee'
 
 export default function InviteForm01() {
-  const { stepOne, setStepOne } = useStaffInviteStore()
+  const stepOne = useStaffInviteStore((s) => s.stepOne)
+  const setStepOne = useStaffInviteStore((s) => s.setStepOne)
   const { data: headOffices } = useHeadOffices()
   const { data: headOfficeTree } = useHeadOfficeTree()
   const { data: storeOptions } = useStoreOptions(
@@ -171,7 +172,7 @@ export default function InviteForm01() {
               <div className="filed-tit">Partner Office 권한 설정</div>
             </div>
             <div className="block">
-              <select className="select-form">
+              <select className="select-form" disabled>
                 <option value="">선택</option>
               </select>
             </div>
