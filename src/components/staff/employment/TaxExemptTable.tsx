@@ -95,6 +95,7 @@ export default function TaxExemptTable({
                   value={data.mealAllowance || ""}
                   placeholder="0"
                   max={MAX_MEAL}
+                  disabled={!data.mealIncluded}
                   onChange={(e) =>
                     handleAmountChange("mealAllowance", e.target.value, MAX_MEAL)
                   }
@@ -126,6 +127,7 @@ export default function TaxExemptTable({
                   value={data.vehicleAllowance || ""}
                   placeholder="0"
                   max={MAX_VEHICLE}
+                  disabled={!data.vehicleIncluded}
                   onChange={(e) =>
                     handleAmountChange(
                       "vehicleAllowance",
@@ -161,6 +163,7 @@ export default function TaxExemptTable({
                   value={data.childcareAllowance || ""}
                   placeholder="0"
                   max={MAX_CHILDCARE}
+                  disabled={!data.childcareIncluded}
                   onChange={(e) =>
                     handleAmountChange(
                       "childcareAllowance",

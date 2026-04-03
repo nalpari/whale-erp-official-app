@@ -42,11 +42,11 @@ export default function ContractOptionSheet({
       ? `${minimumWage.toLocaleString('ko-KR')}원`
       : '-';
 
-  // 바텀시트 열릴 때 prop 동기화 + 통상시급 미설정 시 최저시급으로 초기화
+  // 바텀시트 열릴 때 prop 동기화 (최저시급 fallback은 부모에서 activeTimelyAmount로 처리)
   const syncFromProps = () => {
     setYear(effectiveInitialYear);
     setWeeklyHours(initialWeeklyHours);
-    setTimelyAmount(initialTimelyAmount || minimumWage);
+    setTimelyAmount(initialTimelyAmount);
   };
 
   const handleClose = () => {

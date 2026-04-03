@@ -10,6 +10,7 @@ export default function InviteForm01() {
   const { data: headOfficeTree } = useHeadOfficeTree()
   const { data: storeOptions } = useStoreOptions(
     stepOne.headOfficeOrganizationId ?? undefined,
+    stepOne.workplaceType === 'FRANCHISE' ? stepOne.franchiseOrganizationId ?? undefined : undefined,
   )
 
   // 선택된 본사의 가맹점 목록
@@ -69,6 +70,7 @@ export default function InviteForm01() {
                   onChange={(e) =>
                     setStepOne({
                       headOfficeOrganizationId: e.target.value ? Number(e.target.value) : null,
+                      franchiseOrganizationId: null,
                       storeId: null,
                     })
                   }
@@ -90,6 +92,7 @@ export default function InviteForm01() {
                     onChange={(e) =>
                       setStepOne({
                         franchiseOrganizationId: e.target.value ? Number(e.target.value) : null,
+                        storeId: null,
                       })
                     }
                   >
@@ -111,7 +114,7 @@ export default function InviteForm01() {
                       storeId: e.target.value ? Number(e.target.value) : null,
                     })
                   }
-                  disabled={!stepOne.headOfficeOrganizationId}
+                  disabled={!stepOne.headOfficeOrganizationId || (stepOne.workplaceType === 'FRANCHISE' && !stepOne.franchiseOrganizationId)}
                 >
                   <option value="">점포 선택</option>
                   {storeOptions?.map((store) => (

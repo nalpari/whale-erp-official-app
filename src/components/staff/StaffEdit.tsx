@@ -61,7 +61,7 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>(
     employee.workplaceType || 'HEAD_OFFICE',
   )
-  const [selectedHeadOfficeId, setSelectedHeadOfficeId] = useState<number>(
+  const [selectedHeadOfficeId, setSelectedHeadOfficeId] = useState<number | null>(
     employee.headOfficeOrganizationId,
   )
   const [selectedFranchiseId, setSelectedFranchiseId] = useState<number | null>(
@@ -92,8 +92,8 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
   const franchiseOptions =
     headOfficeTree.find((o) => o.id === selectedHeadOfficeId)?.franchises ?? []
 
-  // 저장 버튼 활성화 조건: 근무여부, 입사일(읽기전용이므로 이미 존재)
-  const canSave = !!workStatus && !!employee.hireDate
+  // 저장 버튼 활성화 조건: 근무여부 + 본사 선택
+  const canSave = !!workStatus && !!employee.hireDate && !!selectedHeadOfficeId
 
   const handleWorkStatusChange = (status: string) => {
     setWorkStatus(status)
@@ -106,15 +106,14 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
 
   const handleWorkplaceTypeChange = (type: WorkplaceType) => {
     setWorkplaceType(type)
-    // 본사 선택 시 가맹점/점포 초기화
+    setSelectedStoreId(null)
     if (type === 'HEAD_OFFICE') {
       setSelectedFranchiseId(null)
-      setSelectedStoreId(null)
     }
   }
 
   const handleHeadOfficeChange = (value: string) => {
-    const id = value ? Number(value) : 0
+    const id = value ? Number(value) : null
     setSelectedHeadOfficeId(id)
     setSelectedFranchiseId(null)
     setSelectedStoreId(null)

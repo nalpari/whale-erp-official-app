@@ -91,7 +91,11 @@ const DEFAULT_STEP_ONE: StepOneData = {
 }
 
 function getToday(): string {
-  return new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function createDefaultStepTwo(): StepTwoData {
@@ -113,34 +117,38 @@ function createDefaultStepTwo(): StepTwoData {
   }
 }
 
-const DEFAULT_WORK_HOURS: EmploymentContractWorkHourDto[] = [
-  { dayType: 'WEEKDAY', isWork: true, isBreak: true, workStartTime: '09:00:00', workEndTime: '18:00:00', breakStartTime: '12:00:00', breakEndTime: '13:00:00', firstSaturdayWorkDay: null, firstSundayWorkDay: null },
-  { dayType: 'SATURDAY', isWork: false, isBreak: false, everySaturdayWork: true, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null },
-  { dayType: 'SUNDAY', isWork: false, isBreak: false, everySundayWork: true, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null },
-]
-
-const DEFAULT_STEP_THREE_SALARY: StepThreeSalaryData = {
-  timelyAmount: 0,
-  weeklyHours: 40,
-  monthlyTime: 0,
-  overtimeTime: 0,
-  nightTime: 0,
-  holidayTime: 0,
-  addHolidayTime: 0,
-  mealAllowance: 0,
-  mealIncluded: false,
-  vehicleAllowance: 0,
-  vehicleIncluded: false,
-  childcareAllowance: 0,
-  childcareIncluded: false,
-  weekdayHourlyWage: 0,
-  overtimeHourlyWage: 0,
-  holidayHourlyWage: 0,
-  bonuses: [],
+function createDefaultWorkHours(): EmploymentContractWorkHourDto[] {
+  return [
+    { dayType: 'WEEKDAY', isWork: true, isBreak: true, workStartTime: '09:00:00', workEndTime: '18:00:00', breakStartTime: '12:00:00', breakEndTime: '13:00:00', firstSaturdayWorkDay: null, firstSundayWorkDay: null },
+    { dayType: 'SATURDAY', isWork: false, isBreak: false, everySaturdayWork: true, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null },
+    { dayType: 'SUNDAY', isWork: false, isBreak: false, everySundayWork: true, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null },
+  ]
 }
 
-const DEFAULT_STEP_FOUR: StepFourData = {
-  workHours: DEFAULT_WORK_HOURS,
+function createDefaultStepThreeSalary(): StepThreeSalaryData {
+  return {
+    timelyAmount: 0,
+    weeklyHours: 40,
+    monthlyTime: 0,
+    overtimeTime: 0,
+    nightTime: 0,
+    holidayTime: 0,
+    addHolidayTime: 0,
+    mealAllowance: 0,
+    mealIncluded: false,
+    vehicleAllowance: 0,
+    vehicleIncluded: false,
+    childcareAllowance: 0,
+    childcareIncluded: false,
+    weekdayHourlyWage: 0,
+    overtimeHourlyWage: 0,
+    holidayHourlyWage: 0,
+    bonuses: [],
+  }
+}
+
+function createDefaultStepFour(): StepFourData {
+  return { workHours: createDefaultWorkHours() }
 }
 
 const NO_END_DATE_VALUE = '9999-12-31'
@@ -151,8 +159,8 @@ export const useStaffInviteStore = create<StaffInviteState>()(
       currentStep: 1,
       stepOne: { ...DEFAULT_STEP_ONE },
       stepTwo: createDefaultStepTwo(),
-      stepThreeSalary: { ...DEFAULT_STEP_THREE_SALARY },
-      stepFour: { ...DEFAULT_STEP_FOUR },
+      stepThreeSalary: createDefaultStepThreeSalary(),
+      stepFour: createDefaultStepFour(),
 
       setCurrentStep: (step) =>
         set({ currentStep: step }, false, 'setCurrentStep'),
@@ -191,8 +199,8 @@ export const useStaffInviteStore = create<StaffInviteState>()(
             currentStep: 1,
             stepOne: { ...DEFAULT_STEP_ONE },
             stepTwo: createDefaultStepTwo(),
-            stepThreeSalary: { ...DEFAULT_STEP_THREE_SALARY },
-            stepFour: { ...DEFAULT_STEP_FOUR },
+            stepThreeSalary: createDefaultStepThreeSalary(),
+            stepFour: createDefaultStepFour(),
           },
           false,
           'reset',

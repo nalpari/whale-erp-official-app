@@ -150,7 +150,6 @@ export async function updateEmployeeWithFiles(
   const response = await api.put<{ data: EmployeeInfoResponse }>(
     `${BASE_URL}/${id}/with-files`,
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
   )
   return response.data.data
 }
@@ -252,7 +251,6 @@ export async function saveEmployeeCertificatesWithFiles(
   const response = await api.put<{ data: EmployeeCertificateResponse[] }>(
     `/api/v1/employee/member/${memberId}/certificates/with-files`,
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
   )
   return response.data.data
 }
@@ -350,7 +348,7 @@ export async function getEmployeeCommonCode(
     return response.data.data
   } catch (err) {
     console.error('[getEmployeeCommonCode] 공통코드 조회 실패:', err)
-    return null
+    throw err
   }
 }
 

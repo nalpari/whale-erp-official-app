@@ -146,10 +146,12 @@ export default function EmploymentContract({
       (isEditMode ? 0 : inviteSalary.holidayHourlyWage),
   );
 
-  // 시급 활성값: 0이면 최저시급 사용
-  const activeWeekdayWage = weekdayHourlyWage || minimumWage;
-  const activeOvertimeWage = overtimeHourlyWage || minimumWage;
-  const activeHolidayWage = holidayHourlyWage || minimumWage;
+  // 시급 활성값: 계약분류에 따라 fallback 다르게 적용
+  // 비포괄: 통상시급 기반 (평일=통상시급, 연장/휴일=통상시급*배율)
+  // 파트타임: 최저시급
+  const activeWeekdayWage = weekdayHourlyWage || (isNonComprehensive ? activeTimelyAmount : minimumWage);
+  const activeOvertimeWage = overtimeHourlyWage || (isNonComprehensive ? Math.round(activeTimelyAmount * OVERTIME_RATE) : minimumWage);
+  const activeHolidayWage = holidayHourlyWage || (isNonComprehensive ? Math.round(activeTimelyAmount * HOLIDAY_RATE) : minimumWage);
 
   // 상여금 상태
   const [bonuses, setBonuses] = useState<ContractBonus[]>(

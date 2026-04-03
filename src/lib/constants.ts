@@ -22,5 +22,7 @@ export const isHealthCheckExpired = (date?: string | null) => {
   if (!date) return false
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  return new Date(date) < today
+  const [y, m, d] = date.split('-').map(Number)
+  const expiry = new Date(y, m - 1, d)
+  return expiry < today
 }

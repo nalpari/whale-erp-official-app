@@ -20,7 +20,6 @@ import {
   deleteMemberDocument,
   updateEmployeeLoginInfo,
   withdrawEmployeeMember,
-  getMinimumWage,
   getEmployeeCommonCode,
   getEmployeeListByType,
 } from '@/lib/api/employee'
@@ -47,7 +46,6 @@ export const employeeKeys = {
   certificates: (memberId: number) => [...employeeKeys.all, 'certificate', memberId] as const,
   documents: (memberId: number) => [...employeeKeys.all, 'document', memberId] as const,
   byType: (params: GetEmployeeListByTypeParams) => [...employeeKeys.all, 'by-type', params] as const,
-  minimumWage: (year: number) => [...employeeKeys.all, 'minimum-wage', year] as const,
   commonCode: (headOfficeId?: number, franchiseId?: number) =>
     [...employeeKeys.all, 'common-code', { headOfficeId, franchiseId }] as const,
 }
@@ -113,16 +111,6 @@ export const useEmployeeCommonCode = (
   })
 }
 
-// 최저시급 조회
-export const useMinimumWage = (year: number, enabled = true) => {
-  return useQuery({
-    queryKey: employeeKeys.minimumWage(year),
-    queryFn: () => getMinimumWage(year),
-    enabled,
-    staleTime: 24 * 60 * 60 * 1000, // 24시간
-  })
-}
-
 // 직원 타입별 목록 조회
 export const useEmployeeListByType = (
   params: GetEmployeeListByTypeParams,
@@ -143,7 +131,7 @@ export const useCreateEmployee = () => {
   return useMutation({
     mutationFn: (data: PostEmployeeInfoRequest) => createEmployee(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.all })
     },
   })
 }
@@ -154,9 +142,8 @@ export const useUpdateEmployee = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateEmployeeInfoRequest }) =>
       updateEmployee(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(variables.id) })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: employeeKeys.all })
     },
   })
 }

@@ -441,19 +441,19 @@ export default function StaffDetail() {
               <div className="sub-cont-tit-wrap">
                 <div className="sub-cont-tit">경력정보</div>
               </div>
+              {/* 이력서 파일: 경력과 무관하게 표시 */}
+              {resumeDoc && (
+                <div className="sub-item-bx">
+                  <button
+                    className="down-btn"
+                    onClick={() => handleFileDownload(resumeDoc.uploadFileId)}
+                  >
+                    {resumeDoc.fileName || '이력서.pdf'}
+                  </button>
+                </div>
+              )}
               {careers && careers.length > 0 ? (
                 <>
-                  {/* 이력서 파일 */}
-                  {resumeDoc && (
-                    <div className="sub-item-bx">
-                      <button
-                        className="down-btn"
-                        onClick={() => handleFileDownload(resumeDoc.uploadFileId)}
-                      >
-                        {resumeDoc.fileName || '이력서.pdf'}
-                      </button>
-                    </div>
-                  )}
                   <div className="sub-item-bx">
                     <ul className="career-wrap">
                       {careers.map((career) => (

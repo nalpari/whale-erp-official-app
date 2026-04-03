@@ -57,9 +57,12 @@ export default function InviteForm04() {
     dayType: DayType,
     updates: Partial<EmploymentContractWorkHourDto>,
   ) => {
-    const newWorkHours = workHours.map((wh) =>
-      wh.dayType === dayType ? { ...wh, ...updates } : wh,
-    )
+    const exists = workHours.some((wh) => wh.dayType === dayType)
+    const newWorkHours = exists
+      ? workHours.map((wh) =>
+          wh.dayType === dayType ? { ...wh, ...updates } : wh,
+        )
+      : [...workHours, { ...findWorkHour([], dayType), ...updates }]
     setStepFour({ workHours: newWorkHours })
   }
 
@@ -135,20 +138,20 @@ export default function InviteForm04() {
               {WEEKDAYS.map((day) => {
                 const dayWh = workHours.find((wh) => wh.dayType === day.dayType)
                 const isActive = dayWh ? dayWh.isWork : true
+                const nextIsWork = dayWh ? !dayWh.isWork : false
                 return (
                   <button
                     key={day.dayType}
                     className={`day-btn${isActive ? ' act' : ''}`}
                     onClick={() => {
-                      const exists = workHours.some((wh) => wh.dayType === day.dayType)
-                      if (exists) {
+                      if (dayWh) {
                         const newWorkHours = workHours.map((wh) =>
-                          wh.dayType === day.dayType ? { ...wh, isWork: !wh.isWork } : wh,
+                          wh.dayType === day.dayType ? { ...wh, isWork: nextIsWork } : wh,
                         )
                         setStepFour({ workHours: newWorkHours })
                       } else {
                         setStepFour({
-                          workHours: [...workHours, { dayType: day.dayType, isWork: true, isBreak: false, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null }],
+                          workHours: [...workHours, { dayType: day.dayType, isWork: nextIsWork, isBreak: false, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null }],
                         })
                       }
                     }}

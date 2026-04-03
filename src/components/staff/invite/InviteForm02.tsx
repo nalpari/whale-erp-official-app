@@ -27,8 +27,13 @@ export default function InviteForm02() {
   const stepTwo = useStaffInviteStore((s) => s.stepTwo)
   const setStepTwo = useStaffInviteStore((s) => s.setStepTwo)
   const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK')
-  const [isCustomInput, setIsCustomInput] = useState(false)
-  const [customText, setCustomText] = useState('')
+
+  // 직접입력 복원: jobDescription이 프리셋 옵션에 없으면 직접입력 상태
+  const isPresetJob = stepTwo.jobDescription
+    ? stepTwo.jobDescription.split(',').map((s) => s.trim()).every((j) => JOB_DESCRIPTION_OPTIONS.includes(j))
+    : true
+  const [isCustomInput, setIsCustomInput] = useState(!isPresetJob && !!stepTwo.jobDescription)
+  const [customText, setCustomText] = useState(!isPresetJob ? stepTwo.jobDescription : '')
 
   const selectedJobs = stepTwo.jobDescription
     ? stepTwo.jobDescription.split(',').map((s) => s.trim()).filter(Boolean)
@@ -92,7 +97,7 @@ export default function InviteForm02() {
                   type="date"
                   className="date-picker-input"
                   value={stepTwo.contractStartDate}
-                  onChange={(e) => setStepTwo({ contractStartDate: e.target.value, hireDate: e.target.value })}
+                  onChange={(e) => setStepTwo({ contractStartDate: e.target.value })}
                 />
               </div>
               <span>~</span>

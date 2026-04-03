@@ -40,8 +40,13 @@ export default function InviteForm03() {
     (sal.mealIncluded ? sal.mealAllowance : 0) +
     (sal.vehicleIncluded ? sal.vehicleAllowance : 0) +
     (sal.childcareIncluded ? sal.childcareAllowance : 0)
+  // 계약분류별 월급여 계산: 포괄=전체수당, 비포괄=기본급+비과세, 파트타임=0
   const monthlyTotal = Math.round(
-    baseAmount + overtimeAmount + nightAmount + holidayAmount + addHolidayAmount + nonTaxTotal
+    contractType === 'CNTCFWK_001'
+      ? baseAmount + overtimeAmount + nightAmount + holidayAmount + addHolidayAmount + nonTaxTotal
+      : contractType === 'CNTCFWK_002'
+        ? baseAmount + nonTaxTotal
+        : 0,
   )
   const annualTotal = monthlyTotal * 12
 
