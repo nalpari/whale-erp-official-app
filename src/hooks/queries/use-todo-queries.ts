@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteTodos, createTodo, getEmployeeOptions, getCalendarData } from '@/lib/api/todo'
 import type { TodoCreateRequest } from '@/types/todo'
 
+const TODO_BASE_KEY = ['todo'] as const
+
 export const todoKeys = {
-  all: ['todo'] as const,
+  all: TODO_BASE_KEY,
   calendar: (params: { year: number; month: number; headOfficeId: number | null; storeId: number | null }) =>
-    [...todoKeys.all, 'calendar', params] as const,
-  employeesAll: [...['todo'], 'employees'] as const,
-  employees: (params: Record<string, unknown>) => [...todoKeys.all, 'employees', params] as const,
+    [...TODO_BASE_KEY, 'calendar', params] as const,
+  employeesAll: [...TODO_BASE_KEY, 'employees'] as const,
+  employees: (params: Record<string, unknown>) => [...TODO_BASE_KEY, 'employees', params] as const,
 }
 
 export function useCalendarData(

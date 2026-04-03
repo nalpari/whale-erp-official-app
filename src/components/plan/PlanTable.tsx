@@ -140,14 +140,14 @@ export default function PlanTable() {
     }
   }
 
-  const searchParams: ScheduleSearchParams = {
-    officeId: headOfficeId ?? 0,
+  const searchParams = headOfficeId ? {
+    officeId: headOfficeId,
     storeId,
     employeeName: searchEmployeeName || undefined,
     dayType: searchDayType ?? undefined,
     from: searchFrom,
     to: searchTo,
-  }
+  } satisfies ScheduleSearchParams : null
 
   // 본사/점포 선택 없으면 요청 보내지 않음
   const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(

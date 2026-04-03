@@ -16,7 +16,7 @@ for (let h = 0; h < 24; h++) {
 
 export default function TimePickerSheet() {
   const timePickerSheet = useBottomSheetControler((state) => state.timePickerSheet);
-  const setTimePickerSheet = useBottomSheetControler((state) => state.setTimePickerSheet);
+  const closeTimePickerSheet = useBottomSheetControler((state) => state.closeTimePickerSheet);
   const timePickerTitle = useBottomSheetControler((state) => state.timePickerTitle);
   const timePickerValue = useBottomSheetControler((state) => state.timePickerValue);
   const onTimeSelect = useBottomSheetControler((state) => state.onTimeSelect);
@@ -31,7 +31,7 @@ export default function TimePickerSheet() {
   }, [timePickerSheet]);
 
   const handleClose = () => {
-    setTimePickerSheet(false);
+    closeTimePickerSheet();
   };
 
   const handleSelect = (time: string | null) => {

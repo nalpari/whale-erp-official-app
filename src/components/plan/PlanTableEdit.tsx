@@ -101,25 +101,32 @@ export default function PlanTableEdit() {
   }, !!headOfficeId && !!storeId)
 
   // 직원 목록 매핑 (바텀시트 오픈 시점에 lazily 전달)
-  // API 응답에는 contractType이 포함되므로 schedule 전용 타입으로 narrowing
   const mappedEmployees = useMemo(
-    () => (employeeList as ScheduleEmployeeOption[]).map((e) => ({
+    () => employeeList.map((e) => ({
       id: e.employeeInfoId,
       memberId: e.memberId,
       name: e.employeeName,
-      contractType: toContractType(e.contractType),
+      contractType: toContractType(
+        'contractType' in e ? (e as ScheduleEmployeeOption).contractType : null,
+      ),
       employeeNumber: e.employeeNumber,
     })),
     [employeeList],
   )
 
   // 검색 조건: date 쿼리 파라미터가 있으면 해당 날짜만, 없으면 목록 검색 조건 상속
-  const params: ScheduleSearchParams = useMemo(() => ({
-    officeId: headOfficeId ?? 0,
-    storeId,
-    from: editDate ?? searchFrom,
-    to: editDate ?? searchTo,
-  }), [headOfficeId, storeId, editDate, searchFrom, searchTo])
+  const fromDate = editDate ?? searchFrom
+  const toDate = editDate ?? searchTo
+
+  const params = useMemo(() => {
+    if (!headOfficeId) return null
+    return {
+      officeId: headOfficeId,
+      storeId,
+      from: fromDate,
+      to: toDate,
+    } satisfies ScheduleSearchParams
+  }, [headOfficeId, storeId, fromDate, toDate])
 
   const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(params, !!headOfficeId && !!storeId)
 
@@ -127,7 +134,7 @@ export default function PlanTableEdit() {
   const initialEditState = useMemo(() => {
     const state = new Map<string, WorkerEditItem[]>()
 
-    for (const date of createDateRange(params.from, params.to)) {
+    for (const date of createDateRange(fromDate, toDate)) {
       state.set(date, [])
     }
 
@@ -139,9 +146,9 @@ export default function PlanTableEdit() {
       state.set(schedule.date, workers)
     }
     return state
-  }, [scheduleList, params.from, params.to])
+  }, [scheduleList, fromDate, toDate])
 
-  const editScopeKey = `${storeId ?? 'none'}:${params.from}:${params.to}:${editDate ?? 'range'}`
+  const editScopeKey = `${storeId ?? 'none'}:${fromDate}:${toDate}:${editDate ?? 'range'}`
   const [editSession, setEditSession] = useState<{
     scopeKey: string
     data: Map<string, WorkerEditItem[]>

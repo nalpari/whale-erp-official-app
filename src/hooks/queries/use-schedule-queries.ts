@@ -15,11 +15,11 @@ export const scheduleKeys = {
 }
 
 // 계획표 목록 조회
-export const useScheduleList = (params: ScheduleSearchParams, enabled = true) => {
+export const useScheduleList = (params: ScheduleSearchParams | null, enabled = true) => {
   return useQuery({
-    queryKey: scheduleKeys.list(params),
-    queryFn: () => getScheduleList(params),
-    enabled: !!params.officeId && !!params.storeId && !!params.from && !!params.to && enabled,
+    queryKey: params ? scheduleKeys.list(params) : scheduleKeys.all,
+    queryFn: () => getScheduleList(params!),
+    enabled: !!params && !!params.officeId && !!params.storeId && !!params.from && !!params.to && enabled,
   })
 }
 

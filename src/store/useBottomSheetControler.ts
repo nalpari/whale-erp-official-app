@@ -85,6 +85,7 @@ type BottomSheetControlerState = {
   setPhotoUploadSheet: (isOpen: boolean) => void
   timePickerSheet: boolean
   setTimePickerSheet: (isOpen: boolean) => void
+  closeTimePickerSheet: () => void
   timePickerTitle: string
   timePickerValue: string
   onTimeSelect: TimeSelectCallback | null
@@ -282,6 +283,12 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           { timePickerSheet: isOpen },
           false,
           'bottomSheet/setTimePicker',
+        ),
+      closeTimePickerSheet: () =>
+        set(
+          { timePickerSheet: false, onTimeSelect: null, timePickerTitle: '', timePickerValue: '' },
+          false,
+          'bottomSheet/closeTimePicker',
         ),
       timePickerTitle: '',
       timePickerValue: '',

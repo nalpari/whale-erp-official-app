@@ -68,10 +68,9 @@ export default function StoreSelectSheet() {
       const prevStoreId = selectedStore?.id ?? null
       const nextStoreId = store?.id ?? null
       setSelection(office, store)
-      // 본사/점포 변경 시 관련 캐시 모두 무효화
-      queryClient.removeQueries({ queryKey: todoKeys.employeesAll })
-      queryClient.removeQueries({ queryKey: scheduleKeys.all })
       if (prevOfficeId !== nextOfficeId || prevStoreId !== nextStoreId) {
+        queryClient.removeQueries({ queryKey: todoKeys.employeesAll })
+        queryClient.removeQueries({ queryKey: scheduleKeys.all })
         usePlanSearchStore.getState().reset()
       }
     } catch (err) {
