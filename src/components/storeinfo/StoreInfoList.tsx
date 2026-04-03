@@ -118,7 +118,7 @@ export default function StoreInfoList() {
           <div className="search-count">
             검색결과 <span>{totalElements}건</span>
           </div>
-          <button className={`search-btn act${hasSearched ? " filtered" : ""}`} onClick={() => setStoreSearchSheet(true)}>
+          <button className={`search-btn${hasSearched ? " filtered" : ""}`} onClick={() => setStoreSearchSheet(true)}>
             <i className="icon-search"></i>
             <span>검색</span>
           </button>

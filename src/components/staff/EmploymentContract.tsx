@@ -49,22 +49,22 @@ export default function EmploymentContract({
 
   // 비과세 항목
   const [mealAllowance, setMealAllowance] = useState<number>(
-    salary?.mealAllowanceAmount ?? 0
+    salary?.mealAllowance ?? 0
   );
   const [mealIncluded, setMealIncluded] = useState<boolean>(
-    (salary?.mealAllowanceAmount ?? 0) > 0
+    (salary?.mealAllowance ?? 0) > 0
   );
   const [vehicleAllowance, setVehicleAllowance] = useState<number>(
-    salary?.vehicleAllowanceAmount ?? 0
+    salary?.vehicleAllowance ?? 0
   );
   const [vehicleIncluded, setVehicleIncluded] = useState<boolean>(
-    (salary?.vehicleAllowanceAmount ?? 0) > 0
+    (salary?.vehicleAllowance ?? 0) > 0
   );
   const [childcareAllowance, setChildcareAllowance] = useState<number>(
-    salary?.childcareAllowanceAmount ?? 0
+    salary?.childcareAllowance ?? 0
   );
   const [childcareIncluded, setChildcareIncluded] = useState<boolean>(
-    (salary?.childcareAllowanceAmount ?? 0) > 0
+    (salary?.childcareAllowance ?? 0) > 0
   );
 
   // 계산된 금액

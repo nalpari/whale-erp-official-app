@@ -45,6 +45,7 @@ export type TodoCreateRequest = TodoCreateBase &
 
 export interface EmployeeOption {
   employeeInfoId: number;
+  memberId: number | null;
   employeeNumber: string;
   employeeName: string;
   headOfficeName: string;

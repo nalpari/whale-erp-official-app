@@ -1,0 +1,140 @@
+import type { WorkerResponse, WorkerIconType, ScheduleContractType } from '@/types/schedule'
+
+// ── 계약유형 검증 ──
+
+const VALID_CONTRACT_TYPES: readonly ScheduleContractType[] = ['정직원', '계약직', '수습', '파트타이머', '임시근무']
+const SORT_LAST_TIME = '99:99'
+
+/** 서버 응답 문자열을 ScheduleContractType으로 안전하게 변환 (유효하지 않으면 기본값 '정직원') */
+export function toContractType(value: string | undefined | null): ScheduleContractType {
+  if (value && (VALID_CONTRACT_TYPES as readonly string[]).includes(value)) {
+    return value as ScheduleContractType
+  }
+  if (value) {
+    console.warn('[toContractType] 알 수 없는 계약 유형입니다. 기본값 정직원으로 대체합니다:', value)
+  }
+  return '정직원'
+}
+
+// ── 기본 시간 상수 ──
+
+export const DEFAULT_WORK_START = '09:00'
+export const DEFAULT_WORK_END = '18:00'
+export const DEFAULT_BREAK_START = '12:00'
+export const DEFAULT_BREAK_END = '13:00'
+
+// ── 아바타 아이콘 매핑 ──
+// iconType 서버 값(0~3) → 아바타 이미지
+const AVATAR_IMAGES = [
+  '/assets/images/layout/avatar01.svg',
+  '/assets/images/layout/avatar02.svg',
+  '/assets/images/layout/avatar03.svg',
+  '/assets/images/layout/avatar04.svg',
+] as const
+
+/** iconType(0~3) → 아바타 이미지 경로 */
+export function getWorkerAvatar(iconType: WorkerIconType): string {
+  return AVATAR_IMAGES[iconType] ?? AVATAR_IMAGES[0]
+}
+
+// ── 계약유형 스타일 매핑 ──
+
+export function getContractStyle(contractType: ScheduleContractType) {
+  switch (contractType) {
+    case '파트타이머':
+      return { wrapClass: 'part', badgeClass: 'badge green', label: '파트' }
+    case '임시근무':
+      return { wrapClass: 'temporary', badgeClass: 'badge brown', label: '임시' }
+    default:
+      return { wrapClass: 'full', badgeClass: 'badge blue', label: contractType }
+  }
+}
+
+// ── 근무시간 계산 ──
+
+export function calcWorkHours(worker: Pick<WorkerResponse, 'hasWork' | 'workStartTime' | 'workEndTime' | 'hasBreak' | 'breakStartTime' | 'breakEndTime'>): string {
+  if (!worker.hasWork || !worker.workStartTime || !worker.workEndTime) return '0h'
+  const [sh, sm] = worker.workStartTime.split(':').map(Number)
+  const [eh, em] = worker.workEndTime.split(':').map(Number)
+  let totalMin = (eh * 60 + em) - (sh * 60 + sm)
+  // 자정을 넘는 야간 근무 보정 (예: 22:00 ~ 06:00)
+  if (totalMin < 0) totalMin += 24 * 60
+  if (worker.hasBreak && worker.breakStartTime && worker.breakEndTime) {
+    const [bsh, bsm] = worker.breakStartTime.split(':').map(Number)
+    const [beh, bem] = worker.breakEndTime.split(':').map(Number)
+    let breakMin = (beh * 60 + bem) - (bsh * 60 + bsm)
+    if (breakMin < 0) breakMin += 24 * 60
+    totalMin -= breakMin
+  }
+  const hours = Math.floor(totalMin / 60)
+  const mins = totalMin % 60
+  return mins > 0 ? `${hours}h${mins}m` : `${hours}h`
+}
+
+// ── 정렬 ──
+
+const CONTRACT_ORDER: Record<ScheduleContractType, number> = {
+  '정직원': 1, '계약직': 2, '수습': 3, '파트타이머': 4, '임시근무': 5,
+}
+
+/** 근무자 정렬: 삭제된 항목 제외 후, 근무 시작시간 오름차순(미지정 시 끝으로), 동일 시간 시 계약유형 우선순위 순 */
+export function sortWorkers<T extends Pick<WorkerResponse, 'workStartTime' | 'contractType' | 'isDeleted'>>(workers: T[]): T[] {
+  return [...workers]
+    .filter((w) => !w.isDeleted)
+    .sort((a, b) => {
+      const timeA = a.workStartTime ?? SORT_LAST_TIME
+      const timeB = b.workStartTime ?? SORT_LAST_TIME
+      if (timeA !== timeB) return timeA.localeCompare(timeB)
+      return (CONTRACT_ORDER[a.contractType] ?? 99) - (CONTRACT_ORDER[b.contractType] ?? 99)
+    })
+}
+
+// ── 요일 ──
+
+export const DAY_OPTIONS = [
+  { value: 'MONDAY', label: '월' },
+  { value: 'TUESDAY', label: '화' },
+  { value: 'WEDNESDAY', label: '수' },
+  { value: 'THURSDAY', label: '목' },
+  { value: 'FRIDAY', label: '금' },
+  { value: 'SATURDAY', label: '토' },
+  { value: 'SUNDAY', label: '일' },
+] as const
+
+export const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const
+
+/** YYYY-MM-DD 문자열을 로컬 타임존 Date로 파싱 (UTC 오프셋 버그 방지) */
+export function parseDateLocal(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+export function formatDateWithDay(dateStr: string): string {
+  const date = parseDateLocal(dateStr)
+  return `${dateStr.replace(/-/g, '.')} ${DAY_LABELS[date.getDay()]}`
+}
+
+// ── 날짜 유틸 ──
+
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
+export function getMonday(date: Date = new Date()): string {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+  d.setDate(diff)
+  return formatLocalDate(d)
+}
+
+export function getSunday(date: Date = new Date()): string {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? 0 : 7)
+  d.setDate(diff)
+  return formatLocalDate(d)
+}

@@ -1,24 +1,50 @@
-"use client";
-import { useBottomSheetControler } from "@/store/useBottomSheetControler";
-import Image from "next/image";
-import { Sheet } from "react-modal-sheet";
+'use client'
+import { useState } from 'react'
+import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import Image from 'next/image'
+import { Sheet } from 'react-modal-sheet'
+import { getWorkerAvatar, getContractStyle } from '@/lib/schedule-utils'
 
 export default function WorkerChangeSheet() {
-  const workerChangeSheet = useBottomSheetControler(
-    (state) => state.workerChangeSheet
-  );
-  const setWorkerChangeSheet = useBottomSheetControler(
-    (state) => state.setWorkerChangeSheet
-  );
+  const workerChangeSheet = useBottomSheetControler((state) => state.workerChangeSheet)
+  const closeWorkerChangeSheet = useBottomSheetControler((state) => state.closeWorkerChangeSheet)
+  const worker = useBottomSheetControler((state) => state.workerSheetContext.worker)
+  const onWorkerReplace = useBottomSheetControler((state) => state.onWorkerReplace)
+  const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
+
+  const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const handleClose = () => {
-    setWorkerChangeSheet(false);
-  };
+    closeWorkerChangeSheet()
+  }
+
+  const handleOpenStart = () => {
+    setSelectedId(null)
+  }
+
+  const handleReplace = () => {
+    if (selectedId === null) return
+    const emp = employees.find((e) => e.id === selectedId)
+    if (!emp || emp.memberId === null) {
+      console.warn('[WorkerChangeSheet] 유효성 검사 실패 — 직원 정보 누락')
+      return
+    }
+    try {
+      onWorkerReplace?.(emp.memberId, emp.name, emp.contractType)
+    } catch (err) {
+      console.error('[WorkerChangeSheet] 교체 콜백 실패:', err)
+    } finally {
+      handleClose()
+    }
+  }
+
+  const badge = worker ? getContractStyle(worker.contractType) : null
 
   return (
     <Sheet
       isOpen={workerChangeSheet}
       onClose={handleClose}
+      onOpenStart={handleOpenStart}
       detent="content"
       disableScrollLocking={true}
     >
@@ -29,80 +55,63 @@ export default function WorkerChangeSheet() {
             <div className="bottom-sheet-header">
               <h3>근무자 교체</h3>
             </div>
-            <div className=" bottom-sheet-body">
+            <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
-                <div className="worker-info-wrap full">
-                  <div className="worker-img">
-                    <Image
-                      src="/assets/images/layout/avatar02.svg"
-                      alt="근무자 이미지"
-                      width={46}
-                      height={46}
-                    />
-                  </div>
-                  <div className="worker-info">
-                    <div className="worker-name">
-                      <span>김직원 님</span>의
-                      <span className="badge blue ml5">정직원 4h</span>
+                {worker && badge && (
+                  <div className={`worker-info-wrap ${badge.wrapClass}`}>
+                    <div className="worker-img">
+                      <Image
+                        src={getWorkerAvatar(worker.iconType)}
+                        alt="근무자 이미지"
+                        width={46}
+                        height={46}
+                      />
                     </div>
-                    <div className="worker-name">교체 근무자를 선택하세요.</div>
-                  </div>
-                </div>
-                <div className="worker-info-wrap part">
-                  <div className="worker-img">
-                    <Image
-                      src="/assets/images/layout/avatar01.svg"
-                      alt="근무자 이미지"
-                      width={46}
-                      height={46}
-                    />
-                  </div>
-                  <div className="worker-info">
-                    <div className="worker-name">
-                      <span>김직원 님</span>의
-                      <span className="badge green ml5">파트 4h</span>
+                    <div className="worker-info">
+                      <div className="worker-name">
+                        <span>{worker.workerName} 님</span>의
+                        <span className={`${badge.badgeClass} ml5`}>{badge.label}</span>
+                      </div>
+                      <div className="worker-name">교체 근무자를 선택하세요.</div>
                     </div>
-                    <div className="worker-name">교체 근무자를 선택하세요.</div>
                   </div>
-                </div>
-                <div className="worker-info-wrap temporary">
-                  <div className="worker-img">
-                    <Image
-                      src="/assets/images/layout/avatar01.svg"
-                      alt="근무자 이미지"
-                      width={46}
-                      height={46}
-                    />
-                  </div>
-                  <div className="worker-info">
-                    <div className="worker-name">
-                      <span>김직원 님</span>의
-                      <span className="badge brown ml5">임시 4h</span>
-                    </div>
-                    <div className="worker-name">교체 근무자를 선택하세요.</div>
-                  </div>
-                </div>
+                )}
                 <div className="sheet-data-filed">
-                    <div className="filed-tit">
-                      교체 근무자<span className="imp"> *</span>
-                    </div>
-                    <div className="block">
-                      <select name="" id="" className="select-form">
-                        <option value="1">김직원</option>
-                        <option value="2">이직원</option>
-                        <option value="3">박직원</option>
-                      </select>
-                    </div>
+                  <div className="filed-tit">
+                    교체 근무자<span className="imp"> *</span>
                   </div>
+                  <div className="block">
+                    <select
+                      className="select-form"
+                      value={selectedId ?? ''}
+                      onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+                    >
+                      <option value="">선택</option>
+                      {employees
+                        .filter((e) => e.memberId !== null && e.memberId !== worker?.workerId)
+                        .map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="bottom-sheet-footer">
-              <button className="btn-form blue">교체</button>
+              <button
+                className="btn-form blue"
+                onClick={handleReplace}
+                disabled={selectedId === null}
+              >
+                교체
+              </button>
             </div>
           </div>
         </Sheet.Content>
       </Sheet.Container>
       <Sheet.Backdrop onTap={handleClose} />
     </Sheet>
-  );
+  )
 }

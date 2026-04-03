@@ -19,14 +19,6 @@
     display: block;
     width: 100%;
     min-width: 100px;
-    &::-webkit-calendar-picker-indicator {
-      opacity: 0;
-      position: absolute;
-      right: 0;
-      width: 40px;
-      height: 100%;
-      cursor: pointer;
-    }
     background-color: #fff;
     height: 48px;
     border-radius: 6px;
