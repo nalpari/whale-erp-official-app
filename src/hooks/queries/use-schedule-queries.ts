@@ -19,7 +19,7 @@ export const useScheduleList = (params: ScheduleSearchParams, enabled = true) =>
   return useQuery({
     queryKey: scheduleKeys.list(params),
     queryFn: () => getScheduleList(params),
-    enabled: !!params.officeId && !!params.from && !!params.to && enabled,
+    enabled: !!params.officeId && !!params.storeId && !!params.from && !!params.to && enabled,
   })
 }
 

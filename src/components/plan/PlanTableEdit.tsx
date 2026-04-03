@@ -97,7 +97,7 @@ export default function PlanTableEdit() {
     headOfficeId: headOfficeId ?? undefined,
     franchiseId: authFranchiseId ?? undefined,
     storeId: storeId ?? undefined,
-  }, !!headOfficeId)
+  }, !!headOfficeId && !!storeId)
 
   // 직원 목록을 바텀시트 store에 동기화 (빈 목록도 반영하여 stale 방지)
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function PlanTableEdit() {
     to: editDate ?? searchTo,
   }), [headOfficeId, storeId, editDate, searchFrom, searchTo])
 
-  const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(params, !!headOfficeId)
+  const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(params, !!headOfficeId && !!storeId)
 
   // API 데이터 → 초기 EditState 파생 (scheduleList 또는 검색 기간 변경 시 재계산)
   const initialEditState = useMemo(() => {

@@ -9,6 +9,11 @@ const VALID_MIME_TYPES = [
   'application/vnd.ms-excel', // .xls
 ]
 
+function hasValidExcelExtension(fileName: string): boolean {
+  const lowerFileName = fileName.toLowerCase()
+  return lowerFileName.endsWith('.xlsx') || lowerFileName.endsWith('.xls')
+}
+
 interface UploadExcelPopupProps {
   isUploading: boolean
   isSaving: boolean
@@ -46,7 +51,8 @@ export default function UploadExcelPopup({
       return
     }
 
-    if (!VALID_MIME_TYPES.includes(file.type)) {
+    const hasValidMimeType = !file.type || VALID_MIME_TYPES.includes(file.type)
+    if (!hasValidMimeType && !hasValidExcelExtension(file.name)) {
       onAlert('엑셀 파일(.xlsx, .xls)만 업로드할 수 있습니다.')
       e.target.value = ''
       return

@@ -124,7 +124,10 @@ Login supports multi-authority (조직) selection:
 
 # Code Conventions
 
-아래 항목을 코드 작성 시 반드시 준수한다.
+아래 항목은 `필수`와 `권장`으로 구분한다.
+
+- **필수**: 팀 공통 가드레일로 예외 없이 지켜야 하는 규칙
+- **권장**: 기본 패턴으로 따르되, 더 단순하고 명확한 대안이 있으면 예외 허용
 
 ## 1. 컴포넌트 간 통신: Zustand 전용
 
@@ -160,9 +163,10 @@ Login supports multi-authority (조직) selection:
 
 - **금지**: `catch { }`, `catch { /* noop */ }`, `catch { // 주석 }` — 어떤 형태든 err 바인딩 없는 catch 금지
 - **필수**: 최소 `console.error('[컴포넌트명] 동작 실패:', err)` 로깅. 유틸 함수(localStorage 래퍼 등)도 예외 없이 최소 `console.warn` 필수
-- **뮤테이션 훅**: `onError` 콜백에 `console.error` 로깅 추가. mutation은 `mutateAsync` + `try/catch` 전용 사용 (`mutate()` 단독 사용 금지 — onError만으로는 UI 에러 처리 불가)
+- **권장**: mutation은 사용자 피드백이 필요한 흐름에서 `mutateAsync` + `try/catch`를 우선 사용한다. 단순 토글/낙관적 업데이트처럼 `onSuccess`/`onError`만으로 충분한 경우 `mutate()` 사용 가능
+- **권장**: `onError` 콜백에도 `console.error` 로깅을 남긴다
 - **Promise 체인**: `.then()` 사용 시 반드시 `.catch()` 추가
-- **외부 제공 콜백**: 외부에서 주입된 콜백은 모두 `try/catch`로 감싸서 에러 전파 방지. 닫기 타이밍은 용도에 따라 구분:
+- **필수**: Alert, Popup, BottomSheet, store callback처럼 컴포넌트 경계를 넘는 외부 제공 콜백은 `try/catch`로 감싸서 에러 전파를 막는다. 닫기 타이밍은 용도에 따라 구분:
   - **결과 확인형** (Alert onConfirm — 저장/삭제 등 비동기 작업): `await` + `try/catch`, 성공 시에만 닫기. 실패 시 팝업 유지하여 사용자가 재시도 가능
   - **UI 입력형** (바텀시트 onSelect — 시간 선택, 검색 등): `try/catch/finally`, finally에서 항상 닫기. 시트가 고착되면 앱이 멈춘 것으로 인식됨
   ```tsx
@@ -187,11 +191,11 @@ Login supports multi-authority (조직) selection:
 
 ## 4. 타입 안전성
 
-- **Discriminated union 활용**: 상호 배타적 필드 조합은 union 타입으로 제약 (예: `hasPeriod: true → endDate 필수`, `hasPeriod: false → endDate?: never`)
+- **권장**: 상호 배타적 필드 조합은 discriminated union으로 제약 (예: `hasPeriod: true → endDate 필수`, `hasPeriod: false → endDate?: never`)
 - **이중 부재 표현 금지**: `headOfficeId?: number | null`처럼 optional + null을 동시에 사용하지 않음. optional(`?:`)이면 `number`만, required면 `number | null`만 사용
-- **dead code 제거**: 미사용 타입/인터페이스는 즉시 삭제
-- **deprecated API 제거**: deprecated 표기한 함수/속성은 모든 호출부 마이그레이션 후 즉시 삭제 (deprecated 상태로 방치하지 않음)
-- **공유 타입 export**: 다른 파일에서 사용될 수 있는 타입은 반드시 `export` 선언 (예: `AlertOptions`)
+- **권장**: 미사용 타입/인터페이스는 주기적으로 정리한다
+- **권장**: deprecated API는 새 코드에서 사용하지 말고, 호출부 마이그레이션이 끝나면 제거한다
+- **필수**: 다른 파일에서 사용될 수 있는 타입은 `export` 선언 (예: `AlertOptions`)
 
 ## 5. 상태 관리: stale 값 주의
 
@@ -199,18 +203,19 @@ Login supports multi-authority (조직) selection:
 - **금지**: 모듈 레벨에서 `new Date()` 호출하여 상수로 사용 (예: `const defaultTo = new Date().toISOString()`)
 - **필수**: 날짜/시간 기반 값은 함수로 감싸서 호출 시점에 생성 (`function getDefaultTo() { return new Date().toISOString().slice(0, 10) }`)
 - **이유**: 자정 이후 stale 값으로 비교/표시 오류 발생
-- **원칙**: 비용이 미미한 연산은 메모이제이션하지 않음
+- **권장**: 비용이 작고 단순한 파생 값은 불필요한 메모이제이션보다 직접 계산을 우선한다
 
 ## 6. 매직넘버/매직스트링 금지
 
-- **필수**: 반복 사용되는 숫자/문자열은 상수(`const SWIPE_THRESHOLD = 50`)로 선언
-- **여러 파일에서 동일 값 사용 시**: 동일한 상수명 사용 (3곳 이상이면 공통 모듈 추출 고려)
-- **중복 함수/상수**: 2곳 이상에서 동일한 유틸 함수(formatDate, STATUS_MAP 등)가 사용되면 `lib/` 공통 모듈로 추출
+- **필수**: 의미 설명이 필요한 값이나 반복 사용되는 도메인 값은 상수(`const SWIPE_THRESHOLD = 50`)로 선언
+- **권장**: 여러 파일에서 같은 값이 3곳 이상 반복되면 공통 상수/유틸 추출을 검토한다
+- **권장**: 아주 짧은 UI 문자열이나 1회성 리터럴까지 기계적으로 상수화하지 않는다
 
 ## 7. pathname 하드코딩 최소화
 
-- **조건부 UI 렌더링** (버튼 표시/숨김 등): pathname 분기 대신 Zustand store 플래그로 제어
-- **페이지 제목 매핑**: `getPageTitle()` 등 한 곳에서 관리 (허용하되, 조건이 5개 이상 늘어나면 store 기반 패턴으로 전환)
+- **권장**: 전역 UI 상태(헤더 버튼, 레이아웃 표시/숨김 등)는 pathname 분기보다 store 플래그로 제어
+- **허용**: 단순 페이지 조건 분기나 1~2곳의 국소적인 라우트 체크는 `usePathname()` 등 직접 사용 가능
+- **권장**: 페이지 제목 매핑은 `getPageTitle()`처럼 한 곳에 모으고, 조건이 커지면 store 기반 패턴으로 전환
 
 ## 8. React Compiler + useCallback 의존성
 
@@ -231,7 +236,7 @@ Login supports multi-authority (조직) selection:
     await createMutation.mutateAsync(data);
   }, [createMutation]); // 매 렌더 재생성
   ```
-- **useEffect 연쇄 방지**: useCallback이 매 렌더 재생성되면 이를 의존하는 useEffect도 매 렌더 실행됨. 헤더 버튼 연동(`setOnSave`) 등에서 특히 주의
+- **권장**: useCallback이 헤더 버튼 연동(`setOnSave`) 등 다른 Hook의 의존성으로 연결될 때는 재생성 비용을 특히 주의한다
 
 ## 9. Zustand store 구독 최적화
 
@@ -287,9 +292,9 @@ Login supports multi-authority (조직) selection:
 
 ## 13. Zustand 폼 스토어 배치 업데이트 및 초기값 안전성
 
-- **개별 setField 반복 금지**: 동일 useEffect 안에서 `setField`를 5회 이상 개별 호출하면 그만큼 리렌더링이 발생함. 스토어에 `setFields(partial)` 배치 액션을 제공하고 1회 호출로 통합
+- **권장**: 동일 `useEffect` 안에서 `setField`를 여러 번 반복해야 하면 `setFields(partial)` 같은 배치 액션으로 묶는 쪽을 우선 검토한다
   ```tsx
-  // ❌ 금지 (12회 호출 → 최대 12회 리렌더)
+  // ❌ 비권장 (12회 호출 → 최대 12회 리렌더)
   setField("storeName", ...);
   setField("ceoName", ...);
   // ... 10회 더
