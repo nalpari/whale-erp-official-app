@@ -144,16 +144,23 @@ export default function InviteForm04() {
                     key={day.dayType}
                     className={`day-btn${isActive ? ' act' : ''}`}
                     onClick={() => {
+                      let updated: EmploymentContractWorkHourDto[]
                       if (dayWh) {
-                        const newWorkHours = workHours.map((wh) =>
+                        updated = workHours.map((wh) =>
                           wh.dayType === day.dayType ? { ...wh, isWork: nextIsWork } : wh,
                         )
-                        setStepFour({ workHours: newWorkHours })
                       } else {
-                        setStepFour({
-                          workHours: [...workHours, { dayType: day.dayType, isWork: nextIsWork, isBreak: false, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null }],
-                        })
+                        updated = [...workHours, { dayType: day.dayType, isWork: nextIsWork, isBreak: false, workStartTime: null, workEndTime: null, breakStartTime: null, breakEndTime: null, firstSaturdayWorkDay: null, firstSundayWorkDay: null }]
                       }
+                      // 개별 요일 상태에 맞춰 WEEKDAY.isWork 동기화
+                      const anyWeekdayWork = WEEKDAYS.some((d) => {
+                        const wh = updated.find((w) => w.dayType === d.dayType)
+                        return wh ? wh.isWork : true
+                      })
+                      updated = updated.map((wh) =>
+                        wh.dayType === 'WEEKDAY' ? { ...wh, isWork: anyWeekdayWork } : wh,
+                      )
+                      setStepFour({ workHours: updated })
                     }}
                   >
                     {day.label}

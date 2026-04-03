@@ -140,7 +140,7 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
   }
 
   const handleSave = async () => {
-    if (!canSave || isSaving) return
+    if (!canSave || isSaving || !selectedHeadOfficeId) return
 
     const data = {
       workplaceType,
