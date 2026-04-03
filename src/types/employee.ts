@@ -189,6 +189,10 @@ export interface EmployeeInfoResponse {
 // ========== 직원 수정 요청 ==========
 
 export interface UpdateEmployeeInfoRequest {
+  workplaceType?: WorkplaceType | null
+  headOfficeOrganizationId?: number | null
+  franchiseOrganizationId?: number | null
+  storeId?: number | null
   employeeNumber?: string | null
   workStatus?: string | null
   birthDate?: string | null
