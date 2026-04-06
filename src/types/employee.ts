@@ -14,6 +14,13 @@ export interface EmployeeSimpleListItem {
   salaryDay: number | null
 }
 
+// 직원 분류 공통코드 옵션
+export interface EmployeeClassifyOption {
+  code: string
+  name: string
+  sortOrder: number
+}
+
 // 직원 타입별 조회 파라미터
 export interface GetEmployeeListByTypeParams {
   headOfficeId: number
