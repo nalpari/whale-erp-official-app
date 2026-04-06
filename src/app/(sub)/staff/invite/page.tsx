@@ -1,5 +1,5 @@
-import StaffInvite from "@/components/staff/StaffInvite";
+import StaffInvite from '@/components/staff/StaffInvite'
 
 export default function StaffInvitePage() {
-  return <StaffInvite />;
+  return <StaffInvite />
 }
