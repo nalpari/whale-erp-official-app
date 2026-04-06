@@ -75,7 +75,7 @@ function StaffEditForm({ employee }: { employee: EmployeeInfoDetailResponse }) {
 
   // 점포 옵션 조회 (본사/가맹점 ID 기반)
   const { data: storeOptions = [] } = useStoreOptions(
-    selectedHeadOfficeId || undefined,
+    selectedHeadOfficeId ?? undefined,
     selectedFranchiseId ?? undefined,
   )
 
