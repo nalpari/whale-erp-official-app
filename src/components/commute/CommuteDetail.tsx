@@ -214,8 +214,9 @@ export default function CommuteDetail() {
   }, [setTitle]);
 
   const { id } = useParams<{ id: string }>();
-  const employeeId = Number(id);
-  const hasInvalidEmployeeId = isNaN(employeeId) || employeeId <= 0;
+  const isValidEmployeeId = /^[1-9]\d*$/.test(id);
+  const employeeId = isValidEmployeeId ? Number(id) : 0;
+  const hasInvalidEmployeeId = !isValidEmployeeId;
 
   const officeId = useStoreStore((s) => s.selectedHeadOffice?.id);
   const storeId = useStoreStore((s) => s.selectedStore?.id);

@@ -131,6 +131,11 @@ export default function CommuteList() {
   const items = data?.pages.flatMap((page) => page.content) ?? [];
   const totalElements = data?.pages[0]?.totalElements ?? 0;
   const bottomRef = useRef<HTMLDivElement>(null);
+  const isFetchingNextPageRef = useRef(isFetchingNextPage);
+
+  useEffect(() => {
+    isFetchingNextPageRef.current = isFetchingNextPage;
+  }, [isFetchingNextPage]);
 
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -139,7 +144,7 @@ export default function CommuteList() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && !isFetchingNextPageRef.current) {
           fetchNextPage();
         }
       },

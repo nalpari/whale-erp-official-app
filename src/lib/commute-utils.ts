@@ -13,6 +13,10 @@ export interface AttendanceRecordGroup {
 /** HH:mm:ss 문자열을 분 단위로 변환 */
 export function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) {
+    console.warn('[timeToMinutes] 잘못된 시간 형식:', time)
+    return 0
+  }
   return h * 60 + (m ?? 0)
 }
 
