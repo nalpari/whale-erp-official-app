@@ -194,8 +194,11 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
         )}
       </div>
       <div className="commute-list-data">
-        {group.records.map((record) => (
-          <RecordRow key={record.recordId ?? `${record.date}-empty`} record={record} />
+        {group.records.map((record, index) => (
+          <RecordRow
+            key={record.recordId ?? `${record.date}-empty-${index}`}
+            record={record}
+          />
         ))}
       </div>
     </div>

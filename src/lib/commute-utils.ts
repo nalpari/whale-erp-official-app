@@ -113,9 +113,10 @@ export function groupAttendanceRecords(
   // (최초 그룹 생성 시 첫 번째 레코드만 사용하던 버그 수정)
   for (const group of map.values()) {
     if (group.records.length > 1) {
-      const statuses = group.records.map(r => getAttendanceDayStatus(r, now))
-      if (statuses.includes('근무')) group.status = '근무'
+      const statuses = group.records.map((r) => getAttendanceDayStatus(r, now))
+      if (statuses.includes('휴일')) group.status = '휴일'
       else if (statuses.includes('지연')) group.status = '지연'
+      else if (statuses.includes('근무')) group.status = '근무'
       else if (statuses.includes('미출근')) group.status = '미출근'
       else if (statuses.includes('결근')) group.status = '결근'
     }
