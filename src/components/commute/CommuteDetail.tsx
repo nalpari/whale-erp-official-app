@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -123,13 +123,17 @@ function RecordRow({ record }: { record: AttendanceRecord }) {
   const status = getAttendanceDayStatus(record);
   const badge = STATUS_BADGE[status];
   const workMin = calcWorkMinutes(record.workStartTime, record.workEndTime);
-  const timeRange = `${formatTime(record.workStartTime)}~${formatTime(record.workEndTime) || "진행 중"}`;
+  // workStartTime이 null이면 "-" 표시, workEndTime이 null이면 "진행 중" 표시
+  const timeRange = record.workStartTime
+    ? `${formatTime(record.workStartTime)}~${formatTime(record.workEndTime) || "진행 중"}`
+    : "-";
 
   return (
     <div className="commute-list-data-item">
       <div className="commute-list-data-time">{timeRange}</div>
       <div className="commute-list-data-work">
-        <span className="time">{formatMinutes(workMin)}</span>
+        {/* 퇴근 기록이 있을 때만 근무시간 표시 (진행 중이면 0분 숨김) */}
+        {record.workEndTime && <span className="time">{formatMinutes(workMin)}</span>}
         <span className={badge.className}>{badge.label}</span>
       </div>
     </div>
@@ -152,7 +156,8 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
     );
   }
 
-  if (!group.hasContract) {
+  // 계약 없고 출근기록도 없을 때만 날짜만 표시 (화면정의서 Note #10: 출근기록 있으면 계약 없어도 근무 표시)
+  if (!group.hasContract && !group.records.some((r) => r.workStartTime !== null)) {
     return (
       <div className="commute-list-item">
         <div className="commute-list-tit">{dateLabel}</div>
@@ -207,6 +212,7 @@ export default function CommuteDetail() {
 
   const { id } = useParams<{ id: string }>();
   const employeeId = Number(id);
+  if (isNaN(employeeId) || employeeId <= 0) notFound();
 
   const officeId = useStoreStore((s) => s.selectedHeadOffice?.id);
   const storeId = useStoreStore((s) => s.selectedStore?.id);
@@ -224,7 +230,7 @@ export default function CommuteDetail() {
   const [queryFrom, setQueryFrom] = useState(from);
   const [queryTo, setQueryTo] = useState(to);
 
-  const { data, isLoading, isError } = useAttendanceDetail(
+  const { data, isLoading, isError, error } = useAttendanceDetail(
     {
       officeId: officeId ?? 0,
       franchiseId: franchiseId ?? undefined,
@@ -235,6 +241,10 @@ export default function CommuteDetail() {
     },
     !!officeId && !!employeeId
   );
+
+  useEffect(() => {
+    if (isError) console.error('[CommuteDetail] 근무현황 조회 실패:', error)
+  }, [isError, error])
 
   const handleSearch = () => {
     setQueryFrom(from);

@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useCommuteSearchStore } from "@/store/useCommuteSearchStore";
 import { useStoreStore } from "@/store/useStoreStore";
@@ -32,12 +33,18 @@ export default function CommuteSearchSheet() {
   const authFranchiseId = useAuthStore((s) => s.franchiseId);
   const franchiseId = storeFranchiseId ?? authFranchiseId;
 
-  const { data: workStatusOptions = [] } = useCommonCodeHierarchy("EMPWK");
-  const { data: contractOptions = [] } = useCommonCodeHierarchy("CNTCFWK");
-  const { data: employeeClassifyOptions = [] } = useEmployeeClassifyOptions(
+  const { data: workStatusOptions = [], isError: workStatusError } = useCommonCodeHierarchy("EMPWK");
+  const { data: contractOptions = [], isError: contractError } = useCommonCodeHierarchy("CNTCFWK");
+  const { data: employeeClassifyOptions = [], isError: classifyError } = useEmployeeClassifyOptions(
     officeId,
     franchiseId ?? undefined
   );
+
+  useEffect(() => {
+    if (workStatusError) console.warn('[CommuteSearchSheet] 근무여부 옵션 로딩 실패')
+    if (contractError) console.warn('[CommuteSearchSheet] 계약분류 옵션 로딩 실패')
+    if (classifyError) console.warn('[CommuteSearchSheet] 직원분류 옵션 로딩 실패')
+  }, [workStatusError, contractError, classifyError])
 
   const handleClose = () => setCommuteSearchSheet(false);
 

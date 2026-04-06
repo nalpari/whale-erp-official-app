@@ -34,7 +34,9 @@ export const getAttendanceList = async (params: AttendanceListParams): Promise<A
     params: cleaned,
     paramsSerializer: () => buildParamsSerializer(cleaned),
   })
-  return response.data.data
+  const result = response.data.data
+  if (!result) throw new Error('[getAttendanceList] 서버 응답에 data 필드가 없습니다.')
+  return result
 }
 
 export const getAttendanceDetail = async (params: AttendanceDetailParams): Promise<AttendanceDetailResponse> => {
@@ -43,5 +45,7 @@ export const getAttendanceDetail = async (params: AttendanceDetailParams): Promi
     params: cleaned,
     paramsSerializer: () => buildParamsSerializer(cleaned),
   })
-  return response.data.data
+  const result = response.data.data
+  if (!result) throw new Error('[getAttendanceDetail] 서버 응답에 data 필드가 없습니다.')
+  return result
 }

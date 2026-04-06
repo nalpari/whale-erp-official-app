@@ -53,7 +53,8 @@ export function getAvatarSrc(iconType: number): string {
 
 /**
  * 출퇴근 기록 단건에 대한 일별 표시 상태 계산
- * Description #7, #10 기준
+ * 화면정의서 Note #7: 지연 = 계약 출근 시각 기준 30분 초과 출근
+ * 화면정의서 Note #10: 출근기록 있으면 계약 없어도 근무로 표시
  */
 export function getAttendanceDayStatus(
   record: AttendanceRecord,
@@ -65,29 +66,19 @@ export function getAttendanceDayStatus(
   const [year, month, day] = record.date.split('-').map(Number)
   const recordDate = new Date(year, month - 1, day)
   const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const isToday = recordDate.getTime() === todayMidnight.getTime()
   const isPast = recordDate < todayMidnight
 
   // 출근 기록 없음
   if (record.recordId === null) {
     if (isPast) return '결근'
-    // 오늘: 계약 출근 시간이 지났으면 미출근
-    if (isToday && record.contractStartTime) {
-      const contractStartMin = timeToMinutes(record.contractStartTime)
-      const nowMin = now.getHours() * 60 + now.getMinutes()
-      if (nowMin >= contractStartMin) return '미출근'
-    }
     return '미출근'
   }
 
-  // 출근은 했고 퇴근 미등록
-  if (record.workStartTime && !record.workEndTime) {
-    if (record.contractEndTime) {
-      const contractEndMin = timeToMinutes(record.contractEndTime)
-      const nowMin = now.getHours() * 60 + now.getMinutes()
-      if (isToday && nowMin >= contractEndMin + 30) return '지연'
-    }
-    return '근무'
+  // 출근 기록 있음 — 지연 판단: 계약 출근 시각 기준 30분 초과 시 지연 (화면정의서 Note #7)
+  if (record.workStartTime && record.contractStartTime) {
+    const contractStartMin = timeToMinutes(record.contractStartTime)
+    const workStartMin = timeToMinutes(record.workStartTime)
+    if (workStartMin > contractStartMin + 30) return '지연'
   }
 
   return '근무'
@@ -116,6 +107,17 @@ export function groupAttendanceRecords(
         totalMinutes: calcWorkMinutes(record.workStartTime, record.workEndTime),
         status: getAttendanceDayStatus(record, now),
       })
+    }
+  }
+  // 같은 날 레코드가 2개 이상인 경우 전체 레코드 기반으로 status 재계산
+  // (최초 그룹 생성 시 첫 번째 레코드만 사용하던 버그 수정)
+  for (const group of map.values()) {
+    if (group.records.length > 1) {
+      const statuses = group.records.map(r => getAttendanceDayStatus(r, now))
+      if (statuses.includes('근무')) group.status = '근무'
+      else if (statuses.includes('지연')) group.status = '지연'
+      else if (statuses.includes('미출근')) group.status = '미출근'
+      else if (statuses.includes('결근')) group.status = '결근'
     }
   }
   return Array.from(map.values())

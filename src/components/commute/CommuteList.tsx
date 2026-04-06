@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "@/components/storeinfo/css/store-search-btn.scss";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
@@ -104,7 +105,7 @@ export default function CommuteList() {
       searchParams.contractClassify
     );
 
-  const { data, isLoading, isError } = useAttendanceList(
+  const { data, isLoading, isError, error } = useAttendanceList(
     {
       officeId: officeId ?? 0,
       franchiseId: franchiseId ?? undefined,
@@ -113,6 +114,10 @@ export default function CommuteList() {
     },
     !!officeId
   );
+
+  useEffect(() => {
+    if (isError) console.error('[CommuteList] 출퇴근 목록 조회 실패:', error)
+  }, [isError, error])
 
   const items = data?.content ?? [];
   const totalElements = data?.totalElements ?? 0;
