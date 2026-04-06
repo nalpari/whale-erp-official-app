@@ -77,7 +77,7 @@ export default function MainContents() {
                 </div>
                 <div className="go-to-name">점포정보 관리</div>
               </button>
-              <button className="go-to-item">
+              <button className="go-to-item" onClick={() => router.push('/staff')}>
                 <div className="go-to-logo">
                   <Image
                     src="/assets/images/main/go_to_icon02.svg"
