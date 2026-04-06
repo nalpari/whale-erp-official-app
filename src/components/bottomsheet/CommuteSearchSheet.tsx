@@ -33,7 +33,7 @@ export default function CommuteSearchSheet() {
   );
 
   const searchParams = useCommuteSearchStore((s) => s.searchParams);
-  const setSearchParams = useCommuteSearchStore((s) => s.setSearchParams);
+  const replaceSearchParams = useCommuteSearchStore((s) => s.replaceSearchParams);
   const search = useCommuteSearchStore((s) => s.search);
   const [draftParams, setDraftParams] = useState<SearchFields>(searchParams);
 
@@ -58,7 +58,7 @@ export default function CommuteSearchSheet() {
   const handleClose = () => setCommuteSearchSheet(false);
 
   const handleSearch = () => {
-    setSearchParams(draftParams);
+    replaceSearchParams(draftParams);
     search();
     handleClose();
   };

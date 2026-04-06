@@ -8,6 +8,7 @@ interface CommuteSearchState {
   searchParams: SearchFields
   hasSearched: boolean
   setSearchParams: (params: Partial<SearchFields>) => void
+  replaceSearchParams: (params: SearchFields) => void
   search: () => void
   reset: () => void
 }
@@ -27,6 +28,12 @@ export const useCommuteSearchStore = create<CommuteSearchState>()(
           (state) => ({ searchParams: { ...state.searchParams, ...params } }),
           false,
           'setSearchParams',
+        ),
+      replaceSearchParams: (params) =>
+        set(
+          { searchParams: { ...DEFAULT_PARAMS, ...params } },
+          false,
+          'replaceSearchParams',
         ),
       search: () =>
         set(
