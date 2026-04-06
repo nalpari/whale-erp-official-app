@@ -1,5 +1,4 @@
 import api from '@/lib/api'
-import type { EmployeeClassifyOption, EmployeeSimpleListItem, GetEmployeeListByTypeParams } from '@/types/employee'
 import type {
   PostEmployeeInfoRequest,
   EmployeeInfoResponse,
@@ -19,6 +18,7 @@ import type {
   EmployeeSimpleListResponse,
   GetEmployeeListByTypeParams,
   EmployeeInfoCommonCodeResponse,
+  EmployeeClassifyOption,
 } from '@/types/employee'
 import type { PaginatedResponse } from '@/types/payroll'
 
