@@ -266,6 +266,7 @@ export default function CommuteDetail({ employeeId }: { employeeId: number }) {
               alt="profile-img"
               width={64}
               height={64}
+              loading="eager"
             />
           </div>
           <div className="profile-info">
