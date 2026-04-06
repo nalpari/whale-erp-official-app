@@ -138,7 +138,7 @@ export default function CommuteList() {
   }, [isFetchingNextPage]);
 
   useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
+    if (!hasNextPage) return;
     const el = bottomRef.current;
     if (!el) return;
 
@@ -153,7 +153,7 @@ export default function CommuteList() {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, fetchNextPage]);
 
   return (
     <div className="container">

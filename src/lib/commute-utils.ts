@@ -12,12 +12,12 @@ export interface AttendanceRecordGroup {
 
 /** HH:mm:ss 문자열을 분 단위로 변환 */
 export function timeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number)
+  const [h, m, s] = time.split(':').map(Number)
   if (Number.isNaN(h) || Number.isNaN(m)) {
     console.warn('[timeToMinutes] 잘못된 시간 형식:', time)
     return 0
   }
-  return h * 60 + (m ?? 0)
+  return h * 60 + (m ?? 0) + ((s ?? 0) / 60)
 }
 
 /** 분 단위를 "Xh Ym" 형태로 포맷 */
@@ -118,11 +118,13 @@ export function groupAttendanceRecords(
   for (const group of map.values()) {
     if (group.records.length > 1) {
       const statuses = group.records.map((r) => getAttendanceDayStatus(r, now))
+      // 우선순위: 휴일 > 지연 > 결근 > 미출근 > 근무
+      // 더 심각한 상태를 우선 표시하여 복수 계약 직원의 결근이 근무에 가려지지 않도록 함
       if (statuses.includes('휴일')) group.status = '휴일'
       else if (statuses.includes('지연')) group.status = '지연'
-      else if (statuses.includes('근무')) group.status = '근무'
-      else if (statuses.includes('미출근')) group.status = '미출근'
       else if (statuses.includes('결근')) group.status = '결근'
+      else if (statuses.includes('미출근')) group.status = '미출근'
+      else group.status = '근무'
     }
   }
   return Array.from(map.values())

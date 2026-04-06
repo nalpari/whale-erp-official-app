@@ -1,7 +1,6 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useParams, notFound } from "next/navigation";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -205,18 +204,13 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
   );
 }
 
-export default function CommuteDetail() {
+export default function CommuteDetail({ employeeId }: { employeeId: number }) {
   const setTitle = useHeaderStore((s) => s.setTitle);
 
   useEffect(() => {
     setTitle("출퇴근 현황");
     return () => setTitle("");
   }, [setTitle]);
-
-  const { id } = useParams<{ id: string }>();
-  const isValidEmployeeId = /^[1-9]\d*$/.test(id);
-  const employeeId = isValidEmployeeId ? Number(id) : 0;
-  const hasInvalidEmployeeId = !isValidEmployeeId;
 
   const officeId = useStoreStore((s) => s.selectedHeadOffice?.id);
   const storeId = useStoreStore((s) => s.selectedStore?.id);
@@ -260,8 +254,6 @@ export default function CommuteDetail() {
     setQueryFrom(from);
     setQueryTo(to);
   };
-
-  if (hasInvalidEmployeeId) notFound();
 
   return (
     <div className="container sub">
