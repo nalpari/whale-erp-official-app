@@ -1,13 +1,13 @@
 "use client";
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import "@/components/storeinfo/css/store-search-btn.scss";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useCommuteSearchStore } from "@/store/useCommuteSearchStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useAttendanceList } from "@/hooks/queries/use-commute-queries";
+import { useAttendanceInfiniteList } from "@/hooks/queries/use-commute-queries";
 import type { AttendanceListItem } from "@/types/commute";
 import { getAvatarSrc } from "@/lib/commute-utils";
 
@@ -105,7 +105,15 @@ export default function CommuteList() {
       searchParams.contractClassify
     );
 
-  const { data, isLoading, isError, error } = useAttendanceList(
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useAttendanceInfiniteList(
     {
       officeId: officeId ?? 0,
       franchiseId: franchiseId ?? undefined,
@@ -119,8 +127,27 @@ export default function CommuteList() {
     if (isError) console.error('[CommuteList] 출퇴근 목록 조회 실패:', error)
   }, [isError, error])
 
-  const items = data?.content ?? [];
-  const totalElements = data?.totalElements ?? 0;
+  const items = data?.pages.flatMap((page) => page.content) ?? [];
+  const totalElements = data?.pages[0]?.totalElements ?? 0;
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const el = bottomRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="container">
@@ -164,6 +191,14 @@ export default function CommuteList() {
             {items.map((item) => (
               <AttendanceCard key={item.contractId} item={item} />
             ))}
+            {hasNextPage && (
+              <div
+                ref={bottomRef}
+                style={{ padding: "20px 0", textAlign: "center", color: "#999" }}
+              >
+                {isFetchingNextPage && "불러오는 중..."}
+              </div>
+            )}
           </div>
         )}
       </div>
