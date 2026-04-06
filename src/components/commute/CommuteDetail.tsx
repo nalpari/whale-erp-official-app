@@ -215,7 +215,7 @@ export default function CommuteDetail() {
 
   const { id } = useParams<{ id: string }>();
   const employeeId = Number(id);
-  if (isNaN(employeeId) || employeeId <= 0) notFound();
+  const hasInvalidEmployeeId = isNaN(employeeId) || employeeId <= 0;
 
   const officeId = useStoreStore((s) => s.selectedHeadOffice?.id);
   const storeId = useStoreStore((s) => s.selectedStore?.id);
@@ -233,7 +233,13 @@ export default function CommuteDetail() {
   const [queryFrom, setQueryFrom] = useState(from);
   const [queryTo, setQueryTo] = useState(to);
 
-  const { data, isLoading, isError, error } = useAttendanceDetail(
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useAttendanceDetail(
     {
       officeId: officeId ?? 0,
       franchiseId: franchiseId ?? undefined,
@@ -253,6 +259,8 @@ export default function CommuteDetail() {
     setQueryFrom(from);
     setQueryTo(to);
   };
+
+  if (hasInvalidEmployeeId) notFound();
 
   return (
     <div className="container sub">
@@ -390,7 +398,15 @@ export default function CommuteDetail() {
                 <div className="loading">불러오는 중...</div>
               </div>
             ) : isError ? (
-              <div className="empty-data">데이터를 불러오지 못했습니다.</div>
+              <div className="empty-data">
+                <div>데이터를 불러오지 못했습니다.</div>
+                <button
+                  className="btn-form grey"
+                  onClick={() => void refetch()}
+                >
+                  다시 시도
+                </button>
+              </div>
             ) : (
               <div className="commute-list-wrap">
                 {groupAttendanceRecords(data?.record ?? []).map((group) => (

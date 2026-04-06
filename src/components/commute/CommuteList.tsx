@@ -110,6 +110,7 @@ export default function CommuteList() {
     isLoading,
     isError,
     error,
+    refetch,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -183,7 +184,15 @@ export default function CommuteList() {
             <div className="loading">불러오는 중...</div>
           </div>
         ) : isError ? (
-          <div className="empty-data">데이터를 불러오지 못했습니다.</div>
+          <div className="empty-data">
+            <div>데이터를 불러오지 못했습니다.</div>
+            <button
+              className="btn-form grey"
+              onClick={() => void refetch()}
+            >
+              다시 시도
+            </button>
+          </div>
         ) : items.length === 0 ? (
           <div className="empty-data">출퇴근 현황이 없습니다.</div>
         ) : (

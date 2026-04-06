@@ -35,7 +35,9 @@ export default function CommuteSearchSheet() {
   const searchParams = useCommuteSearchStore((s) => s.searchParams);
   const replaceSearchParams = useCommuteSearchStore((s) => s.replaceSearchParams);
   const search = useCommuteSearchStore((s) => s.search);
-  const [draftParams, setDraftParams] = useState<SearchFields>(searchParams);
+  const [draftParams, setDraftParams] = useState<SearchFields>(() => ({
+    ...searchParams,
+  }));
 
   const officeId = useStoreStore((s) => s.selectedHeadOffice?.id);
   const storeFranchiseId = useStoreStore((s) => s.selectedStore?.franchiseId);
@@ -58,22 +60,30 @@ export default function CommuteSearchSheet() {
   const handleClose = () => setCommuteSearchSheet(false);
 
   const handleSearch = () => {
-    replaceSearchParams(draftParams);
-    search();
-    handleClose();
+    try {
+      replaceSearchParams(draftParams);
+      search();
+    } catch (err) {
+      console.error("[CommuteSearchSheet] 검색 처리 실패:", err);
+    } finally {
+      handleClose();
+    }
   };
 
   const handleReset = () => setDraftParams({ ...DEFAULT_SEARCH_PARAMS });
 
   const toggleDayType = (value: DayType) => {
-    const current = draftParams.dayType ?? [];
-    const next = current.includes(value)
-      ? current.filter((v) => v !== value)
-      : [...current, value];
-    setDraftParams((prev) => ({
-      ...prev,
-      dayType: next.length > 0 ? next : undefined,
-    }));
+    setDraftParams((prev) => {
+      const current = prev.dayType ?? [];
+      const next = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+
+      return {
+        ...prev,
+        dayType: next.length > 0 ? next : undefined,
+      };
+    });
   };
 
   return (
@@ -101,13 +111,15 @@ export default function CommuteSearchSheet() {
                         key={opt.code}
                         className={`radio-btn block${draftParams.status === opt.code ? " act" : ""}`}
                         onClick={() =>
-                          setDraftParams((prev) => ({
-                            ...prev,
-                            status:
-                              draftParams.status === opt.code
-                                ? undefined
-                                : opt.code,
-                          }))
+                          setDraftParams((prev) => {
+                            const nextStatus =
+                              prev.status === opt.code ? undefined : opt.code;
+
+                            return {
+                              ...prev,
+                              status: nextStatus,
+                            };
+                          })
                         }
                       >
                         {opt.name}
