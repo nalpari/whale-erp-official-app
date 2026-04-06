@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useCommuteSearchStore } from "@/store/useCommuteSearchStore";
 import { useStoreStore } from "@/store/useStoreStore";
@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useCommonCodeHierarchy } from "@/hooks/queries/use-common-code-queries";
 import { useEmployeeClassifyOptions } from "@/hooks/queries/use-commute-queries";
 import { CONTRACT_CLASS_LABEL } from "@/lib/constants/contract";
+import type { AttendanceListParams } from "@/types/commute";
 import { Sheet } from "react-modal-sheet";
 
 const DAY_TYPE_OPTIONS = [
@@ -16,6 +17,12 @@ const DAY_TYPE_OPTIONS = [
 ] as const;
 
 type DayType = "WEEKDAY" | "SATURDAY" | "SUNDAY";
+type SearchFields = Omit<AttendanceListParams, "officeId" | "franchiseId" | "storeId">;
+
+const DEFAULT_SEARCH_PARAMS: SearchFields = {
+  page: 0,
+  size: 50,
+};
 
 export default function CommuteSearchSheet() {
   const commuteSearchSheet = useBottomSheetControler(
@@ -26,7 +33,9 @@ export default function CommuteSearchSheet() {
   );
 
   const searchParams = useCommuteSearchStore((s) => s.searchParams);
-  const { setSearchParams, search, reset } = useCommuteSearchStore.getState();
+  const setSearchParams = useCommuteSearchStore((s) => s.setSearchParams);
+  const search = useCommuteSearchStore((s) => s.search);
+  const [draftParams, setDraftParams] = useState<SearchFields>(searchParams);
 
   const officeId = useStoreStore((s) => s.selectedHeadOffice?.id);
   const storeFranchiseId = useStoreStore((s) => s.selectedStore?.franchiseId);
@@ -49,18 +58,22 @@ export default function CommuteSearchSheet() {
   const handleClose = () => setCommuteSearchSheet(false);
 
   const handleSearch = () => {
+    setSearchParams(draftParams);
     search();
     handleClose();
   };
 
-  const handleReset = () => reset();
+  const handleReset = () => setDraftParams({ ...DEFAULT_SEARCH_PARAMS });
 
   const toggleDayType = (value: DayType) => {
-    const current = searchParams.dayType ?? [];
+    const current = draftParams.dayType ?? [];
     const next = current.includes(value)
       ? current.filter((v) => v !== value)
       : [...current, value];
-    setSearchParams({ dayType: next.length > 0 ? next : undefined });
+    setDraftParams((prev) => ({
+      ...prev,
+      dayType: next.length > 0 ? next : undefined,
+    }));
   };
 
   return (
@@ -86,14 +99,15 @@ export default function CommuteSearchSheet() {
                     {workStatusOptions.map((opt) => (
                       <button
                         key={opt.code}
-                        className={`radio-btn block${searchParams.status === opt.code ? " act" : ""}`}
+                        className={`radio-btn block${draftParams.status === opt.code ? " act" : ""}`}
                         onClick={() =>
-                          setSearchParams({
+                          setDraftParams((prev) => ({
+                            ...prev,
                             status:
-                              searchParams.status === opt.code
+                              draftParams.status === opt.code
                                 ? undefined
                                 : opt.code,
-                          })
+                          }))
                         }
                       >
                         {opt.name}
@@ -109,11 +123,12 @@ export default function CommuteSearchSheet() {
                     <input
                       type="text"
                       className="input-frame"
-                      value={searchParams.employeeName ?? ""}
+                      value={draftParams.employeeName ?? ""}
                       onChange={(e) =>
-                        setSearchParams({
+                        setDraftParams((prev) => ({
+                          ...prev,
                           employeeName: e.target.value || undefined,
-                        })
+                        }))
                       }
                     />
                   </div>
@@ -126,7 +141,7 @@ export default function CommuteSearchSheet() {
                     {DAY_TYPE_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
-                        className={`radio-btn block${(searchParams.dayType ?? []).includes(opt.value) ? " act" : ""}`}
+                        className={`radio-btn block${(draftParams.dayType ?? []).includes(opt.value) ? " act" : ""}`}
                         onClick={() => toggleDayType(opt.value)}
                       >
                         {opt.label}
@@ -141,12 +156,13 @@ export default function CommuteSearchSheet() {
                   <div className="block">
                     <select
                       className="select-form"
-                      value={searchParams.employeeClassify ?? ""}
+                      value={draftParams.employeeClassify ?? ""}
                       disabled={!officeId}
                       onChange={(e) =>
-                        setSearchParams({
+                        setDraftParams((prev) => ({
+                          ...prev,
                           employeeClassify: e.target.value || undefined,
-                        })
+                        }))
                       }
                     >
                       <option value="">전체</option>
@@ -171,11 +187,12 @@ export default function CommuteSearchSheet() {
                   <div className="block">
                     <select
                       className="select-form"
-                      value={searchParams.contractClassify ?? ""}
+                      value={draftParams.contractClassify ?? ""}
                       onChange={(e) =>
-                        setSearchParams({
+                        setDraftParams((prev) => ({
+                          ...prev,
                           contractClassify: e.target.value || undefined,
-                        })
+                        }))
                       }
                     >
                       <option value="">전체</option>
