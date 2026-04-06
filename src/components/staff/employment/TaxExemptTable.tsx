@@ -4,7 +4,7 @@ import { Tooltip } from "react-tooltip";
 /** 비과세 항목 최대 금액 */
 const MAX_MEAL = 200000;
 const MAX_VEHICLE = 200000;
-const MAX_CHILDCARE = 200000;
+const MAX_CHILDCARE = 100000;
 
 interface TaxExemptData {
   mealAllowance: number;
