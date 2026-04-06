@@ -38,8 +38,10 @@ export const getAttendanceList = async (params: AttendanceListParams): Promise<A
 }
 
 export const getAttendanceDetail = async (params: AttendanceDetailParams): Promise<AttendanceDetailResponse> => {
+  const cleaned = cleanParams(params)
   const response = await api.get<{ data: AttendanceDetailResponse }>('/api/v1/employee/attendances/records', {
-    params: cleanParams(params),
+    params: cleaned,
+    paramsSerializer: () => buildParamsSerializer(cleaned),
   })
   return response.data.data
 }

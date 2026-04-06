@@ -12,6 +12,8 @@ import {
   calcWorkMinutes,
   formatMinutes,
   formatTime,
+  toInputDate,
+  getAvatarSrc,
 } from "@/lib/commute-utils";
 import type { AttendanceRecord, CommuteDayDisplayStatus, ContractWorkHour } from "@/types/commute";
 import type { AttendanceRecordGroup } from "@/lib/commute-utils";
@@ -109,17 +111,6 @@ function ContractWorkHourRow({ item }: { item: ContractWorkHour }) {
   );
 }
 
-const AVATAR_MAP: Record<number, string> = {
-  0: "/assets/images/layout/avatar01.svg",
-  1: "/assets/images/layout/avatar02.svg",
-  2: "/assets/images/layout/avatar03.svg",
-  3: "/assets/images/layout/avatar04.svg",
-};
-
-function getAvatarSrc(iconType: number): string {
-  return AVATAR_MAP[iconType] ?? AVATAR_MAP[0];
-}
-
 const STATUS_BADGE: Record<CommuteDayDisplayStatus, { label: string; className: string }> = {
   근무: { label: "근무", className: "badge d-green" },
   지연: { label: "지연", className: "badge orange" },
@@ -127,10 +118,6 @@ const STATUS_BADGE: Record<CommuteDayDisplayStatus, { label: string; className: 
   결근: { label: "결근", className: "badge d-red" },
   휴일: { label: "휴일", className: "badge grey" },
 };
-
-function toInputDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
 
 function RecordRow({ record }: { record: AttendanceRecord }) {
   const status = getAttendanceDayStatus(record);
@@ -227,12 +214,13 @@ export default function CommuteDetail() {
   const authFranchiseId = useAuthStore((s) => s.franchiseId);
   const franchiseId = storeFranchiseId ?? authFranchiseId;
 
-  const today = new Date();
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 6);
-
-  const [from, setFrom] = useState(toInputDate(sevenDaysAgo));
-  const [to, setTo] = useState(toInputDate(today));
+  const [from, setFrom] = useState(() => {
+    const today = new Date();
+    const d = new Date(today);
+    d.setDate(today.getDate() - 6);
+    return toInputDate(d);
+  });
+  const [to, setTo] = useState(() => toInputDate(new Date()));
   const [queryFrom, setQueryFrom] = useState(from);
   const [queryTo, setQueryTo] = useState(to);
 
@@ -334,7 +322,7 @@ export default function CommuteDetail() {
               <div className="sub-cont-tit-wrap">
                 <div className="sub-cont-tit">근무시간</div>
               </div>
-              {groupContractWorkHours(data!.contractWorkHours).map((item) => (
+              {groupContractWorkHours(data?.contractWorkHours ?? []).map((item) => (
                 <ContractWorkHourRow key={item.dayType} item={item} />
               ))}
             </div>

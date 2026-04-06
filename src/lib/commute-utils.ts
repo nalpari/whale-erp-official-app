@@ -32,6 +32,25 @@ export function formatTime(time: string | null): string {
   return time.slice(0, 5)
 }
 
+/** Date 객체를 로컬 날짜 기준 YYYY-MM-DD 문자열로 변환 (toISOString은 UTC 기준이므로 사용 금지) */
+export function toInputDate(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export const AVATAR_MAP: Record<number, string> = {
+  0: '/assets/images/layout/avatar01.svg',
+  1: '/assets/images/layout/avatar02.svg',
+  2: '/assets/images/layout/avatar03.svg',
+  3: '/assets/images/layout/avatar04.svg',
+}
+
+export function getAvatarSrc(iconType: number): string {
+  return AVATAR_MAP[iconType] ?? AVATAR_MAP[0]
+}
+
 /**
  * 출퇴근 기록 단건에 대한 일별 표시 상태 계산
  * Description #7, #10 기준
@@ -42,12 +61,12 @@ export function getAttendanceDayStatus(
 ): CommuteDayDisplayStatus {
   if (record.isHoliday) return '휴일'
 
-  const recordDate = new Date(record.date)
-  const isToday =
-    recordDate.getFullYear() === now.getFullYear() &&
-    recordDate.getMonth() === now.getMonth() &&
-    recordDate.getDate() === now.getDate()
-  const isPast = recordDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  // "YYYY-MM-DD" 문자열을 UTC가 아닌 로컬 자정으로 파싱 (new Date("YYYY-MM-DD")는 UTC midnight)
+  const [year, month, day] = record.date.split('-').map(Number)
+  const recordDate = new Date(year, month - 1, day)
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const isToday = recordDate.getTime() === todayMidnight.getTime()
+  const isPast = recordDate < todayMidnight
 
   // 출근 기록 없음
   if (record.recordId === null) {
@@ -104,14 +123,16 @@ export function groupAttendanceRecords(
 
 /**
  * 출퇴근 시작/종료 시간으로 근무 분 계산
- * - 퇴근 없으면 24:00 기준
- * - 출근 없으면 00:00 기준
+ * - 출근 또는 퇴근이 없으면 0 반환 (진행 중이거나 결근인 경우)
+ * - 야간 근무(자정 넘기기) 지원
  */
 export function calcWorkMinutes(
   workStartTime: string | null,
   workEndTime: string | null,
 ): number {
-  const startMin = workStartTime ? timeToMinutes(workStartTime) : 0
-  const endMin = workEndTime ? timeToMinutes(workEndTime) : 24 * 60
+  if (!workStartTime || !workEndTime) return 0
+  const startMin = timeToMinutes(workStartTime)
+  let endMin = timeToMinutes(workEndTime)
+  if (endMin < startMin) endMin += 24 * 60 // 야간 근무 (자정 넘기기)
   return Math.max(0, endMin - startMin)
 }

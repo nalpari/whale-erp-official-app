@@ -8,17 +8,7 @@ import { useStoreStore } from "@/store/useStoreStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useAttendanceList } from "@/hooks/queries/use-commute-queries";
 import type { AttendanceListItem } from "@/types/commute";
-
-const AVATAR_MAP: Record<number, string> = {
-  0: "/assets/images/layout/avatar01.svg",
-  1: "/assets/images/layout/avatar02.svg",
-  2: "/assets/images/layout/avatar03.svg",
-  3: "/assets/images/layout/avatar04.svg",
-};
-
-function getAvatarSrc(iconType: number): string {
-  return AVATAR_MAP[iconType] ?? AVATAR_MAP[0];
-}
+import { getAvatarSrc } from "@/lib/commute-utils";
 
 function AttendanceCard({ item }: { item: AttendanceListItem }) {
   const router = useRouter();
