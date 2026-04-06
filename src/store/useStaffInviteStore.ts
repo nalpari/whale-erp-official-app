@@ -218,8 +218,11 @@ export const useStaffInviteStore = create<StaffInviteState>()(
         if (!stepTwo.hireDate || !stepTwo.contractStartDate || !stepTwo.jobDescription) {
           return null
         }
-        // Step 2: 계약기간 미정이 아닌 경우 종료일 필수
+        // Step 2: 계약기간 미정이 아닌 경우 종료일 필수 + 역전 방지
         if (!stepTwo.noEndDate && !stepTwo.contractEndDate) {
+          return null
+        }
+        if (!stepTwo.noEndDate && stepTwo.contractEndDate && stepTwo.contractEndDate < stepTwo.contractStartDate) {
           return null
         }
         // Step 4: 평일/토/일 중 1개 이상 근무 설정 필수

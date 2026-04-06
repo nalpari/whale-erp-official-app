@@ -22,9 +22,10 @@ export async function downloadFile(fileId: number): Promise<void> {
 
   try {
     const { downloadUrl } = await getDownloadUrl(fileId)
+    if (popup.closed) throw new Error('다운로드 창이 닫혔습니다.')
     popup.location.href = downloadUrl
   } catch (error) {
-    popup.close()
+    if (!popup.closed) popup.close()
     throw error
   }
 }

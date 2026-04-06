@@ -19,12 +19,13 @@ function isStepValid(step: number, stepOne: StepOneData, stepTwo: StepTwoData, s
     if (stepOne.workplaceType === 'FRANCHISE' && !stepOne.franchiseOrganizationId) return false
     if (!stepOne.employeeName.trim()) return false
     if (!stepOne.mobilePhone.trim()) return false
-    if (stepOne.mobilePhone.replace(/[^0-9]/g, '').length < 10) return false
+    if (!/^01[016789]\d{7,8}$/.test(stepOne.mobilePhone.replace(/[^0-9]/g, ''))) return false
   }
   if (step === 2) {
     if (!stepTwo.hireDate) return false
     if (!stepTwo.contractStartDate) return false
     if (!stepTwo.noEndDate && !stepTwo.contractEndDate) return false
+    if (!stepTwo.noEndDate && stepTwo.contractEndDate && stepTwo.contractEndDate < stepTwo.contractStartDate) return false
     if (!stepTwo.jobDescription.trim()) return false
   }
   if (step === 4) {
@@ -70,7 +71,7 @@ export default function StaffInvite() {
     if (!request) return
 
     openAlert({
-      message: `${request.employeeName}님에게 초대 카카오톡을 발송할까요?`,
+      message: `${request.employeeName}님에게 회원가입 초대를 전송할까요?`,
       confirmText: '초대하기',
       cancelText: '취소',
       onConfirm: async () => {
