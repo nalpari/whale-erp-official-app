@@ -265,6 +265,9 @@ export default function PlanTableEdit() {
   const buildRequests = (): ScheduleRequest[] => {
     const requests: ScheduleRequest[] = []
     for (const [date, workers] of effectiveEditState) {
+      // 근무자가 없는 날짜는 제외 — 바텀시트에서 선택한 기간 외 날짜가 빈 채로 포함되어
+      // DB에 work_shift 없는 work_schedule이 생성되는 문제 방지
+      if (workers.length === 0) continue
       const workerRequests: WorkerRequest[] = workers.map((w) => {
         const base = {
           shiftId: w.shiftId ?? undefined,
