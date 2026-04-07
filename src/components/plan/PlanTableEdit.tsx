@@ -298,6 +298,10 @@ export default function PlanTableEdit() {
       return
     }
     const requests = buildRequests()
+    if (requests.length === 0) {
+      openAlert({ message: '근무 계획이 저장되었습니다.', onConfirm: () => navigateToPlanList(router) })
+      return
+    }
     try {
       await upsertSchedule({ storeId, data: requests })
       openAlert({

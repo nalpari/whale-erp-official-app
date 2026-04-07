@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useDeleteTodos, useCalendarData } from "@/hooks/queries/use-todo-queries";
+import { isInterceptorHandled } from "@/lib/api";
 import { getCalendarData } from "@/lib/api/todo";
 import TodoCalendar from "@/components/todo/TodoCalendar";
 import type { CalendarDayData, OrgGroup, EmployeeGroup, TodoItem } from "@/types/todo";
@@ -116,6 +117,7 @@ export default function TodoContents() {
           try {
             await deleteTodos([todoId]);
           } catch (err) {
+            if (isInterceptorHandled(err)) return
             console.error("[TodoContents] 삭제 실패:", err);
             openAlert({ message: "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요." });
           }

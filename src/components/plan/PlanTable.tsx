@@ -262,7 +262,6 @@ export default function PlanTable() {
         <div className="plan-table-wrap">
           {scheduleList.map((schedule) => {
             const activeWorkers = sortWorkers(schedule.workerList)
-            if (activeWorkers.length === 0) return null
 
             return (
               <div key={`${schedule.storeId ?? 'unknown'}-${schedule.date}`} className="plan-table-item">
@@ -278,6 +277,11 @@ export default function PlanTable() {
                   </div>
                 </div>
                 <div className="plan-table-content">
+                  {activeWorkers.length === 0 && (
+                    <div className="sub-item-bx" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                      등록 된 근무 계획이 없습니다.
+                    </div>
+                  )}
                   {activeWorkers.map((worker) => {
                     const style = getContractStyle(worker.contractType)
                     const hours = calcWorkHours(worker)
