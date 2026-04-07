@@ -7,7 +7,6 @@ import { useStoreStore } from "@/store/useStoreStore";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateTodo } from "@/hooks/queries/use-todo-queries";
 import { useEmployeeOptions } from "@/hooks/queries/use-todo-queries";
-import { getErrorMessage } from "@/lib/api";
 import "./css/todo.scss";
 
 export default function TodoCreate() {
@@ -31,6 +30,7 @@ export default function TodoCreate() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
 
+  // TODO: 공통 로딩 화면으로 교체 (등록 pending)
   const { mutateAsync: createTodo, isPending: isCreating } = useCreateTodo();
 
   const { data: employees = [] } = useEmployeeOptions(
@@ -82,8 +82,8 @@ export default function TodoCreate() {
             },
       );
       router.push(`/todo?date=${startDate}`);
-    } catch (err) {
-      setSubmitError(getErrorMessage(err, "등록에 실패했습니다."));
+    } catch {
+      setSubmitError("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     }
   }, [
     validate,

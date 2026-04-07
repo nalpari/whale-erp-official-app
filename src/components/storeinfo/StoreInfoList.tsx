@@ -124,6 +124,7 @@ export default function StoreInfoList() {
           </button>
         </div>
         <div className="sub-cont-wrap">
+          {/* TODO: 공통 로딩 화면으로 교체 (목록 조회) */}
           {isLoading ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
               불러오는 중...

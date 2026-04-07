@@ -110,7 +110,6 @@ export default function CommuteList() {
     isLoading,
     isError,
     error,
-    refetch,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -184,19 +183,13 @@ export default function CommuteList() {
 
         {!officeId ? (
           <div className="empty-data">점포를 선택해주세요.</div>
-        ) : isLoading ? (
-          <div className="loading-wrap">
-            <div className="loading">불러오는 중...</div>
+        ) : /* TODO: 공통 로딩 화면으로 교체 (목록 조회) */ isLoading ? (
+          <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+            불러오는 중...
           </div>
         ) : isError ? (
-          <div className="empty-data">
-            <div>데이터를 불러오지 못했습니다.</div>
-            <button
-              className="btn-form grey"
-              onClick={() => void refetch()}
-            >
-              다시 시도
-            </button>
+          <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+            데이터를 불러오지 못했습니다.
           </div>
         ) : items.length === 0 ? (
           <div className="empty-data">출퇴근 현황이 없습니다.</div>

@@ -17,6 +17,8 @@ function hasValidExcelExtension(fileName: string): boolean {
 interface UploadExcelPopupProps {
   isUploading: boolean
   isSaving: boolean
+  // TODO: 공통 로딩 화면으로 교체 (샘플 다운로드 pending)
+  isDownloadingSample?: boolean
   result: ExcelValidationResponse | null
   onClose: () => void
   onUpload: (file: File) => void | Promise<void>
@@ -28,6 +30,7 @@ interface UploadExcelPopupProps {
 export default function UploadExcelPopup({
   isUploading,
   isSaving,
+  isDownloadingSample = false,
   result,
   onClose,
   onUpload,
@@ -128,9 +131,9 @@ export default function UploadExcelPopup({
               <button
                 className="btn-s outline-g"
                 onClick={handleDownloadSample}
-                disabled={isProcessing}
+                disabled={isProcessing || isDownloadingSample}
               >
-                샘플
+                {isDownloadingSample ? '다운로드 중...' : '샘플'}
               </button>
             </div>
             <input
