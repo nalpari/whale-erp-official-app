@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { usePopupControler } from '@/store/usePopupControler'
 import { useHeaderStore } from '@/store/useHeaderStore'
+import { getErrorMessage, isInterceptorHandled } from '@/lib/api'
 import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule-queries'
 import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
@@ -301,9 +302,10 @@ export default function PlanTableEdit() {
         onConfirm: () => navigateToPlanList(router),
       })
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTableEdit] 근무 계획 저장 실패:', err)
       openAlert({
-        message: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
       })
     }
   }

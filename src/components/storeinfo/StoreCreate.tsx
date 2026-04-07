@@ -5,6 +5,7 @@ import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
+import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { buildOperatingHoursRequest, getOrganizationId } from "@/lib/store-utils";
 import StoreBasicInfoForm from "./storeform/StoreBasicInfoForm";
 import StoreContactForm from "./storeform/StoreContactForm";
@@ -123,8 +124,9 @@ export default function StoreCreate() {
         onConfirm: () => router.push("/storeinfo"),
       });
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[StoreCreate] 점포 등록 실패:', err);
-      openAlert({ message: "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요." });
+      openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
     }
   };
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { useHeaderStore } from "@/store/useHeaderStore";
+import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { useCreateTodo } from "@/hooks/queries/use-todo-queries";
 import { useEmployeeOptions } from "@/hooks/queries/use-todo-queries";
 import "./css/todo.scss";
@@ -82,8 +83,10 @@ export default function TodoCreate() {
             },
       );
       router.push(`/todo?date=${startDate}`);
-    } catch {
-      setSubmitError("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } catch (err) {
+      if (isInterceptorHandled(err)) return
+      console.error('[TodoCreate] 투두 등록 실패:', err);
+      setSubmitError(getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
     }
   }, [
     validate,

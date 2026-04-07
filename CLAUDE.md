@@ -151,7 +151,6 @@ Login supports multi-authority (조직) selection:
 ## 4. 에러 처리
 
 - 빈 `catch` 블록은 사용하지 않는다. 최소한 로그를 남기거나, 의도적으로 무시한 이유를 코드에 표현한다.
-- 사용자 진행이 막히거나 데이터 정합성에 영향을 주는 실패는 `console.error`로 끝내지 말고 UI 피드백이나 안전한 폴백을 함께 둔다.
 - Alert, Popup, BottomSheet처럼 외부 콜백을 실행하는 지점은 예외 전파로 UI가 깨지지 않도록 감싼다.
 - Promise 체인을 유지할 때는 `.catch()`를 생략하지 않는다.
 

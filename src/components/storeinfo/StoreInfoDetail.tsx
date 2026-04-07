@@ -4,6 +4,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useCallback } from "react";
+import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { useStoreDetail, useDeleteStore } from "@/hooks/queries/use-store-queries";
 import type { OperatingHour } from "@/types/store";
 import { STATUS_MAP, WEEKDAY_LABEL, WEEKDAY_ORDER, ALL_DAYS, formatDate, formatTime, getFileNameAndExt } from "@/lib/store-utils";
@@ -66,8 +67,9 @@ export default function StoreInfoDetail({ id }: { id: number }) {
           await deleteStoreAsync(id);
           router.push("/storeinfo");
         } catch (err) {
+          if (isInterceptorHandled(err)) return
           console.error('[StoreInfoDetail] 점포 삭제 실패:', err);
-          openAlert({ message: "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요." });
+          openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
         }
       },
     });

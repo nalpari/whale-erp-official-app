@@ -9,6 +9,7 @@ import { usePopupControler } from '@/store/usePopupControler'
 import { useScheduleList, useUpsertSchedule, useValidateScheduleExcel, useDownloadScheduleTemplate } from '@/hooks/queries/use-schedule-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers, getMonday, getSunday } from '@/lib/schedule-utils'
+import { getErrorMessage, isInterceptorHandled } from '@/lib/api'
 import { downloadScheduleExcel } from '@/lib/api/schedule'
 import { downloadBlob } from '@/lib/file-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
@@ -72,6 +73,7 @@ export default function PlanTable() {
       const result = await validateExcel({ storeId, file })
       setValidationResult(result)
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTable] 엑셀 검증 실패:', err)
       setValidationResult({
         valid: false,
@@ -104,8 +106,9 @@ export default function PlanTable() {
         },
       })
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTable] 엑셀 저장 실패:', err)
-      openAlert({ message: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' })
+      openAlert({ message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.') })
     }
   }
 
@@ -115,8 +118,9 @@ export default function PlanTable() {
       const blob = await downloadTemplate()
       downloadBlob(blob, '근무계획표_업로드_샘플.xlsx')
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTable] 샘플 다운로드 실패:', err)
-      openAlert({ message: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' })
+      openAlert({ message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.') })
     }
   }
 
@@ -141,8 +145,9 @@ export default function PlanTable() {
       const defaultName = `근무계획표_${searchFrom}_${searchTo}.xlsx`
       downloadBlob(blob, defaultName)
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTable] 엑셀 다운로드 실패:', err)
-      openAlert({ message: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' })
+      openAlert({ message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.') })
     } finally {
       setIsDownloadingExcel(false)
     }

@@ -5,6 +5,7 @@ import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
+import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { buildOperatingHoursRequest, toFormOperating, getOrganizationId } from "@/lib/store-utils";
 import StoreOperatingHourForm from "../storeform/StoreOperatingHourForm";
 
@@ -94,8 +95,9 @@ export default function StoreEditTime({ id }: { id: number }) {
         onConfirm: () => router.push(`/storeinfo/${id}`),
       });
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[StoreEditTime] 영업시간 저장 실패:', err);
-      openAlert({ message: "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요." });
+      openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
     }
   };
 
