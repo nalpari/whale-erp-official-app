@@ -19,9 +19,11 @@ export function getErrorMessage(error: unknown, fallback = '알 수 없는 오�
   return fallback
 }
 
+const handledErrors = new WeakSet<object>()
+
 /** 인터셉터에서 이미 alert 처리된 에러인지 확인 */
 export function isInterceptorHandled(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && '_interceptorHandled' in error
+  return typeof error === 'object' && error !== null && handledErrors.has(error)
 }
 
 const api = axios.create({
@@ -103,14 +105,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // TODO: Partner Office App 권한 처리 미구현 — currentPath 헤더 기반 메뉴/기능 접근 권한 검증 필요
-    // currentPath 헤더 누락으로 인한 400 에러를 공통 처리 (AuthorityCheckFilter.kt)
+    // TODO: 임시 처리 — currentPath 헤더 기반 권한 검증 구현 후 이 블록 삭제 필요
+    // currentPath 헤더가 미구현 상태라 AuthorityCheckFilter.kt가 400을 반환하는 동안만 유지
     if (
       error.response?.status === 400 &&
       error.response?.data?.message?.includes('Required request header')
     ) {
       usePopupControler.getState().openAlert({ message: '접근 권한이 없습니다.' })
-      ;(error as Record<string, unknown>)._interceptorHandled = true
+      handledErrors.add(error)
       return Promise.reject(error)
     }
 

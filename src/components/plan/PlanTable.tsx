@@ -73,7 +73,10 @@ export default function PlanTable() {
       const result = await validateExcel({ storeId, file })
       setValidationResult(result)
     } catch (err) {
-      if (isInterceptorHandled(err)) return
+      if (isInterceptorHandled(err)) {
+        setValidationResult(null)
+        return
+      }
       console.error('[PlanTable] 엑셀 검증 실패:', err)
       setValidationResult({
         valid: false,
