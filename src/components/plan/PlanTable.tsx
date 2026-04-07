@@ -9,6 +9,7 @@ import { usePopupControler } from '@/store/usePopupControler'
 import { useScheduleList, useUpsertSchedule, useValidateScheduleExcel, useDownloadScheduleTemplate } from '@/hooks/queries/use-schedule-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { getContractStyle, calcWorkHours, sortWorkers, getMonday, getSunday } from '@/lib/schedule-utils'
+import { getErrorMessage, isInterceptorHandled } from '@/lib/api'
 import { downloadScheduleExcel } from '@/lib/api/schedule'
 import { downloadBlob } from '@/lib/file-utils'
 import '@/components/storeinfo/css/store-search-btn.scss'
@@ -47,9 +48,11 @@ export default function PlanTable() {
   // 엑셀 업로드 팝업 상태
   const [isUploadOpen, setUploadOpen] = useState(false)
   const [validationResult, setValidationResult] = useState<ExcelValidationResponse | null>(null)
+  // TODO: 공통 로딩 화면으로 교체 (엑셀 검증/저장 pending)
   const { mutateAsync: validateExcel, isPending: isValidating } = useValidateScheduleExcel()
   const { mutateAsync: upsertSchedule, isPending: isSavingExcel } = useUpsertSchedule()
-  const { mutateAsync: downloadTemplate } = useDownloadScheduleTemplate()
+  // TODO: 공통 로딩 화면으로 교체 (샘플 다운로드 pending)
+  const { mutateAsync: downloadTemplate, isPending: isDownloadingTemplate } = useDownloadScheduleTemplate()
 
   const handleOpenUpload = () => {
     if (!storeId) {
@@ -70,6 +73,10 @@ export default function PlanTable() {
       const result = await validateExcel({ storeId, file })
       setValidationResult(result)
     } catch (err) {
+      if (isInterceptorHandled(err)) {
+        setValidationResult(null)
+        return
+      }
       console.error('[PlanTable] 엑셀 검증 실패:', err)
       setValidationResult({
         valid: false,
@@ -102,8 +109,9 @@ export default function PlanTable() {
         },
       })
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTable] 엑셀 저장 실패:', err)
-      openAlert({ message: '엑셀 데이터 저장에 실패했습니다. 다시 시도해주세요.' })
+      openAlert({ message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.') })
     }
   }
 
@@ -113,10 +121,14 @@ export default function PlanTable() {
       const blob = await downloadTemplate()
       downloadBlob(blob, '근무계획표_업로드_샘플.xlsx')
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTable] 샘플 다운로드 실패:', err)
-      openAlert({ message: '샘플 파일 다운로드에 실패했습니다.' })
+      openAlert({ message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.') })
     }
   }
+
+  // TODO: 공통 로딩 화면으로 교체 (엑셀 다운로드 pending)
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false)
 
   // 엑셀 다운로드 (현재 검색 조건 기준)
   const handleDownloadExcel = async () => {
@@ -124,6 +136,7 @@ export default function PlanTable() {
       openAlert({ message: '점포를 먼저 선택해주세요.' })
       return
     }
+    setIsDownloadingExcel(true)
     try {
       const blob = await downloadScheduleExcel({
         storeId,
@@ -135,8 +148,11 @@ export default function PlanTable() {
       const defaultName = `근무계획표_${searchFrom}_${searchTo}.xlsx`
       downloadBlob(blob, defaultName)
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTable] 엑셀 다운로드 실패:', err)
-      openAlert({ message: '엑셀 다운로드에 실패했습니다. 다시 시도해주세요.' })
+      openAlert({ message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.') })
+    } finally {
+      setIsDownloadingExcel(false)
     }
   }
 
@@ -150,7 +166,7 @@ export default function PlanTable() {
   } satisfies ScheduleSearchParams : null
 
   // 본사/점포 선택 없으면 요청 보내지 않음
-  const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(
+  const { data: scheduleList = [], isLoading, isError } = useScheduleList(
     searchParams,
     !!headOfficeId,
   )
@@ -193,21 +209,19 @@ export default function PlanTable() {
   if (isError) {
     return (
       <div className="container">
-        <div style={{ padding: "40px 0", textAlign: "center" }}>
-          <div style={{ color: "#e74c3c", marginBottom: "16px" }}>근무 계획 정보를 불러올 수 없습니다.</div>
-          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-            <button className="btn-form outline min" onClick={() => refetch()}>다시 시도</button>
-          </div>
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+          근무 계획 정보를 불러올 수 없습니다.
         </div>
       </div>
     )
   }
 
+  // TODO: 공통 로딩 화면으로 교체 (목록 조회)
   if (isLoading) {
     return (
       <div className="container">
-        <div style={{ padding: "40px 0", textAlign: "center" }}>
-          <p>데이터를 불러오는 중입니다...</p>
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+          불러오는 중...
         </div>
       </div>
     )
@@ -223,8 +237,8 @@ export default function PlanTable() {
               <button className="btn-s outline-g" onClick={handleOpenUpload}>
                 엑셀 업로드
               </button>
-              <button className="btn-s outline-g" onClick={handleDownloadExcel}>
-                엑셀 다운로드
+              <button className="btn-s outline-g" onClick={handleDownloadExcel} disabled={isDownloadingExcel}>
+                {isDownloadingExcel ? '다운로드 중...' : '엑셀 다운로드'}
               </button>
             </>
           )}
@@ -248,7 +262,6 @@ export default function PlanTable() {
         <div className="plan-table-wrap">
           {scheduleList.map((schedule) => {
             const activeWorkers = sortWorkers(schedule.workerList)
-            if (activeWorkers.length === 0) return null
 
             return (
               <div key={`${schedule.storeId ?? 'unknown'}-${schedule.date}`} className="plan-table-item">
@@ -264,6 +277,11 @@ export default function PlanTable() {
                   </div>
                 </div>
                 <div className="plan-table-content">
+                  {activeWorkers.length === 0 && (
+                    <div className="sub-item-bx" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                      등록 된 근무 계획이 없습니다.
+                    </div>
+                  )}
                   {activeWorkers.map((worker) => {
                     const style = getContractStyle(worker.contractType)
                     const hours = calcWorkHours(worker)
@@ -310,6 +328,7 @@ export default function PlanTable() {
         <UploadExcelPopup
           isUploading={isValidating}
           isSaving={isSavingExcel}
+          isDownloadingSample={isDownloadingTemplate}
           result={validationResult}
           onClose={() => {
             setUploadOpen(false)

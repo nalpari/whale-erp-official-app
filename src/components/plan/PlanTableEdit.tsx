@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { usePopupControler } from '@/store/usePopupControler'
 import { useHeaderStore } from '@/store/useHeaderStore'
+import { getErrorMessage, isInterceptorHandled } from '@/lib/api'
 import { useScheduleList, useUpsertSchedule } from '@/hooks/queries/use-schedule-queries'
 import { useEmployeeOptions } from '@/hooks/queries/use-todo-queries'
 import { useMounted } from '@/hooks/use-mounted'
@@ -67,6 +68,7 @@ export default function PlanTableEdit() {
   const setOnBack = useHeaderStore((state) => state.setOnBack)
   const setWorkerSheetEmployees = useBottomSheetControler((state) => state.setWorkerSheetEmployees)
 
+  // TODO: 공통 로딩 화면으로 교체 (저장 pending)
   const { mutateAsync: upsertSchedule, isPending: isUpserting } = useUpsertSchedule()
 
   // 본사 ID: 점포 선택 바텀시트 > authStore 순 fallback
@@ -93,7 +95,7 @@ export default function PlanTableEdit() {
   }, [setTitle, setOnBack, openAlert, router, editDate])
 
   // 직원 목록 API 연동
-  const { data: employeeList = [], isLoading: isEmployeeLoading, isError: isEmployeeError, refetch: refetchEmployees } = useEmployeeOptions({
+  const { data: employeeList = [], isLoading: isEmployeeLoading, isError: isEmployeeError } = useEmployeeOptions({
     purpose: 'BROAD',
     headOfficeId: headOfficeId ?? undefined,
     franchiseId: authFranchiseId ?? undefined,
@@ -128,7 +130,7 @@ export default function PlanTableEdit() {
     } satisfies ScheduleSearchParams
   }, [headOfficeId, storeId, fromDate, toDate])
 
-  const { data: scheduleList = [], isLoading, isError, refetch } = useScheduleList(params, !!headOfficeId && !!storeId)
+  const { data: scheduleList = [], isLoading, isError } = useScheduleList(params, !!headOfficeId && !!storeId)
 
   // API 데이터 → 초기 EditState 파생 (scheduleList 또는 검색 기간 변경 시 재계산)
   const initialEditState = useMemo(() => {
@@ -263,6 +265,9 @@ export default function PlanTableEdit() {
   const buildRequests = (): ScheduleRequest[] => {
     const requests: ScheduleRequest[] = []
     for (const [date, workers] of effectiveEditState) {
+      // 근무자가 없는 날짜는 제외 — 바텀시트에서 선택한 기간 외 날짜가 빈 채로 포함되어
+      // DB에 work_shift 없는 work_schedule이 생성되는 문제 방지
+      if (workers.length === 0) continue
       const workerRequests: WorkerRequest[] = workers.map((w) => {
         const base = {
           shiftId: w.shiftId ?? undefined,
@@ -293,6 +298,10 @@ export default function PlanTableEdit() {
       return
     }
     const requests = buildRequests()
+    if (requests.length === 0) {
+      openAlert({ message: '근무 계획이 저장되었습니다.', onConfirm: () => navigateToPlanList(router) })
+      return
+    }
     try {
       await upsertSchedule({ storeId, data: requests })
       openAlert({
@@ -300,9 +309,10 @@ export default function PlanTableEdit() {
         onConfirm: () => navigateToPlanList(router),
       })
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[PlanTableEdit] 근무 계획 저장 실패:', err)
       openAlert({
-        message: '근무 계획 저장에 실패했습니다. 다시 시도해주세요.',
+        message: getErrorMessage(err, '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
       })
     }
   }
@@ -380,22 +390,19 @@ export default function PlanTableEdit() {
   if (isError || isEmployeeError) {
     return (
       <div className="container sub">
-        <div style={{ padding: "40px 0", textAlign: "center" }}>
-          <div style={{ color: "#e74c3c", marginBottom: "16px" }}>근무 계획 정보를 불러올 수 없습니다.</div>
-          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-            <button className="btn-form outline min" onClick={() => { refetch(); refetchEmployees() }}>다시 시도</button>
-            <button className="btn-form outline min" onClick={() => router.back()}>돌아가기</button>
-          </div>
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+          근무 계획 정보를 불러올 수 없습니다.
         </div>
       </div>
     )
   }
 
+  // TODO: 공통 로딩 화면으로 교체 (상세 조회)
   if (isLoading || isEmployeeLoading) {
     return (
       <div className="container sub">
-        <div style={{ padding: "40px 0", textAlign: "center" }}>
-          <p>데이터를 불러오는 중입니다...</p>
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+          불러오는 중...
         </div>
       </div>
     )

@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import CommuteDetail from "@/components/commute/CommuteDetail";
 
-export default function CommuteDetailPage({
+export default async function CommuteDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const employeeId = /^[1-9]\d*$/.test(params.id) ? Number(params.id) : NaN;
+  const { id } = await params;
+  const employeeId = /^[1-9]\d*$/.test(id) ? Number(id) : NaN;
   if (isNaN(employeeId)) notFound();
   return <CommuteDetail employeeId={employeeId} />;
 }

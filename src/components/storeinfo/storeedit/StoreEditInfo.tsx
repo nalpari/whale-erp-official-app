@@ -5,7 +5,7 @@ import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
-import { getErrorMessage } from "@/lib/api";
+import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { getOrganizationId } from "@/lib/store-utils";
 import StoreBasicInfoForm from "../storeform/StoreBasicInfoForm";
 import StoreContactForm from "../storeform/StoreContactForm";
@@ -14,9 +14,10 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const openAlert = usePopupControler((state) => state.openAlert);
+  // TODO: 공통 로딩 화면으로 교체 (수정 pending)
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
   const setFields = useStoreFormStore((state) => state.setFields);
-  const { data, isLoading, isError, refetch } = useStoreDetail(id);
+  const { data, isLoading, isError } = useStoreDetail(id);
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setOnBack = useHeaderStore((state) => state.setOnBack);
   const setRightLabel = useHeaderStore((state) => state.setRightLabel);
@@ -68,17 +69,14 @@ export default function StoreEditInfo({ id }: { id: number }) {
   if (isError) {
     return (
       <div className="container sub">
-        <div style={{ padding: "40px 0", textAlign: "center" }}>
-          <div style={{ color: "#e74c3c", marginBottom: "16px" }}>점포 정보를 불러올 수 없습니다.</div>
-          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-            <button className="btn-form outline min" onClick={() => refetch()}>다시 시도</button>
-            <button className="btn-form outline min" onClick={() => router.back()}>돌아가기</button>
-          </div>
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+          점포 정보를 불러올 수 없습니다.
         </div>
       </div>
     );
   }
 
+  // TODO: 공통 로딩 화면으로 교체 (상세 조회)
   if (isLoading || !data) {
     return (
       <div className="container sub">
@@ -132,8 +130,9 @@ export default function StoreEditInfo({ id }: { id: number }) {
         onConfirm: () => router.push(`/storeinfo/${id}`),
       });
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[StoreEditInfo] 점포정보 저장 실패:', err);
-      openAlert({ message: getErrorMessage(err, "저장에 실패했습니다.") });
+      openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
     }
   };
 

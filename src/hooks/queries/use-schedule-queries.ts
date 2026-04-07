@@ -35,9 +35,6 @@ export const useUpsertSchedule = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all })
     },
-    onError: (err) => {
-      console.error('[useUpsertSchedule] mutation 실패:', err)
-    },
   })
 }
 
@@ -49,9 +46,6 @@ export const useDeleteSchedule = () => {
       deleteSchedule(storeId, date),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all })
-    },
-    onError: (err) => {
-      console.error('[useDeleteSchedule] mutation 실패:', err)
     },
   })
 }
@@ -69,9 +63,6 @@ export const useDeleteWorker = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all })
     },
-    onError: (err) => {
-      console.error('[useDeleteWorker] mutation 실패:', err)
-    },
   })
 }
 
@@ -80,9 +71,6 @@ export const useValidateScheduleExcel = () => {
   return useMutation({
     mutationFn: ({ storeId, file }: { storeId: number; file: File }) =>
       validateScheduleExcel(storeId, file),
-    onError: (err) => {
-      console.error('[useValidateScheduleExcel] mutation 실패:', err)
-    },
   })
 }
 
@@ -90,8 +78,5 @@ export const useValidateScheduleExcel = () => {
 export const useDownloadScheduleTemplate = () => {
   return useMutation({
     mutationFn: () => downloadScheduleTemplate(),
-    onError: (err) => {
-      console.error('[useDownloadScheduleTemplate] mutation 실패:', err)
-    },
   })
 }

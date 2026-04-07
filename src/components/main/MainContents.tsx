@@ -73,6 +73,7 @@ export default function MainContents() {
                     alt="go-to-logo"
                     width={34}
                     height={34}
+                    priority
                   />
                 </div>
                 <div className="go-to-name">점포정보 관리</div>

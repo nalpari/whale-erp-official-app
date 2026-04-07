@@ -233,7 +233,6 @@ export default function CommuteDetail({ employeeId }: { employeeId: number }) {
     isLoading,
     isError,
     error,
-    refetch,
   } = useAttendanceDetail(
     {
       officeId: officeId ?? 0,
@@ -266,6 +265,7 @@ export default function CommuteDetail({ employeeId }: { employeeId: number }) {
               alt="profile-img"
               width={64}
               height={64}
+              priority
             />
           </div>
           <div className="profile-info">
@@ -386,19 +386,14 @@ export default function CommuteDetail({ employeeId }: { employeeId: number }) {
             </div>
 
             {/* 근무 기록 목록 */}
+            {/* TODO: 공통 로딩 화면으로 교체 (상세 조회) */}
             {isLoading ? (
-              <div className="loading-wrap">
-                <div className="loading">불러오는 중...</div>
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+                불러오는 중...
               </div>
             ) : isError ? (
-              <div className="empty-data">
-                <div>데이터를 불러오지 못했습니다.</div>
-                <button
-                  className="btn-form grey"
-                  onClick={() => void refetch()}
-                >
-                  다시 시도
-                </button>
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+                데이터를 불러오지 못했습니다.
               </div>
             ) : (
               <div className="commute-list-wrap">
