@@ -126,7 +126,7 @@ export interface PayrollStatementUpdateRequest {
   settlementStartDate: string
   settlementEndDate: string
   paymentDate: string
-  attachmentFileId?: number | null
+  attachmentFileId: number | null
   paymentItems: PaymentItem[]
   deductionItems: DeductionItem[]
   remarks?: string

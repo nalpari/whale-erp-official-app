@@ -1,6 +1,5 @@
 'use client'
 import { useRouter, useParams } from 'next/navigation'
-import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
 import type { PartTimerPayrollDetail, PartTimerPaymentItem } from '@/types/parttime-payroll'
 
 interface PartTimerPayStubProps {
@@ -45,11 +44,6 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
   const router = useRouter()
   const params = useParams()
   const id = params?.id
-
-  // 직원 계약 정보 조회
-  const contractEmployeeId = initialData?.employeeInfoId ?? 0
-  const { data: contracts = [] } = useContractsByEmployee(contractEmployeeId, contractEmployeeId > 0)
-  const contract = contracts[0] ?? null
 
   if (!initialData) {
     return (

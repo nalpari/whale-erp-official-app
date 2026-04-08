@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useHeaderStore } from '@/store/useHeaderStore'
@@ -11,7 +12,7 @@ import {
   useDownloadPayrollExcel,
 } from '@/hooks/queries/use-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
-import { uploadAttachment, getFileInfo, getFileDownloadUrl, type UploadFileResponse } from '@/lib/api/file'
+import { uploadAttachment, getFileInfo, getFileDownloadUrl } from '@/lib/api/file'
 import { getLatestPayroll } from '@/lib/api/payroll'
 import { getOvertimeStatements, getOvertimeStatement } from '@/lib/api/overtime'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
@@ -215,14 +216,11 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   const [remarks, setRemarks] = useState(initialData?.remarks ?? '')
   const [attachmentFile, setAttachmentFile] = useState<File | undefined>()
   const [useFileMode, setUseFileMode] = useState(!!initialData?.attachmentFileId)
-  const [existingFileInfo, setExistingFileInfo] = useState<UploadFileResponse | null>(null)
-
-  useEffect(() => {
-    if (!initialData?.attachmentFileId) return
-    getFileInfo(initialData.attachmentFileId)
-      .then(setExistingFileInfo)
-      .catch((err) => console.error('[FullTimerPayDetail] 첨부파일 정보 조회 실패:', err))
-  }, [initialData?.attachmentFileId])
+  const { data: existingFileInfo = null } = useQuery({
+    queryKey: ['file-info', initialData?.attachmentFileId],
+    queryFn: () => getFileInfo(initialData?.attachmentFileId ?? 0),
+    enabled: !!initialData?.attachmentFileId,
+  })
   const [paymentItems, setPaymentItems] = useState<PaymentItem[]>(initialData?.paymentItems ?? [])
   const [deductionItems, setDeductionItems] = useState<DeductionItem[]>(initialData?.deductionItems ?? [])
 
@@ -407,13 +405,13 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
       if (initialData?.attachmentFileId) {
         setIsDownloadingFile(true)
         await getFileDownloadUrl(initialData.attachmentFileId)
-        setIsDownloadingFile(false)
       } else {
         await downloadExcelMutation.mutateAsync(id)
       }
     } catch (error) {
-      setIsDownloadingFile(false)
       alert(getErrorMessage(error, '다운로드에 실패했습니다.'))
+    } finally {
+      setIsDownloadingFile(false)
     }
   }
 
@@ -470,12 +468,17 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   }
 
   // 파일 변경
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      setAttachmentFile(file)
-      clearPayItems()
+    if (!file) return
+    if (file.size > MAX_FILE_SIZE) {
+      openAlert({ message: '파일 크기는 10MB 이하만 등록할 수 있습니다.' })
+      e.target.value = ''
+      return
     }
+    setAttachmentFile(file)
+    clearPayItems()
   }
 
   return (
