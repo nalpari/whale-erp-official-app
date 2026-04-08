@@ -189,6 +189,18 @@ interface WeeklyPaidHolidayAllowance {
 | `partTimerFormDraft` | 신규 폼 상태 복원용 (조직, 직원, 기간, 계약 정보 포함) | 미리보기 클릭 시 | 로드 후 삭제 |
 | `partTimerEditDraft` | 수정 폼 상태 복원용 (paymentItems + deductionItems) | 미리보기/근무시간편집 클릭 시 | 로드 후 삭제 |
 
+### Phase 7: 직원 계약 정보 연동 + 계약서 기반 상여금
+
+| 순서 | 작업 | 파일 | 상태 |
+|------|------|------|------|
+| 7-1 | PartTimerPayrollDetail 타입에 employeeInfoId, headOfficeId, franchiseId 추가 | `src/types/parttime-payroll.ts` | ✅ 완료 |
+| 7-2 | 수정 모드에서 initialData.employeeInfoId로 계약 정보 조회 | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 7-3 | 급여명세서(stub)에서 계약 정보 조회 | `PartTimerPayStub.tsx` | ✅ 완료 |
+| 7-4 | PartTimerBonusItemRequest 타입 + Create/Update 요청에 bonusItems 추가 | `src/types/parttime-payroll.ts` | ✅ 완료 |
+| 7-5 | 계약서 기반 상여금 조회 + ON/OFF 토글 UI | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 7-6 | 신규/수정 저장 시 bonusItems 조립 (buildBonusItems) | `PartTimerPayDetail.tsx` | ✅ 완료 |
+| 7-7 | 미리보기에 계약서 기반 상여금 반영 (신규/수정 모두) | `PartTimerPayDetail.tsx` | ✅ 완료 |
+
 ## 생성/수정 파일 목록
 
 | 구분 | 파일 | 설명 |

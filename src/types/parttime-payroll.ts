@@ -13,6 +13,24 @@ export interface PartTimerPaymentItem {
   remarks?: string
 }
 
+// 파트타이머 상여금 항목 (session storage용 필드 + API 응답 필드 통합)
+export interface PartTimerBonusItem {
+  id?: number
+  // session storage (미리보기)
+  bonusCode?: string
+  bonusType?: string
+  amount?: number
+  enabled?: boolean
+  memo?: string
+  // API 응답
+  bonusName?: string
+  bonusAmount?: number
+  isActive?: boolean
+  itemOrder?: number
+  // 공통
+  deductionAmount?: number
+}
+
 // 파트타이머 공제항목
 export interface PartTimerDeductionItem {
   id?: number
@@ -42,10 +60,13 @@ export interface WeeklyPaidHolidayAllowance {
 export interface PartTimerPayrollDetail {
   id: number
   memberId: number
+  employeeInfoId?: number
   memberName: string
   workStatus?: string
   employeeClassification?: string
   employeeClassificationName?: string
+  headOfficeId?: number
+  franchiseId?: number
   headOfficeName?: string
   franchiseName?: string
   storeName?: string
@@ -61,6 +82,7 @@ export interface PartTimerPayrollDetail {
   isEmailSend: boolean
   paymentItems: PartTimerPaymentItem[]
   deductionItems: PartTimerDeductionItem[]
+  bonusItems?: PartTimerBonusItem[]
   weeklyPaidHolidayAllowances: WeeklyPaidHolidayAllowance[]
   createdAt?: string
   updatedAt?: string
@@ -103,6 +125,15 @@ export interface PartTimerPayrollSearchParams {
   size: number
 }
 
+// 상여금 저장 요청 항목
+export interface PartTimerBonusItemRequest {
+  bonusName?: string
+  bonusAmount?: number
+  deductionAmount?: number
+  isActive?: boolean
+  itemOrder?: number
+}
+
 // 등록 요청
 export interface PartTimerPayrollCreateRequest {
   employeeInfoId: number
@@ -112,6 +143,7 @@ export interface PartTimerPayrollCreateRequest {
   paymentDate: string
   paymentItems: Omit<PartTimerPaymentItem, 'id'>[]
   deductionItems?: Omit<PartTimerDeductionItem, 'id' | 'displayName'>[]
+  bonusItems?: PartTimerBonusItemRequest[]
   remarks?: string
 }
 
@@ -123,6 +155,7 @@ export interface PartTimerPayrollUpdateRequest {
   paymentDate: string
   paymentItems: PartTimerPaymentItem[]
   deductionItems?: PartTimerDeductionItem[]
+  bonusItems?: PartTimerBonusItemRequest[]
   remarks?: string
 }
 
