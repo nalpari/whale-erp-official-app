@@ -459,8 +459,8 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                         <tbody>
                           {salary.bonuses.map((bonus, i) => (
                             <tr key={bonus.id ?? i}>
-                              <td className="tit">{bonus.bonusType}</td>
-                              <td className="al-r">{formatAmount(bonus.amount)}원</td>
+                              <td className="tit">{bonus.bonusName}</td>
+                              <td className="al-r">{formatAmount(bonus.bonusAmount)}원</td>
                             </tr>
                           ))}
                         </tbody>

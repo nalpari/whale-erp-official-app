@@ -97,7 +97,7 @@ export default function OverTimeWorkEdit({ overtimeId, initialData, isPreview = 
       }
       // 미리보기에는 전체 날짜 전달 (0시간 포함)
       onPreviewSave(items)
-      router.back()
+      router.push(overtimeId ? `/overtime/${overtimeId}/stub` : '/overtime/new/stub')
       return
     }
 

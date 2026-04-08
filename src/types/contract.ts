@@ -79,12 +79,17 @@ export interface ContractSalaryInfo {
   bonuses?: ContractBonus[]
 }
 
-// 상여금
+// 상여금 (API 응답: bonusCode/bonusType/amount, 레거시: bonusName/bonusAmount)
 export interface ContractBonus {
   id?: number
   bonusCode?: string
-  bonusType: string
-  amount: number
+  bonusType?: string
+  bonusName?: string
+  amount?: number
+  bonusAmount?: number
+  deductionAmount?: number
+  isActive?: boolean
+  itemOrder?: number
   memo?: string
 }
 
