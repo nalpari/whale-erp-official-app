@@ -139,10 +139,10 @@ export default function PaymentConditionSheet({
     setLocalPaymentItems((prev) => [
       ...prev,
       {
-        itemCode: bonus.bonusCode || bonus.bonusType,
+        itemCode: bonus.bonusName,
         itemOrder: prev.length + 1,
-        amount: bonus.amount,
-        remarks: bonus.bonusType,
+        amount: bonus.bonusAmount,
+        remarks: bonus.bonusName,
       },
     ])
     setShowAddPayment(false)
@@ -241,19 +241,19 @@ export default function PaymentConditionSheet({
                             showAddPayment ? (
                               <div className="payment-data-item">
                                 {availableBonuses
-                                  .filter((b) => !localPaymentItems.some((p) => p.itemCode === (b.bonusCode || b.bonusType)))
+                                  .filter((b) => !localPaymentItems.some((p) => p.itemCode === b.bonusName))
                                   .map((b, i) => (
                                     <button
-                                      key={b.bonusCode ?? i}
+                                      key={b.id ?? i}
                                       type="button"
                                       className="btn-form grey"
                                       onClick={() => handleAddPaymentItem(b)}
                                       style={{ width: '100%', fontSize: '13px', marginBottom: '4px', textAlign: 'left' }}
                                     >
-                                      {b.bonusType} ({b.amount.toLocaleString('ko-KR')}원)
+                                      {b.bonusName} ({(b.bonusAmount ?? 0).toLocaleString('ko-KR')}원)
                                     </button>
                                   ))}
-                                {availableBonuses.filter((b) => !localPaymentItems.some((p) => p.itemCode === (b.bonusCode || b.bonusType))).length === 0 && (
+                                {availableBonuses.filter((b) => !localPaymentItems.some((p) => p.itemCode === b.bonusName)).length === 0 && (
                                   <div style={{ padding: '8px 0', color: '#999', fontSize: '13px' }}>
                                     추가 가능한 지급 항목이 없습니다.
                                   </div>

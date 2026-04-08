@@ -52,10 +52,11 @@ export interface DeductionItem {
 // 상여금
 export interface BonusItem {
   id?: number
-  bonusCode?: string
-  bonusType: string
-  amount: number
-  memo?: string
+  bonusName: string
+  bonusAmount: number
+  deductionAmount?: number
+  isActive?: boolean
+  itemOrder?: number
 }
 
 // 급여명세서 상세 응답
@@ -125,6 +126,7 @@ export interface PayrollStatementUpdateRequest {
   settlementStartDate: string
   settlementEndDate: string
   paymentDate: string
+  attachmentFileId?: number | null
   paymentItems: PaymentItem[]
   deductionItems: DeductionItem[]
   remarks?: string
