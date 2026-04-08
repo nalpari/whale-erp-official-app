@@ -18,6 +18,7 @@ import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
 import { getContractsByEmployee } from '@/lib/api/contract'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
+import { usePopupControler } from '@/store/usePopupControler'
 import DeductionAddSheet from '@/components/bottomsheet/DeductionAddSheet'
 import type {
   PartTimerPaymentItem,
@@ -136,6 +137,7 @@ const DEDUCTION_LABELS: Record<string, string> = {
 
 export default function PartTimerPayDetail({ isNew = false, initialData }: PartTimerPayDetailProps) {
   const router = useRouter()
+  const openAlert = usePopupControler((s) => s.openAlert)
   const id = initialData?.id
   const [draft] = useState(() => isNew ? loadDraft() : null)
   const [editDraft] = useState(() => !isNew ? loadEditDraft(id) : null)
@@ -183,7 +185,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           setPaymentItems(dailyItems)
         }
       } catch (error) {
-        alert(getErrorMessage(error, '근무내역을 불러오는데 실패했습니다.'))
+        openAlert({ message: getErrorMessage(error, '근무내역을 불러오는데 실패했습니다.') })
       }
     }
   }
@@ -349,51 +351,59 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   useEffect(() => {
     if (!isNew && id) {
       setShowDeleteButton(true)
-      setOnDelete(async () => {
-        if (!confirm('급여명세서를 삭제하시겠습니까?')) return
-        try {
-          await deleteAsync(id)
-          alert('삭제되었습니다.')
-          router.push('/parttimer')
-        } catch (error) {
-          alert(getErrorMessage(error, '삭제에 실패했습니다.'))
-        }
+      setOnDelete(() => {
+        openAlert({
+          message: '급여명세서를 삭제하시겠습니까?',
+          confirmText: '삭제',
+          cancelText: '취소',
+          onConfirm: async () => {
+            try {
+              await deleteAsync(id)
+              openAlert({
+                message: '삭제되었습니다.',
+                onConfirm: () => router.push('/parttimer'),
+              })
+            } catch (error) {
+              openAlert({ message: getErrorMessage(error, '삭제에 실패했습니다.') })
+            }
+          },
+        })
       })
     }
     return () => {
       setOnDelete(null)
       setShowDeleteButton(false)
     }
-  }, [isNew, id, setOnDelete, setShowDeleteButton, router, deleteAsync])
+  }, [isNew, id, setOnDelete, setShowDeleteButton, router, deleteAsync, openAlert])
 
   // 저장
   const handleSave = async () => {
     if (isNew && !selectedEmployeeInfoId) {
-      alert('직원을 선택해주세요.')
+      openAlert({ message: '직원을 선택해주세요.' })
       return
     }
     if (!payrollYearMonth) {
-      alert('급여 지급월을 선택해주세요.')
+      openAlert({ message: '급여 지급월을 선택해주세요.' })
       return
     }
     if (!paymentDate || !settlementStartDate || !settlementEndDate) {
-      alert('지급일과 근무기간을 먼저 설정해주세요.')
+      openAlert({ message: '지급일과 근무기간을 먼저 설정해주세요.' })
       return
     }
     if (paymentItems.length === 0) {
-      alert('근무시간을 입력해주세요.')
+      openAlert({ message: '근무시간을 입력해주세요.' })
       return
     }
     const totalAmount = paymentItems.reduce((sum, item) => sum + (item.totalAmount || 0), 0)
     if (totalAmount === 0) {
-      alert('급여내역이 0원입니다. 근무시간을 확인해주세요.')
+      openAlert({ message: '급여내역이 0원입니다. 근무시간을 확인해주세요.' })
       return
     }
 
     try {
       if (isNew) {
         if (!selectedEmployeeInfoId) {
-          alert('직원을 선택해주세요.')
+          openAlert({ message: '직원을 선택해주세요.' })
           return
         }
         const request: PartTimerPayrollCreateRequest = {
@@ -412,8 +422,10 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           remarks: remarks || undefined,
         }
         await createMutation.mutateAsync(request)
-        alert('급여명세서가 등록되었습니다.')
-        router.push('/parttimer')
+        openAlert({
+          message: '급여명세서가 등록되었습니다.',
+          onConfirm: () => router.push('/parttimer'),
+        })
       } else if (id) {
         const request: PartTimerPayrollUpdateRequest = {
           payrollYearMonth,
@@ -426,23 +438,31 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           remarks: remarks || undefined,
         }
         await updateMutation.mutateAsync({ id, data: request })
-        alert('급여명세서가 수정되었습니다.')
-        router.push('/parttimer')
+        openAlert({
+          message: '급여명세서가 수정되었습니다.',
+          onConfirm: () => router.push('/parttimer'),
+        })
       }
     } catch (error) {
-      alert(getErrorMessage(error, '저장에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '저장에 실패했습니다.') })
     }
   }
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = () => {
     if (!id || sendEmailMutation.isPending) return
-    if (!confirm('급여명세서를 이메일로 전송하시겠습니까?')) return
-    try {
-      await sendEmailMutation.mutateAsync(id)
-      alert('이메일이 전송되었습니다.')
-    } catch (error) {
-      alert(getErrorMessage(error, '이메일 전송에 실패했습니다.'))
-    }
+    openAlert({
+      message: '급여명세서를 이메일로 전송하시겠습니까?',
+      confirmText: '전송',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await sendEmailMutation.mutateAsync(id)
+          openAlert({ message: '이메일이 전송되었습니다.' })
+        } catch (error) {
+          openAlert({ message: getErrorMessage(error, '이메일 전송에 실패했습니다.') })
+        }
+      },
+    })
   }
 
   const handleDownload = async () => {
@@ -450,7 +470,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
     try {
       await downloadExcelMutation.mutateAsync(id)
     } catch (error) {
-      alert(getErrorMessage(error, '다운로드에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '다운로드에 실패했습니다.') })
     }
   }
 
