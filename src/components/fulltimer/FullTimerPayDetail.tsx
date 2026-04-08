@@ -365,7 +365,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
         router.push('/fulltimer')
       } else if (id) {
         // 파일 모드가 켜져있고 새 파일이 선택된 경우 먼저 업로드
-        let fileId: number | null | undefined = initialData?.attachmentFileId ?? undefined
+        let fileId: number | null = initialData?.attachmentFileId ?? null
         if (useFileMode && attachmentFile) {
           const uploaded = await uploadAttachment(
             attachmentFile,
@@ -469,11 +469,18 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
 
   // 파일 변경
   const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+  const BLOCKED_EXTENSIONS = ['.exe', '.bat', '.cmd', '.sh', '.msi', '.dll', '.com', '.scr', '.ps1', '.vbs', '.html', '.htm']
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > MAX_FILE_SIZE) {
       openAlert({ message: '파일 크기는 10MB 이하만 등록할 수 있습니다.' })
+      e.target.value = ''
+      return
+    }
+    const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '')
+    if (BLOCKED_EXTENSIONS.includes(ext)) {
+      openAlert({ message: '해당 파일 형식은 등록할 수 없습니다.' })
       e.target.value = ''
       return
     }

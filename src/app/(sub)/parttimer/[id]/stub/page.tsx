@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePartTimerPayrollDetail } from '@/hooks/queries/use-parttime-payroll-queries'
 import { useHeaderStore } from '@/store/useHeaderStore'
@@ -17,7 +17,7 @@ export default function PartTimerPayDetailStub() {
   const setOnBack = useHeaderStore((s) => s.setOnBack)
   const { data: detail, isLoading } = usePartTimerPayrollDetail(id)
 
-  const previewData = (() => {
+  const [previewData] = useState<PartTimerPayrollDetail | null>(() => {
     if (typeof window === 'undefined') return null
     try {
       const raw = sessionStorage.getItem(PREVIEW_KEY)
@@ -25,11 +25,12 @@ export default function PartTimerPayDetailStub() {
       const parsed = JSON.parse(raw) as PartTimerPayrollDetail
       if (parsed.id !== undefined && parsed.id !== id) return null
       return parsed
-    } catch {
+    } catch (err) {
+      console.warn('[PartTimerPayDetailStub] sessionStorage 파싱 실패:', err)
       sessionStorage.removeItem(PREVIEW_KEY)
       return null
     }
-  })()
+  })
 
   const data = previewData ?? detail
 

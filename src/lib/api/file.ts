@@ -10,14 +10,6 @@ export interface UploadFileResponse {
 }
 
 /**
- * 첨부파일 업로드
- *
- * @param file 업로드할 파일
- * @param category 파일 카테고리 (백엔드 UploadFileCategory enum)
- * @param referenceType 연결 엔티티 타입 (백엔드 ReferenceType enum)
- * @param referenceId 연결 엔티티 ID
- */
-/**
  * 파일 메타 정보 조회
  */
 export const getFileInfo = async (fileId: number): Promise<UploadFileResponse> => {
@@ -38,14 +30,24 @@ export const getFileDownloadUrl = async (fileId: number): Promise<string> => {
   const a = document.createElement('a')
   a.href = downloadUrl
   a.download = originalFileName
-  a.target = '_blank'
   document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+  try {
+    a.click()
+  } finally {
+    document.body.removeChild(a)
+  }
 
   return downloadUrl
 }
 
+/**
+ * 첨부파일 업로드
+ *
+ * @param file 업로드할 파일
+ * @param category 파일 카테고리 (백엔드 UploadFileCategory enum)
+ * @param referenceType 연결 엔티티 타입 (백엔드 ReferenceType enum)
+ * @param referenceId 연결 엔티티 ID
+ */
 export const uploadAttachment = async (
   file: File,
   category: string,
