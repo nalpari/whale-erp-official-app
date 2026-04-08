@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { usePartTimerPayrollDetail } from '@/hooks/queries/use-parttime-payroll-queries'
 import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
 import PartTimerTimeEdit from '@/components/parttimer/PartTimerTimeEdit'
-import type { PartTimerPaymentItem, PartTimerPayrollDetail, PartTimerBonusItem } from '@/types/parttime-payroll'
+import { normalizeBonusResponse } from '@/types/parttime-payroll'
+import type { PartTimerPaymentItem, PartTimerPayrollDetail, PartTimerBonusDraft } from '@/types/parttime-payroll'
 
 const EDIT_DRAFT_KEY = 'partTimerEditDraft'
 const PREVIEW_KEY = 'partTimerStubPreview'
@@ -24,7 +25,7 @@ export default function PartTimerTimePage() {
   const contractSalaryInfo = contracts[0]?.salaryInfo ?? undefined
   const contractWorkHours = contracts[0]?.workHours ?? undefined
 
-  const handleLocalSave = useCallback((items: PartTimerPaymentItem[], bonuses: PartTimerBonusItem[]) => {
+  const handleLocalSave = useCallback((items: PartTimerPaymentItem[], bonuses: PartTimerBonusDraft[]) => {
     if (!id) return
     // 기존 draft에서 deductionItems 유지 (같은 ID인 경우만)
     const existingRaw = sessionStorage.getItem(EDIT_DRAFT_KEY)
@@ -37,23 +38,32 @@ export default function PartTimerTimePage() {
     } catch (e) { console.warn('EditDraft 파싱 실패:', e) }
     sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ ...existing, id, paymentItems: items, bonusItems: bonuses }))
 
-    const bonusTotal = bonuses.reduce((sum, b) => sum + (b.amount ?? 0), 0)
-    const bonusDeductionTotal = bonuses.reduce((sum, b) => sum + (b.deductionAmount ?? 0), 0)
+    const bonusTotal = bonuses.reduce((sum, b) => sum + b.amount, 0)
+    const bonusDeductionTotal = bonuses.reduce((sum, b) => sum + b.deductionAmount, 0)
 
-    // stubPreview도 업데이트 (stub에서 반영되도록)
+    // stubPreview도 업데이트 — Draft → Response 형태로 변환
     const previewRaw = sessionStorage.getItem(PREVIEW_KEY)
     if (previewRaw) {
       try {
-        const data = JSON.parse(previewRaw) as PartTimerPayrollDetail & { bonusItems?: PartTimerBonusItem[] }
-        data.paymentItems = items
-        data.bonusItems = bonuses
-        data.totalAmount = items.reduce((sum, i) => sum + i.totalAmount, 0) + bonusTotal
-        const deductionTotal = items.reduce((sum, i) => sum + i.deductionAmount, 0)
-          + (data.deductionItems?.reduce((sum, i) => sum + i.amount, 0) ?? 0)
-          + bonusDeductionTotal
-        data.totalDeductionAmount = deductionTotal
-        data.actualPaymentAmount = data.totalAmount - deductionTotal
-        sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(data))
+        const data = JSON.parse(previewRaw) as PartTimerPayrollDetail
+        const previewBonuses = bonuses.map((b, i) => ({
+          bonusName: b.bonusType,
+          bonusAmount: b.amount,
+          deductionAmount: b.deductionAmount,
+          isActive: b.enabled,
+          itemOrder: i + 1,
+        }))
+        const updated = {
+          ...data,
+          paymentItems: items,
+          bonusItems: previewBonuses,
+          totalAmount: items.reduce((sum, i) => sum + i.totalAmount, 0) + bonusTotal,
+          totalDeductionAmount: items.reduce((sum, i) => sum + i.deductionAmount, 0)
+            + (data.deductionItems?.reduce((sum, i) => sum + i.amount, 0) ?? 0)
+            + bonusDeductionTotal,
+        }
+        updated.actualPaymentAmount = updated.totalAmount - updated.totalDeductionAmount
+        sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(updated))
       } catch (e) {
         console.warn('[PartTimerTimePage] previewData 업데이트 실패:', e)
       }
@@ -78,15 +88,8 @@ export default function PartTimerTimePage() {
     )
   }
 
-  // 기존 저장된 상여금이 있으면 우선, 없으면 계약 기반 상여금 사용
-  const savedBonusItems: PartTimerBonusItem[] = (detail?.bonusItems ?? []).map((b) => ({
-    bonusCode: b.bonusCode ?? String(b.id ?? ''),
-    bonusType: b.bonusName ?? b.bonusType ?? '',
-    amount: b.bonusAmount ?? b.amount ?? 0,
-    deductionAmount: b.deductionAmount ?? 0,
-    enabled: b.isActive ?? (b.enabled ?? true),
-    memo: b.memo,
-  }))
+  // 기존 저장된 상여금을 Draft 형태로 정규화
+  const savedBonusItems = (detail?.bonusItems ?? []).map(normalizeBonusResponse)
 
   return (
     <PartTimerTimeEdit

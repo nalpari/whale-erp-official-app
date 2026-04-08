@@ -3,18 +3,18 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUpdatePartTimerPayroll } from '@/hooks/queries/use-parttime-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
-import type { PartTimerPayrollDetail, PartTimerPaymentItem, PartTimerBonusItem } from '@/types/parttime-payroll'
+import type { PartTimerPayrollDetail, PartTimerPaymentItem, PartTimerBonusDraft } from '@/types/parttime-payroll'
 import type { ContractWorkHour, ContractSalaryInfo, DayType } from '@/types/contract'
 
 interface PartTimerTimeEditProps {
   payrollId?: number
   initialData?: PartTimerPayrollDetail
   isPreview?: boolean
-  onPreviewSave?: (items: PartTimerPaymentItem[], bonuses: PartTimerBonusItem[]) => void
+  onPreviewSave?: (items: PartTimerPaymentItem[], bonuses: PartTimerBonusDraft[]) => void
   contractWage?: number
   contractWorkHours?: ContractWorkHour[]
   contractSalaryInfo?: ContractSalaryInfo
-  initialBonusItems?: PartTimerBonusItem[]
+  initialBonusItems?: PartTimerBonusDraft[]
 }
 
 const DEDUCTION_RATE = 0.033
@@ -111,7 +111,7 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
   })
 
   // 상여금 항목 초기화 (이전 설정이 있으면 복원, 없으면 계약 기반으로 생성)
-  const [bonusItems, setBonusItems] = useState<PartTimerBonusItem[]>(() => {
+  const [bonusItems, setBonusItems] = useState<PartTimerBonusDraft[]>(() => {
     if (initialBonusItems && initialBonusItems.length > 0) return initialBonusItems
     return (contractSalaryInfo?.bonuses ?? [])
       .filter((b) => (b.bonusType ?? b.bonusName) && (b.amount ?? b.bonusAmount ?? 0) > 0)
@@ -128,7 +128,7 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
       })
   })
 
-  const updateBonusItem = (index: number, updates: Partial<PartTimerBonusItem>) => {
+  const updateBonusItem = (index: number, updates: Partial<PartTimerBonusDraft>) => {
     setBonusItems((prev) => {
       const updated = [...prev]
       const item = { ...updated[index], ...updates }

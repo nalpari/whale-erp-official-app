@@ -60,14 +60,13 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
     (initialData.weeklyPaidHolidayAllowances ?? []).map((w) => [w.weekStartDate ?? String(w.workWeek), w]),
   )
 
-  // API: bonusName/bonusAmount/isActive, session: bonusType/amount/enabled — 통합 정규화
   const bonusItems = (initialData.bonusItems ?? [])
-    .filter((b) => (b.isActive ?? b.enabled) !== false)
+    .filter((b) => b.isActive)
     .map((b) => ({
-      name: b.bonusName ?? b.bonusType ?? '',
-      amount: b.bonusAmount ?? b.amount ?? 0,
-      deduction: b.deductionAmount ?? 0,
-      key: b.bonusCode ?? b.bonusName ?? b.bonusType ?? '',
+      name: b.bonusName,
+      amount: b.bonusAmount,
+      deduction: b.deductionAmount,
+      key: String(b.id ?? b.bonusName),
     }))
   const bonusTotal = bonusItems.reduce((sum, b) => sum + b.amount, 0)
   const bonusDeductionTotal = bonusItems.reduce((sum, b) => sum + b.deduction, 0)

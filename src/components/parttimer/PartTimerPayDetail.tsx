@@ -20,11 +20,14 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { usePopupControler } from '@/store/usePopupControler'
 import DeductionAddSheet from '@/components/bottomsheet/DeductionAddSheet'
+import {
+  normalizeBonusResponse,
+  bonusDraftToRequest,
+} from '@/types/parttime-payroll'
 import type {
   PartTimerPaymentItem,
   PartTimerDeductionItem,
-  PartTimerBonusItem,
-  PartTimerBonusItemRequest,
+  PartTimerBonusDraft,
   PartTimerPayrollDetail,
   PartTimerPayrollCreateRequest,
   PartTimerPayrollUpdateRequest,
@@ -113,7 +116,7 @@ interface FormDraft {
   remarks: string
   paymentItems: PartTimerPaymentItem[]
   deductionItems: PartTimerDeductionItem[]
-  bonusItems?: PartTimerBonusItem[]
+  bonusItems?: PartTimerBonusDraft[]
 }
 
 const loadDraft = (): FormDraft | null => {
@@ -319,20 +322,16 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
   }
 
   // 상여금: 근무시간 편집(PartTimerTimeEdit)에서 토글 후 draft로 전달됨
-  const bonusItems: PartTimerBonusItem[] = draft?.bonusItems ?? initialData?.bonusItems?.filter((b) => b.isActive !== false) ?? []
-  const bonusTotal = bonusItems.reduce((sum, b) => sum + (b.bonusAmount ?? b.amount ?? 0), 0)
-  const bonusDeductionTotal = bonusItems.reduce((sum, b) => sum + (b.deductionAmount ?? 0), 0)
+  // draft는 이미 PartTimerBonusDraft[], API 응답은 PartTimerBonusResponse[] → 정규화
+  const bonusItems: PartTimerBonusDraft[] = draft?.bonusItems
+    ?? (initialData?.bonusItems ?? []).filter((b) => b.isActive).map(normalizeBonusResponse)
+  const bonusTotal = bonusItems.reduce((sum, b) => sum + b.amount, 0)
+  const bonusDeductionTotal = bonusItems.reduce((sum, b) => sum + b.deductionAmount, 0)
 
   // 상여금 저장 요청 데이터 생성
-  const buildBonusItems = (): PartTimerBonusItemRequest[] | undefined => {
+  const buildBonusItems = () => {
     if (bonusItems.length === 0) return undefined
-    return bonusItems.map((b, i) => ({
-      bonusName: b.bonusName ?? b.bonusType,
-      bonusAmount: b.bonusAmount ?? b.amount,
-      deductionAmount: b.deductionAmount ?? 0,
-      isActive: true,
-      itemOrder: b.itemOrder ?? i + 1,
-    }))
+    return bonusItems.map((b, i) => bonusDraftToRequest(b, i + 1))
   }
 
   // 금액 계산
@@ -764,7 +763,15 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
           onClick={() => {
             if (isNew) {
               const selectedEmployee = employeeList.find((emp) => emp.employeeInfoId === selectedEmployeeInfoId)
-              const previewData: Omit<PartTimerPayrollDetail, 'id' | 'isEmailSend'> & { id?: number; isEmailSend?: boolean; bonusItems?: PartTimerBonusItem[] } = {
+              // Draft → Response 형태로 변환하여 미리보기에 전달
+              const previewBonusItems = bonusItems.map((b, i) => ({
+                bonusName: b.bonusType,
+                bonusAmount: b.amount,
+                deductionAmount: b.deductionAmount,
+                isActive: b.enabled,
+                itemOrder: i + 1,
+              }))
+              const previewData: Omit<PartTimerPayrollDetail, 'id' | 'isEmailSend'> & { id?: number; isEmailSend?: boolean } = {
                 memberId: selectedEmployee?.employeeInfoId ?? 0,
                 memberName: selectedEmployee ? `${selectedEmployee.employeeName} (${selectedEmployee.employeeNumber})` : '',
                 payrollYearMonth,
@@ -778,7 +785,7 @@ export default function PartTimerPayDetail({ isNew = false, initialData }: PartT
                 paymentItems,
                 deductionItems,
                 weeklyPaidHolidayAllowances: [],
-                bonusItems,
+                bonusItems: previewBonusItems,
               }
               // 폼 상태 저장 (뒤로가기 시 복원용)
               const formDraft: FormDraft = {
