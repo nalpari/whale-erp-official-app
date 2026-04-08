@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHeaderStore } from '@/store/useHeaderStore'
 import {
@@ -111,6 +111,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
   const router = useRouter()
   const openAlert = usePopupControler((s) => s.openAlert)
   const id = initialData?.id
+  const fetchRequestRef = useRef(0)
   const allowanceMonthOptions = getAllowanceMonthOptions()
   const [draft] = useState(() => isNew ? loadFormDraft() : null)
   const [editDraft] = useState(() => !isNew ? loadEditDraft(id) : null)
@@ -183,6 +184,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
 
   // 일별 연장근무 시간 조회 → details 자동 채우기
   const fetchOvertimeDetails = async (empId: number, startDt: string, endDt: string) => {
+    const requestId = ++fetchRequestRef.current
     try {
       const result = await getDailyOvertimeHours({
         employeeInfoId: empId,
@@ -192,6 +194,8 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
         franchiseStoreId: selectedFranchiseId,
         storeId: selectedStoreId,
       })
+      // stale 응답 무시: 요청 이후 새 요청이 발생했으면 결과를 반영하지 않음
+      if (requestId !== fetchRequestRef.current) return
       if (result?.items) {
         const dailyItems: OvertimeAllowanceItemDto[] = result.items
           .filter((item): item is Extract<typeof item, { type: 'DAILY' }> => item.type === 'DAILY')
@@ -208,6 +212,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
         setDetails(dailyItems)
       }
     } catch (error) {
+      if (requestId !== fetchRequestRef.current) return
       console.error('[OverTimeDetail] 연장근무 시간 조회 실패:', error)
       openAlert({ message: getErrorMessage(error, '연장근무 내역을 불러오는데 실패했습니다.') })
     }
@@ -302,7 +307,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
       openAlert({ message: '급여 지급월을 선택해주세요.' })
       return
     }
-    if (!calculationStartDate || !calculationEndDate) {
+    if (!calculationStartDate || !calculationEndDate || calculationStartDate > calculationEndDate) {
       openAlert({ message: '연장근무 기간을 설정해주세요.' })
       return
     }

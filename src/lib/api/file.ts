@@ -26,6 +26,12 @@ export const getFileDownloadUrl = async (fileId: number): Promise<string> => {
   )
   const { downloadUrl, originalFileName } = response.data.data
 
+  // pre-signed URL 프로토콜 검증
+  const urlProtocol = new URL(downloadUrl).protocol
+  if (urlProtocol !== 'https:' && urlProtocol !== 'http:') {
+    throw new Error(`허용되지 않는 URL 프로토콜: ${urlProtocol}`)
+  }
+
   // pre-signed URL로 파일 다운로드 트리거
   const a = document.createElement('a')
   a.href = downloadUrl

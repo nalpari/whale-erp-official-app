@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import OverTimeWorkEdit from '@/components/overtime/OverTimeWorkEdit'
-import { safeSessionGet, safeSessionSet } from '@/lib/overtime-utils'
-import type { OvertimeAllowanceDetail, OvertimeAllowanceItemDto } from '@/types/overtime'
+import { safeSessionGet, safeSessionSet, updateOvertimePreview } from '@/lib/overtime-utils'
+import type { OvertimeAllowanceItemDto } from '@/types/overtime'
 
 const PREVIEW_KEY = 'overtimeStubPreview'
 const DRAFT_KEY = 'overtimeFormDraft'
@@ -28,19 +28,7 @@ export default function OverTimeNewTimePage() {
 
   const handlePreviewSave = useCallback((items: OvertimeAllowanceItemDto[]) => {
     // stubPreview 업데이트
-    const data = safeSessionGet<OvertimeAllowanceDetail>(PREVIEW_KEY)
-    if (data) {
-      data.details = items
-      const totalPayment = items.reduce((sum, i) => sum + (i.actualPaymentAmount || 0), 0)
-      const totalDeduction = items.reduce((sum, i) => sum + (i.deductionAmount || 0), 0)
-      data.grossOvertimeAmount = totalPayment
-      data.totalDeductionAmount = totalDeduction
-      data.actualOvertimeAmount = totalPayment - totalDeduction
-      data.totalAmount = totalPayment - totalDeduction
-      data.totalWorkDays = items.length
-      data.totalOvertimeHours = items.reduce((sum, i) => sum + (i.actualOvertimeHours || 0), 0)
-      safeSessionSet(PREVIEW_KEY, data)
-    }
+    updateOvertimePreview(PREVIEW_KEY, items)
 
     // formDraft 업데이트
     const draft = safeSessionGet<{ details?: OvertimeAllowanceItemDto[] }>(DRAFT_KEY)

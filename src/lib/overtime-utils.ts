@@ -53,3 +53,29 @@ export const safeSessionRemove = (key: string): void => {
     console.warn(`[sessionStorage] "${key}" 삭제 실패:`, err)
   }
 }
+
+/** 초과근무 항목에서 금액 요약을 계산한다. */
+export const computeOvertimeSummary = (items: { actualPaymentAmount?: number; deductionAmount?: number; actualOvertimeHours?: number }[]) => {
+  const totalPayment = items.reduce((sum, i) => sum + (i.actualPaymentAmount || 0), 0)
+  const totalDeduction = items.reduce((sum, i) => sum + (i.deductionAmount || 0), 0)
+  return {
+    grossOvertimeAmount: totalPayment,
+    totalDeductionAmount: totalDeduction,
+    actualOvertimeAmount: totalPayment - totalDeduction,
+    totalAmount: totalPayment - totalDeduction,
+    totalWorkDays: items.length,
+    totalOvertimeHours: items.reduce((sum, i) => sum + (i.actualOvertimeHours || 0), 0),
+  }
+}
+
+/** sessionStorage의 preview 데이터에 수정된 항목을 반영한다. */
+export const updateOvertimePreview = <T extends Record<string, unknown>>(
+  previewKey: string,
+  items: { actualPaymentAmount?: number; deductionAmount?: number; actualOvertimeHours?: number }[],
+): void => {
+  const data = safeSessionGet<T>(previewKey)
+  if (!data) return
+  const summary = computeOvertimeSummary(items)
+  const updated = { ...data, details: items, ...summary }
+  safeSessionSet(previewKey, updated)
+}

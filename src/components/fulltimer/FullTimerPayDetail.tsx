@@ -34,6 +34,10 @@ interface FullTimerPayDetailProps {
   initialData?: PayrollStatementDetail
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.xlsx', '.xls', '.csv', '.docx', '.doc', '.hwp', '.txt']
+const ALLOWED_ACCEPT = ALLOWED_EXTENSIONS.join(',')
+
 const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
 
 // 급여지급일 계산
@@ -468,8 +472,6 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   }
 
   // 파일 변경
-  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-  const BLOCKED_EXTENSIONS = ['.exe', '.bat', '.cmd', '.sh', '.msi', '.dll', '.com', '.scr', '.ps1', '.vbs', '.html', '.htm']
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -479,8 +481,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
       return
     }
     const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '')
-    if (BLOCKED_EXTENSIONS.includes(ext)) {
-      openAlert({ message: '해당 파일 형식은 등록할 수 없습니다.' })
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      openAlert({ message: `허용되지 않는 파일 형식입니다.\n(${ALLOWED_EXTENSIONS.join(', ')})` })
       e.target.value = ''
       return
     }
@@ -717,6 +719,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                           <input
                             type="file"
                             id="file-input"
+                            accept={ALLOWED_ACCEPT}
                             onChange={handleFileChange}
                           />
                           <label
@@ -766,7 +769,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                       ) : null}
                       <div className="filed-guide">
                         <span>
-                          모든 파일 형식을 등록할 수 있습니다.
+                          PDF, 이미지(PNG/JPG/GIF), 문서(Excel/Word/HWP/TXT) 파일을 등록할 수 있습니다.
                         </span>
                       </div>
                     </>

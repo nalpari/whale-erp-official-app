@@ -4,8 +4,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useOvertimeDetail } from '@/hooks/queries/use-overtime-queries'
 import OverTimeWorkEdit from '@/components/overtime/OverTimeWorkEdit'
 import ErrorFallback from '@/components/ui/ErrorFallback'
-import { safeSessionGet, safeSessionSet } from '@/lib/overtime-utils'
-import type { OvertimeAllowanceItemDto, OvertimeAllowanceDetail } from '@/types/overtime'
+import { safeSessionSet, updateOvertimePreview } from '@/lib/overtime-utils'
+import type { OvertimeAllowanceItemDto } from '@/types/overtime'
 
 const EDIT_DRAFT_KEY = 'overtimeEditDraft'
 const PREVIEW_KEY = 'overtimeStubPreview'
@@ -24,19 +24,7 @@ export default function OverTimeTimePage() {
     safeSessionSet(EDIT_DRAFT_KEY, { id, details: items })
 
     // stubPreview도 업데이트 (뒤로 가면 stub에서 반영되도록)
-    const data = safeSessionGet<OvertimeAllowanceDetail>(PREVIEW_KEY)
-    if (data) {
-      data.details = items
-      const totalPayment = items.reduce((sum, i) => sum + (i.actualPaymentAmount || 0), 0)
-      const totalDeduction = items.reduce((sum, i) => sum + (i.deductionAmount || 0), 0)
-      data.grossOvertimeAmount = totalPayment
-      data.totalDeductionAmount = totalDeduction
-      data.actualOvertimeAmount = totalPayment - totalDeduction
-      data.totalAmount = totalPayment - totalDeduction
-      data.totalWorkDays = items.length
-      data.totalOvertimeHours = items.reduce((sum, i) => sum + (i.actualOvertimeHours || 0), 0)
-      safeSessionSet(PREVIEW_KEY, data)
-    }
+    updateOvertimePreview(PREVIEW_KEY, items)
   }, [id])
 
   useEffect(() => {
