@@ -20,7 +20,7 @@ export const getFileInfo = async (fileId: number): Promise<UploadFileResponse> =
 /**
  * 파일 다운로드 URL 조회 (pre-signed URL)
  */
-export const getFileDownloadUrl = async (fileId: number): Promise<string> => {
+export const getFileDownloadUrl = async (fileId: number): Promise<{ downloadUrl: string; originalFileName: string }> => {
   const response = await api.get<{ data: { downloadUrl: string; originalFileName: string } }>(
     `/api/v1/files/${fileId}/download-url`,
   )
@@ -32,18 +32,20 @@ export const getFileDownloadUrl = async (fileId: number): Promise<string> => {
     throw new Error(`허용되지 않는 URL 프로토콜: ${urlProtocol}`)
   }
 
-  // pre-signed URL로 파일 다운로드 트리거
+  return { downloadUrl, originalFileName }
+}
+
+/** 브라우저에서 파일 다운로드를 트리거한다. (DOM 사이드이펙트) */
+export const triggerFileDownload = (url: string, fileName: string): void => {
   const a = document.createElement('a')
-  a.href = downloadUrl
-  a.download = originalFileName
+  a.href = url
+  a.download = fileName
   document.body.appendChild(a)
   try {
     a.click()
   } finally {
     document.body.removeChild(a)
   }
-
-  return downloadUrl
 }
 
 /**

@@ -1,3 +1,10 @@
+// 세션 스토리지 키
+export const OVERTIME_SESSION_KEYS = {
+  PREVIEW: 'overtimeStubPreview',
+  FORM_DRAFT: 'overtimeFormDraft',
+  EDIT_DRAFT: 'overtimeEditDraft',
+} as const
+
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'] as const
 
 export const parseLocalDate = (dateStr: string): Date => {

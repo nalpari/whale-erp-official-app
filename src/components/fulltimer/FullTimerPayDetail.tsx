@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useHeaderStore } from '@/store/useHeaderStore'
@@ -12,7 +11,8 @@ import {
   useDownloadPayrollExcel,
 } from '@/hooks/queries/use-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
-import { uploadAttachment, getFileInfo, getFileDownloadUrl } from '@/lib/api/file'
+import { uploadAttachment, getFileDownloadUrl, triggerFileDownload } from '@/lib/api/file'
+import { useFileInfo } from '@/hooks/queries/use-file-queries'
 import { getLatestPayroll } from '@/lib/api/payroll'
 import { getOvertimeStatements, getOvertimeStatement } from '@/lib/api/overtime'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
@@ -220,11 +220,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   const [remarks, setRemarks] = useState(initialData?.remarks ?? '')
   const [attachmentFile, setAttachmentFile] = useState<File | undefined>()
   const [useFileMode, setUseFileMode] = useState(!!initialData?.attachmentFileId)
-  const { data: existingFileInfo = null } = useQuery({
-    queryKey: ['file-info', initialData?.attachmentFileId],
-    queryFn: () => getFileInfo(initialData?.attachmentFileId ?? 0),
-    enabled: !!initialData?.attachmentFileId,
-  })
+  const { data: existingFileInfo = null } = useFileInfo(initialData?.attachmentFileId ?? undefined)
   const [paymentItems, setPaymentItems] = useState<PaymentItem[]>(initialData?.paymentItems ?? [])
   const [deductionItems, setDeductionItems] = useState<DeductionItem[]>(initialData?.deductionItems ?? [])
 
@@ -408,7 +404,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
     try {
       if (initialData?.attachmentFileId) {
         setIsDownloadingFile(true)
-        await getFileDownloadUrl(initialData.attachmentFileId)
+        const { downloadUrl, originalFileName } = await getFileDownloadUrl(initialData.attachmentFileId)
+        triggerFileDownload(downloadUrl, originalFileName)
       } else {
         await downloadExcelMutation.mutateAsync(id)
       }

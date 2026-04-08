@@ -2,11 +2,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import OverTimeWorkEdit from '@/components/overtime/OverTimeWorkEdit'
-import { safeSessionGet, safeSessionSet, updateOvertimePreview } from '@/lib/overtime-utils'
+import { safeSessionGet, safeSessionSet, updateOvertimePreview, OVERTIME_SESSION_KEYS } from '@/lib/overtime-utils'
 import type { OvertimeAllowanceItemDto } from '@/types/overtime'
 
-const PREVIEW_KEY = 'overtimeStubPreview'
-const DRAFT_KEY = 'overtimeFormDraft'
+const PREVIEW_KEY = OVERTIME_SESSION_KEYS.PREVIEW
+const DRAFT_KEY = OVERTIME_SESSION_KEYS.FORM_DRAFT
 
 export default function OverTimeNewTimePage() {
   const router = useRouter()

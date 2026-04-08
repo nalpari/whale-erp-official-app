@@ -4,11 +4,11 @@ import { useParams, useRouter } from 'next/navigation'
 import { useOvertimeDetail } from '@/hooks/queries/use-overtime-queries'
 import OverTimeWorkEdit from '@/components/overtime/OverTimeWorkEdit'
 import ErrorFallback from '@/components/ui/ErrorFallback'
-import { safeSessionSet, updateOvertimePreview } from '@/lib/overtime-utils'
+import { safeSessionSet, updateOvertimePreview, OVERTIME_SESSION_KEYS } from '@/lib/overtime-utils'
 import type { OvertimeAllowanceItemDto } from '@/types/overtime'
 
-const EDIT_DRAFT_KEY = 'overtimeEditDraft'
-const PREVIEW_KEY = 'overtimeStubPreview'
+const EDIT_DRAFT_KEY = OVERTIME_SESSION_KEYS.EDIT_DRAFT
+const PREVIEW_KEY = OVERTIME_SESSION_KEYS.PREVIEW
 
 export default function OverTimeTimePage() {
   const params = useParams()

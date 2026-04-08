@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHeaderStore } from '@/store/useHeaderStore'
 import OverTimeStub from '@/components/overtime/OverTimeStub'
+import { OVERTIME_SESSION_KEYS } from '@/lib/overtime-utils'
 import type { OvertimeAllowanceDetail } from '@/types/overtime'
 
-const PREVIEW_KEY = 'overtimeStubPreview'
+const PREVIEW_KEY = OVERTIME_SESSION_KEYS.PREVIEW
 
 export default function OverTimeNewStubPage() {
   const router = useRouter()

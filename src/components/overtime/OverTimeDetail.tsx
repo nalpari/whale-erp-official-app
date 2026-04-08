@@ -17,7 +17,7 @@ import { getContractsByEmployee } from '@/lib/api/contract'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { usePopupControler } from '@/store/usePopupControler'
-import { formatAmount, safeSessionGet, safeSessionSet, safeSessionRemove } from '@/lib/overtime-utils'
+import { formatAmount, safeSessionGet, safeSessionSet, safeSessionRemove, OVERTIME_SESSION_KEYS } from '@/lib/overtime-utils'
 import type {
   OvertimeAllowanceItemDto,
   OvertimeAllowanceDetail,
@@ -68,9 +68,9 @@ const computeCalculationRange = (ym: string): { start: string; end: string } | n
   }
 }
 
-const FORM_DRAFT_KEY = 'overtimeFormDraft'
-const EDIT_DRAFT_KEY = 'overtimeEditDraft'
-const PREVIEW_KEY = 'overtimeStubPreview'
+const FORM_DRAFT_KEY = OVERTIME_SESSION_KEYS.FORM_DRAFT
+const EDIT_DRAFT_KEY = OVERTIME_SESSION_KEYS.EDIT_DRAFT
+const PREVIEW_KEY = OVERTIME_SESSION_KEYS.PREVIEW
 
 interface EditDraft {
   id: number
@@ -112,7 +112,7 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
   const openAlert = usePopupControler((s) => s.openAlert)
   const id = initialData?.id
   const fetchRequestRef = useRef(0)
-  const allowanceMonthOptions = getAllowanceMonthOptions()
+  const [allowanceMonthOptions] = useState(getAllowanceMonthOptions)
   const [draft] = useState(() => isNew ? loadFormDraft() : null)
   const [editDraft] = useState(() => !isNew ? loadEditDraft(id) : null)
 
