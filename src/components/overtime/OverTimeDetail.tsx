@@ -10,6 +10,7 @@ import {
   useDownloadOvertimeExcel,
 } from '@/hooks/queries/use-overtime-queries'
 import { getErrorMessage } from '@/lib/api'
+import { getDailyOvertimeHours } from '@/lib/api/overtime'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
 import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
 import { getContractsByEmployee } from '@/lib/api/contract'
@@ -164,8 +165,8 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
     editDraft?.details ?? draft?.details ?? initialData?.details ?? [],
   )
 
-  // 급여지급월 변경 시 기간/근무내역 초기화
-  const handleAllowanceYearMonthChange = (ym: string) => {
+  // 급여지급월 변경 시 기간/근무내역 초기화 + 재조회
+  const handleAllowanceYearMonthChange = async (ym: string) => {
     setAllowanceYearMonth(ym)
     const range = computeCalculationRange(ym)
     if (range) {
@@ -173,13 +174,53 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
       setCalculationEndDate(range.end)
     }
     setDetails([])
+
+    // 직원이 선택된 상태면 새 기간으로 재조회
+    if (selectedEmployeeInfoId && range) {
+      await fetchOvertimeDetails(selectedEmployeeInfoId, range.start, range.end)
+    }
   }
 
-  // 직원 선택 시 계약 기반 지급일 자동 설정
+  // 일별 연장근무 시간 조회 → details 자동 채우기
+  const fetchOvertimeDetails = async (empId: number, startDt: string, endDt: string) => {
+    try {
+      const result = await getDailyOvertimeHours({
+        employeeInfoId: empId,
+        startDate: startDt,
+        endDate: endDt,
+        headOfficeId: selectedOfficeId,
+        franchiseStoreId: selectedFranchiseId,
+        storeId: selectedStoreId,
+      })
+      if (result?.items) {
+        const dailyItems: OvertimeAllowanceItemDto[] = result.items
+          .filter((item): item is Extract<typeof item, { type: 'DAILY' }> => item.type === 'DAILY')
+          .map((item) => ({
+            workDay: item.date,
+            workHour: item.overtimeHours,
+            breakTimeHour: 0,
+            contractTimelyAmount: item.contractTimelyAmount,
+            applyTimelyAmount: item.applyTimelyAmount,
+            actualOvertimeHours: item.overtimeHours,
+            deductionAmount: item.deductionAmount,
+            actualPaymentAmount: item.paymentAmount,
+          }))
+        setDetails(dailyItems)
+      }
+    } catch (error) {
+      console.error('[OverTimeDetail] 연장근무 시간 조회 실패:', error)
+      openAlert({ message: getErrorMessage(error, '연장근무 내역을 불러오는데 실패했습니다.') })
+    }
+  }
+
+  // 직원 선택 시 계약 기반 지급일 자동 설정 + 연장근무 내역 조회
   const prevMonthValue = allowanceMonthOptions[1]?.value ?? ''
   const handleEmployeeChange = async (employeeInfoId: number | undefined) => {
     setSelectedEmployeeInfoId(employeeInfoId)
     if (!isNew || !employeeInfoId) return
+
+    let resolvedStartDate = calculationStartDate
+    let resolvedEndDate = calculationEndDate
 
     try {
       const contracts = await getContractsByEmployee(employeeInfoId)
@@ -198,6 +239,8 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
       if (range) {
         setCalculationStartDate(range.start)
         setCalculationEndDate(range.end)
+        resolvedStartDate = range.start
+        resolvedEndDate = range.end
       }
       // 계약 시급 저장
       const wage = contract.salaryInfo?.timelySalary ?? 0
@@ -205,6 +248,11 @@ export default function OverTimeDetail({ isNew = false, initialData }: OverTimeD
     } catch (error) {
       console.error('[OverTimeDetail] 계약 정보 조회 실패:', error)
       openAlert({ message: '계약 정보를 불러올 수 없습니다. 시급이 기본값(0원)으로 설정됩니다.' })
+    }
+
+    // 기간이 설정된 경우 연장근무 내역 자동 조회
+    if (resolvedStartDate && resolvedEndDate) {
+      await fetchOvertimeDetails(employeeInfoId, resolvedStartDate, resolvedEndDate)
     }
   }
 
