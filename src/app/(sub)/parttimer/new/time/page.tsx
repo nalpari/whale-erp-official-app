@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import PartTimerTimeEdit from '@/components/parttimer/PartTimerTimeEdit'
-import type { PartTimerPayrollDetail, PartTimerPaymentItem } from '@/types/parttime-payroll'
+import type { PartTimerPayrollDetail, PartTimerPaymentItem, PartTimerBonusItem } from '@/types/parttime-payroll'
 import type { ContractWorkHour, ContractSalaryInfo } from '@/types/contract'
 
 const PREVIEW_KEY = 'partTimerStubPreview'
@@ -25,12 +25,12 @@ const safeJsonParse = <T,>(raw: string): T | null => {
 export default function PartTimerNewTimePage() {
   const router = useRouter()
 
-  const [previewData] = useState<PartTimerPayrollDetail | null>(() => {
-    if (typeof window === 'undefined') return null
+  const [{ previewData, savedBonusItems }] = useState<{ previewData: PartTimerPayrollDetail | null; savedBonusItems: PartTimerBonusItem[] }>(() => {
+    if (typeof window === 'undefined') return { previewData: null, savedBonusItems: [] }
     const raw = sessionStorage.getItem(PREVIEW_KEY)
-    if (!raw) return null
-    sessionStorage.removeItem(PREVIEW_KEY)
-    return safeJsonParse<PartTimerPayrollDetail>(raw)
+    if (!raw) return { previewData: null, savedBonusItems: [] }
+    const parsed = safeJsonParse<PartTimerPayrollDetail & { bonusItems?: PartTimerBonusItem[] }>(raw)
+    return { previewData: parsed, savedBonusItems: parsed?.bonusItems ?? [] }
   })
 
   const [contractData] = useState<DraftContractData>(() => {
@@ -48,15 +48,20 @@ export default function PartTimerNewTimePage() {
     }
   }, [previewData, router])
 
-  const handlePreviewSave = useCallback((items: PartTimerPaymentItem[]) => {
+  const handlePreviewSave = useCallback((items: PartTimerPaymentItem[], bonuses: PartTimerBonusItem[]) => {
+    const bonusTotal = bonuses.reduce((sum, b) => sum + (b.amount ?? 0), 0)
+    const bonusDeductionTotal = bonuses.reduce((sum, b) => sum + (b.deductionAmount ?? 0), 0)
+
     const raw = sessionStorage.getItem(PREVIEW_KEY)
     if (raw) {
-      const data = safeJsonParse<PartTimerPayrollDetail>(raw)
+      const data = safeJsonParse<PartTimerPayrollDetail & { bonusItems?: PartTimerBonusItem[] }>(raw)
       if (data) {
         data.paymentItems = items
-        data.totalAmount = items.reduce((sum, i) => sum + i.totalAmount, 0)
+        data.bonusItems = bonuses
+        data.totalAmount = items.reduce((sum, i) => sum + i.totalAmount, 0) + bonusTotal
         const deductionTotal = items.reduce((sum, i) => sum + i.deductionAmount, 0)
           + (data.deductionItems?.reduce((sum, i) => sum + i.amount, 0) ?? 0)
+          + bonusDeductionTotal
         data.totalDeductionAmount = deductionTotal
         data.actualPaymentAmount = data.totalAmount - deductionTotal
         sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(data))
@@ -65,9 +70,10 @@ export default function PartTimerNewTimePage() {
 
     const draftRaw = sessionStorage.getItem(DRAFT_KEY)
     if (draftRaw) {
-      const draft = safeJsonParse<{ paymentItems?: PartTimerPaymentItem[] }>(draftRaw)
+      const draft = safeJsonParse<{ paymentItems?: PartTimerPaymentItem[]; bonusItems?: PartTimerBonusItem[] }>(draftRaw)
       if (draft) {
         draft.paymentItems = items
+        draft.bonusItems = bonuses
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       }
     }
@@ -83,6 +89,7 @@ export default function PartTimerNewTimePage() {
       contractWage={contractData.contractWage}
       contractWorkHours={contractData.contractWorkHours}
       contractSalaryInfo={contractData.contractSalaryInfo}
+      initialBonusItems={savedBonusItems}
     />
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useHeaderStore } from '@/store/useHeaderStore'
 import PartTimerPayStub from '@/components/parttimer/PartTimerPayStub'
 import type { PartTimerPayrollDetail } from '@/types/parttime-payroll'
 
@@ -8,12 +9,12 @@ const PREVIEW_KEY = 'partTimerStubPreview'
 
 export default function PartTimerNewStubPage() {
   const router = useRouter()
+  const setOnBack = useHeaderStore((s) => s.setOnBack)
   const [previewData] = useState<PartTimerPayrollDetail | null>(() => {
     if (typeof window === 'undefined') return null
     try {
       const raw = sessionStorage.getItem(PREVIEW_KEY)
       if (!raw) return null
-      sessionStorage.removeItem(PREVIEW_KEY)
       return JSON.parse(raw) as PartTimerPayrollDetail
     } catch {
       sessionStorage.removeItem(PREVIEW_KEY)
@@ -24,8 +25,11 @@ export default function PartTimerNewStubPage() {
   useEffect(() => {
     if (!previewData) {
       router.replace('/parttimer/new')
+      return
     }
-  }, [previewData, router])
+    setOnBack(() => router.push('/parttimer/new'))
+    return () => setOnBack(null)
+  }, [previewData, router, setOnBack])
 
   if (!previewData) return null
 

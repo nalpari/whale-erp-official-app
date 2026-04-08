@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useOvertimeDetail } from '@/hooks/queries/use-overtime-queries'
 import OverTimeDetail from '@/components/overtime/OverTimeDetail'
 import ErrorFallback from '@/components/ui/ErrorFallback'
+import { useHeaderStore } from '@/store/useHeaderStore'
 
 export default function OverTimeDetailPage() {
   const params = useParams()
@@ -12,11 +13,16 @@ export default function OverTimeDetailPage() {
   const id = isNaN(rawId) || rawId <= 0 ? undefined : rawId
   const { data: detail, isLoading, isError } = useOvertimeDetail(id)
 
+  const setOnBack = useHeaderStore((s) => s.setOnBack)
+
   useEffect(() => {
     if (!id) {
       router.replace('/overtime')
+      return
     }
-  }, [id, router])
+    setOnBack(() => router.push('/overtime'))
+    return () => setOnBack(null)
+  }, [id, router, setOnBack])
 
   useEffect(() => {
     if (!isLoading && !isError && !detail && id) {

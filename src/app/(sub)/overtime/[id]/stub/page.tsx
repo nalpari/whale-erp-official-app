@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useOvertimeDetail } from '@/hooks/queries/use-overtime-queries'
 import OverTimeStub from '@/components/overtime/OverTimeStub'
 import ErrorFallback from '@/components/ui/ErrorFallback'
+import { useHeaderStore } from '@/store/useHeaderStore'
 import type { OvertimeAllowanceDetail } from '@/types/overtime'
 
 const PREVIEW_KEY = 'overtimeStubPreview'
@@ -32,11 +33,16 @@ export default function OverTimeStubPage() {
   const { data: detail, isLoading, isError } = useOvertimeDetail(id)
   const data = previewData ?? detail
 
+  const setOnBack = useHeaderStore((s) => s.setOnBack)
+
   useEffect(() => {
     if (!id) {
       router.replace('/overtime')
+      return
     }
-  }, [id, router])
+    setOnBack(() => router.push(`/overtime/${id}`))
+    return () => setOnBack(null)
+  }, [id, router, setOnBack])
 
   if (!id) return null
 

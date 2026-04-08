@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useHeaderStore } from '@/store/useHeaderStore'
 import OverTimeStub from '@/components/overtime/OverTimeStub'
 import type { OvertimeAllowanceDetail } from '@/types/overtime'
 
@@ -21,11 +22,16 @@ export default function OverTimeNewStubPage() {
     }
   })
 
+  const setOnBack = useHeaderStore((s) => s.setOnBack)
+
   useEffect(() => {
     if (!previewData) {
       router.replace('/overtime/new')
+      return
     }
-  }, [previewData, router])
+    setOnBack(() => router.push('/overtime/new'))
+    return () => setOnBack(null)
+  }, [previewData, router, setOnBack])
 
   if (!previewData) return null
 
