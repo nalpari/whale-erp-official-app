@@ -31,8 +31,8 @@ export default function EmploymentContract({
   initialData,
 }: EmploymentContractProps) {
   const router = useRouter();
-  const setContractOptionSheet = useBottomSheetControler(
-    (state) => state.setContractOptionSheet,
+  const openContractOption = useBottomSheetControler(
+    (state) => state.openContractOption,
   );
   const openAlert = usePopupControler((s) => s.openAlert);
 
@@ -368,7 +368,7 @@ export default function EmploymentContract({
               {!isPartTime && (
                 <button
                   className="employment-header"
-                  onClick={() => setContractOptionSheet(true)}
+                  onClick={() => openContractOption(year, activeTimelyAmount, weeklyHours, handleOptionChange)}
                 >
                   <div className="employment-icon">
                     <Image
@@ -528,12 +528,7 @@ export default function EmploymentContract({
 
       {/* ContractOptionSheet: 포괄/비포괄만 */}
       {!isPartTime && (
-        <ContractOptionSheet
-          year={year}
-          timelyAmount={activeTimelyAmount}
-          weeklyHours={weeklyHours}
-          onChange={handleOptionChange}
-        />
+        <ContractOptionSheet />
       )}
 
     </>

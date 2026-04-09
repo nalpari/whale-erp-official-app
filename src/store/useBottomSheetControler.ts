@@ -46,6 +46,11 @@ type BottomSheetControlerState = {
   setStaffSearchSheet: (isOpen: boolean) => void
   contractOptionSheet: boolean
   setContractOptionSheet: (isOpen: boolean) => void
+  contractOptionYear: number
+  contractOptionTimelyAmount: number
+  contractOptionWeeklyHours: number
+  contractOptionOnChange: ((values: { year: number; timelyAmount: number; weeklyHours: number }) => void) | null
+  openContractOption: (year: number, timelyAmount: number, weeklyHours: number, onChange: (values: { year: number; timelyAmount: number; weeklyHours: number }) => void) => void
   partStaffPaySheet: boolean
   setPartStaffPaySheet: (isOpen: boolean) => void
   bonusPaySheet: boolean
@@ -146,6 +151,16 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           { contractOptionSheet: isOpen },
           false,
           'bottomSheet/setContractOption',
+        ),
+      contractOptionYear: new Date().getFullYear(),
+      contractOptionTimelyAmount: 0,
+      contractOptionWeeklyHours: 40,
+      contractOptionOnChange: null,
+      openContractOption: (year, timelyAmount, weeklyHours, onChange) =>
+        set(
+          { contractOptionSheet: true, contractOptionYear: year, contractOptionTimelyAmount: timelyAmount, contractOptionWeeklyHours: weeklyHours, contractOptionOnChange: onChange },
+          false,
+          'bottomSheet/openContractOption',
         ),
       partStaffPaySheet: false,
       setPartStaffPaySheet: (isOpen: boolean) =>

@@ -507,30 +507,35 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                     </div>
                   )}
 
-                  {/* 공통: 상여금 */}
-                  {salary.bonuses && salary.bonuses.length > 0 && (
-                    <div className="sub-item-bx">
-                      <div className="pay-table-header">
-                        <div className="pay-table-tit">상여금</div>
-                      </div>
-                      <table className="pay-table">
-                        <colgroup>
-                          <col />
-                          <col />
-                        </colgroup>
-                        <tbody>
-                          {salary.bonuses.map((bonus, i) => (
-                            <tr key={bonus.id ?? i}>
-                              <td className="tit">{bonus.bonusName}</td>
-                              <td className="al-r">{formatAmount(bonus.bonusAmount)}원</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
                 </>
               )}
+              {/* 공통: 상여금 (계약분류 무관, salary 유무 무관) */}
+              <div className="sub-item-bx">
+                <div className="pay-table-header">
+                  <div className="pay-table-tit">상여금</div>
+                </div>
+                <table className="pay-table">
+                  <colgroup>
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tbody>
+                    {salary?.bonuses && salary.bonuses.length > 0 ? (
+                      salary.bonuses.map((bonus, i) => (
+                        <tr key={bonus.id ?? i}>
+                          <td className="tit">{bonus.bonusType}</td>
+                          <td className="al-r">{formatAmount(bonus.amount)}원</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="tit">-</td>
+                        <td className="al-r">0원</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <div className="sub-cont-wrap">
