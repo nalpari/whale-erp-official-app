@@ -6,7 +6,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
-import { getOrganizationId, getStoreErrorStep, formatErrorDetails, isValidBusinessNumber, isValidPhoneNumber } from "@/lib/store-utils";
+import { formatStoreErrorDetails, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreStep } from "@/lib/store-utils";
 import StoreBasicInfoForm from "../storeform/StoreBasicInfoForm";
 import StoreContactForm from "../storeform/StoreContactForm";
 
@@ -90,17 +90,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
 
   const validateStep = (s: number): boolean => {
     const state = useStoreFormStore.getState();
-    if (s === 1) {
-      if (state.storeOwner === "FRANCHISE" && !state.franchiseId) return false;
-      return !!state.officeId && !!state.storeName;
-    }
-    if (s === 2) {
-      if (!state.ceoName || !state.businessNumber || !state.storeAddress || !state.ceoPhone) return false;
-      if (!isValidBusinessNumber(state.businessNumber)) return false;
-      if (!isValidPhoneNumber(state.ceoPhone)) return false;
-      return true;
-    }
-    return true;
+    return validateStoreStep(s, state);
   };
 
   const handleNext = () => {
@@ -117,15 +107,10 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const handleSave = async () => {
     if (isUpdating) return;
     const form = useStoreFormStore.getState();
-
-    if (!form.officeId || !form.storeName) {
-      openAlert({ message: "필수 입력 항목을 확인해주세요." });
-      return;
-    }
-
-    if (!validateStep(2)) {
+    const invalidStep = getFirstInvalidStoreStep(form);
+    if (invalidStep !== null) {
       setSubmitted(true);
-      setStep(2);
+      setStep(invalidStep);
       window.scrollTo({ top: 0 });
       openAlert({ message: "필수 입력 항목과 입력값 형식을 확인해주세요." });
       return;
@@ -169,10 +154,11 @@ export default function StoreEditInfo({ id }: { id: number }) {
       if (details) {
         const targetStep = getStoreErrorStep(details);
         if (targetStep !== null) {
+          setSubmitted(true);
           setStep(targetStep);
           window.scrollTo({ top: 0 });
         }
-        openAlert({ message: formatErrorDetails(details) });
+        openAlert({ message: formatStoreErrorDetails(details) });
         return;
       }
 

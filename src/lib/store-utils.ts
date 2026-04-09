@@ -25,6 +25,16 @@ export const WEEKDAY_LABEL: Record<string, string> = {
 export const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] as const
 export const ALL_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const
 
+export interface StoreFormValidationState {
+  storeOwner: string
+  officeId: number | null
+  franchiseId: number | null
+  storeName: string
+  ceoName: string
+  businessNumber: string
+  storeAddress: string
+  ceoPhone: string
+}
 
 /** 오늘 날짜를 YYYY-MM-DD 로컬 타임존 문자열로 반환 */
 export function getToday(): string {
@@ -42,6 +52,19 @@ const STORE_FIELD_STEP: Record<string, number> = {
   ceoName: 2, businessNumber: 2, storeAddress: 2, storeAddressDetail: 2, ceoPhone: 2, storePhone: 2,
 }
 
+const STORE_FIELD_ERROR_MESSAGE: Record<string, string> = {
+  storeOwner: '점포 소유 구분을 확인해주세요.',
+  organizationId: '본사 또는 가맹점을 선택해주세요.',
+  storeName: '점포명을 입력해주세요.',
+  operationStatus: '운영 여부를 확인해주세요.',
+  ceoName: '대표자명을 입력해주세요.',
+  businessNumber: '사업자등록번호를 확인해주세요.',
+  storeAddress: '점포주소를 입력해주세요.',
+  storeAddressDetail: '상세주소를 확인해주세요.',
+  ceoPhone: '대표자 연락처를 확인해주세요.',
+  storePhone: '점포 전화번호를 확인해주세요.',
+}
+
 /** 에러 details에서 이동해야 할 가장 앞 스텝 번호 반환 */
 export function getStoreErrorStep(details: Record<string, string>): number | null {
   let min: number | null = null
@@ -49,16 +72,17 @@ export function getStoreErrorStep(details: Record<string, string>): number | nul
     const step = STORE_FIELD_STEP[field]
     if (step !== undefined && (min === null || step < min)) {
       min = step
-    } else if (step === undefined) {
-      console.warn(`[getStoreErrorStep] 매핑되지 않은 에러 필드: ${field}`)
     }
   }
   return min
 }
 
-/** 에러 details 메시지를 줄바꿈으로 합쳐 반환 */
-export function formatErrorDetails(details: Record<string, string>): string {
-  return Object.values(details).join('\n')
+/** 에러 details를 사용자용 메시지로 매핑해 줄바꿈으로 반환 */
+export function formatStoreErrorDetails(details: Record<string, string>): string {
+  const messages = Object.keys(details).map((field) => (
+    STORE_FIELD_ERROR_MESSAGE[field] ?? '입력값을 확인해주세요.'
+  ))
+  return Array.from(new Set(messages)).join('\n')
 }
 
 // ── 패턴 검증 ──
@@ -71,6 +95,33 @@ export function isValidBusinessNumber(value: string): boolean {
 /** 전화번호 형식 검증 (02-XXX(X)-XXXX 또는 0XX-XXX(X)-XXXX) */
 export function isValidPhoneNumber(value: string): boolean {
   return /^0\d{1,2}-\d{3,4}-\d{4}$/.test(value)
+}
+
+/** 점포 폼 Step 유효성 검증 */
+export function validateStoreStep(step: number, state: StoreFormValidationState): boolean {
+  switch (step) {
+    case 1:
+      if (state.storeOwner === 'FRANCHISE' && !state.franchiseId) return false
+      return !!state.officeId && !!state.storeName
+    case 2:
+      if (!state.ceoName || !state.businessNumber || !state.storeAddress || !state.ceoPhone) return false
+      if (!isValidBusinessNumber(state.businessNumber)) return false
+      if (!isValidPhoneNumber(state.ceoPhone)) return false
+      return true
+    default:
+      return true
+  }
+}
+
+/** 여러 step 중 가장 먼저 실패하는 step 반환 */
+export function getFirstInvalidStoreStep(
+  state: StoreFormValidationState,
+  steps: number[] = [1, 2],
+): number | null {
+  for (const step of steps) {
+    if (!validateStoreStep(step, state)) return step
+  }
+  return null
 }
 
 // ── 공통 유틸 함수 ──

@@ -6,7 +6,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
-import { buildOperatingHoursRequest, getOrganizationId, getStoreErrorStep, formatErrorDetails, isValidBusinessNumber, isValidPhoneNumber } from "@/lib/store-utils";
+import { buildOperatingHoursRequest, formatStoreErrorDetails, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreStep } from "@/lib/store-utils";
 import StoreBasicInfoForm from "./storeform/StoreBasicInfoForm";
 import StoreContactForm from "./storeform/StoreContactForm";
 import StorePhotoForm from "./storeform/StorePhotoForm";
@@ -59,18 +59,7 @@ export default function StoreCreate() {
   // Step별 필수값 검증
   const validateStep = (s: number): boolean => {
     const state = useStoreFormStore.getState();
-    switch (s) {
-      case 1:
-        if (state.storeOwner === "FRANCHISE" && !state.franchiseId) return false;
-        return !!state.officeId && !!state.storeName;
-      case 2:
-        if (!state.ceoName || !state.businessNumber || !state.storeAddress || !state.ceoPhone) return false;
-        if (!isValidBusinessNumber(state.businessNumber)) return false;
-        if (!isValidPhoneNumber(state.ceoPhone)) return false;
-        return true;
-      default:
-        return true;
-    }
+    return validateStoreStep(s, state);
   };
 
   const handleNext = () => {
@@ -92,13 +81,12 @@ export default function StoreCreate() {
   const handleSave = async () => {
     if (isCreating) return;
     const form = useStoreFormStore.getState();
-
-    if (!form.officeId || !form.storeName) {
-      openAlert({ message: "필수 입력 항목을 확인해주세요." });
-      return;
-    }
-    if (form.storeOwner === "FRANCHISE" && !form.franchiseId) {
-      openAlert({ message: "가맹점을 선택해주세요." });
+    const invalidStep = getFirstInvalidStoreStep(form);
+    if (invalidStep !== null) {
+      setSubmitted(true);
+      setStep(invalidStep);
+      window.scrollTo({ top: 0 });
+      openAlert({ message: "필수 입력 항목과 입력값 형식을 확인해주세요." });
       return;
     }
 
@@ -134,10 +122,11 @@ export default function StoreCreate() {
       if (details) {
         const targetStep = getStoreErrorStep(details);
         if (targetStep !== null) {
+          setSubmitted(true);
           setStep(targetStep);
           window.scrollTo({ top: 0 });
         }
-        openAlert({ message: formatErrorDetails(details) });
+        openAlert({ message: formatStoreErrorDetails(details) });
         return;
       }
 
