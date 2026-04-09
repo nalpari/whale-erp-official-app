@@ -1,13 +1,18 @@
 'use client'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import { usePopupControler } from '@/store/usePopupControler'
 import {
-  useDeleteContract,
   useSendContractEmail,
+  useDownloadContractDocx,
+  useContractsByEmployee,
 } from '@/hooks/queries/use-contract-queries'
+import { useEmployeeDetail } from '@/hooks/queries/use-employee-queries'
+import { downloadFile } from '@/lib/api/file'
 import { getErrorMessage } from '@/lib/api'
-import type { ContractDetail as ContractDetailType, ElectronicContractStatus, DayType } from '@/types/contract'
+import { CONTRACT_STATUS_BADGE } from '@/lib/constants'
+import { CONTRACT_COMPREHENSIVE, CONTRACT_NON_COMPREHENSIVE, CONTRACT_PART_TIME } from '@/types/contract'
+import type { ContractDetail as ContractDetailType, DayType } from '@/types/contract'
 
 interface ContractDetailProps {
   initialData?: ContractDetailType
@@ -23,12 +28,6 @@ const formatAmount = (amount?: number) => {
   return amount.toLocaleString('ko-KR')
 }
 
-const CONTRACT_STATUS_BADGE: Record<ElectronicContractStatus, { label: string; className: string }> = {
-  WRITING: { label: '작성중', className: 'badge blue' },
-  PROGRESS: { label: '진행중', className: 'badge green' },
-  COMPLETE: { label: '완료', className: 'badge org' },
-  REFUSAL: { label: '거부', className: 'badge red' },
-}
 
 const DAY_LABEL: Record<DayType, string> = {
   WEEKDAY: '평일',
@@ -55,20 +54,22 @@ function getAvatarSrc(employeeInfoId?: number) {
 
 export default function ContractDetail({ initialData }: ContractDetailProps) {
   const router = useRouter()
-  const setPartStaffPaySheet = useBottomSheetControler(
-    (state) => state.setPartStaffPaySheet,
-  )
-  const setBonusPaySheet = useBottomSheetControler(
-    (state) => state.setBonusPaySheet,
+
+  const openAlert = usePopupControler((s) => s.openAlert)
+  const sendEmailMutation = useSendContractEmail()
+  const downloadDocxMutation = useDownloadContractDocx()
+  const { data: employeeContracts } = useContractsByEmployee(
+    initialData?.employeeInfoId ?? 0,
+    !!initialData?.employeeInfoId,
   )
 
-  const deleteContractMutation = useDeleteContract()
-  const sendEmailMutation = useSendContractEmail()
+  const { data: employeeDetail } = useEmployeeDetail(initialData?.employeeInfoId ?? null)
 
   const id = initialData?.id
   const header = initialData?.employmentContractHeader
   const salary = initialData?.salaryInfo
   const workHours = initialData?.workHours ?? []
+  const contractClassification = header?.contractClassification
 
   const statusBadge = header?.electronicContractStatus
     ? CONTRACT_STATUS_BADGE[header.electronicContractStatus]
@@ -82,29 +83,56 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
   if (header?.workersCompensationEnrolled) insuranceList.push('산재보험')
 
   // 급여지급일 텍스트
-  const salaryMonthLabel = header?.salaryMonth === 'SLRCF_001' ? '당월' : header?.salaryMonth === 'SLRCF_002' ? '익월' : ''
-  const salaryCycleLabel = header?.salaryCycle === 'SLRCC_001' ? '월급' : header?.salaryCycle === 'SLRCC_002' ? '시급' : ''
+  const salaryCycleLabel = header?.salaryCycleName ?? ''
+  const salaryMonthLabel = header?.salaryMonthName ?? ''
 
-  const handleDelete = async () => {
+  const handleSendEmail = () => {
     if (!id) return
-    if (!confirm('계약서를 삭제하시겠습니까?')) return
+    if (!initialData?.member) {
+      openAlert({ message: '회원 연결이 필요합니다.', confirmText: '확인' })
+      return
+    }
+    if (!initialData.member.email) {
+      openAlert({ message: '직원의 이메일 주소가 없습니다.', confirmText: '확인' })
+      return
+    }
+    if (!salary) {
+      openAlert({ message: '급여정보를 먼저 등록해주세요.', confirmText: '확인' })
+      return
+    }
+    if (!workHours || workHours.length === 0) {
+      openAlert({ message: '근무시간 정보를 먼저 등록해주세요.', confirmText: '확인' })
+      return
+    }
+    openAlert({
+      message: '직원에게 계약서를 이메일로 전송하시겠습니까?',
+      confirmText: '전송',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await sendEmailMutation.mutateAsync(id)
+          openAlert({ message: '이메일이 전송되었습니다.', confirmText: '확인' })
+        } catch (error) {
+          openAlert({ message: getErrorMessage(error, '이메일 전송에 실패했습니다.'), confirmText: '확인' })
+        }
+      },
+    })
+  }
+
+  const handleFileDownload = async (fileId: number) => {
     try {
-      await deleteContractMutation.mutateAsync(id)
-      alert('삭제되었습니다.')
-      router.push('/contract')
+      await downloadFile(fileId)
     } catch (error) {
-      alert(getErrorMessage(error, '삭제에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '파일 다운로드에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
-  const handleSendEmail = async () => {
+  const handleDownloadDocx = async () => {
     if (!id) return
-    if (!confirm('직원에게 계약서를 이메일로 전송하시겠습니까?')) return
     try {
-      await sendEmailMutation.mutateAsync(id)
-      alert('이메일이 전송되었습니다.')
+      await downloadDocxMutation.mutateAsync(id)
     } catch (error) {
-      alert(getErrorMessage(error, '이메일 전송에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '계약서 다운로드에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
@@ -146,19 +174,25 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                           ? `${initialData.employeeInfoName}님`
                           : '-'}
                       </span>
-                      {initialData?.member && (
+                      {(employeeDetail?.rankName || employeeDetail?.positionName) && (
                         <div className="staff-job">
-                          <span>{initialData.member.name}</span>
-                          <span>{initialData.member.loginId}</span>
+                          {employeeDetail.rankName && <span>{employeeDetail.rankName}</span>}
+                          {employeeDetail.positionName && <span>{employeeDetail.positionName}</span>}
                         </div>
                       )}
                     </div>
                     <div className="staff-data">
-                      {initialData?.member?.loginId && (
-                        <span className="badge grey">{initialData.member.loginId}</span>
+                      {employeeDetail?.employeeNumber && (
+                        <span className="badge grey">{employeeDetail.employeeNumber}</span>
                       )}
-                      {initialData?.workStatusName && (
-                        <span className="badge grey">{initialData.workStatusName}</span>
+                      {employeeDetail?.employeeClassificationName && (
+                        <span className="badge grey">{employeeDetail.employeeClassificationName}</span>
+                      )}
+                      {header?.contractClassificationName && (
+                        <span className="badge grey">{header.contractClassificationName}</span>
+                      )}
+                      {employeeDetail?.workStatusName && (
+                        <span className="badge d-green line w">{employeeDetail.workStatusName}</span>
                       )}
                     </div>
                   </div>
@@ -260,26 +294,44 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                         </div>
                       </td>
                     </tr>
-                    {header?.workContractFile && (
-                      <tr>
-                        <th>근로계약서</th>
-                        <td>
-                          <button className="down-btn">
+                    <tr>
+                      <th>계약기간</th>
+                      <td>
+                        {header?.contractStartDate
+                          ? `${formatDate(header.contractStartDate)} ~ ${header.contractEndDate && header.contractEndDate !== '9999-12-31' ? formatDate(header.contractEndDate) : '정함없음'}`
+                          : '-'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>근로계약서</th>
+                      <td>
+                        {header?.workContractFile ? (
+                          <button
+                            className="down-btn"
+                            onClick={() => {
+                              if (header.workContractFile) handleFileDownload(header.workContractFile.id)
+                            }}
+                          >
                             {header.workContractFile.fileName}
                           </button>
-                        </td>
-                      </tr>
-                    )}
-                    {header?.wageContractFile && (
-                      <tr>
-                        <th>임금계약서</th>
-                        <td>
-                          <button className="down-btn">
+                        ) : '-'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>임금계약서</th>
+                      <td>
+                        {header?.wageContractFile ? (
+                          <button
+                            className="down-btn"
+                            onClick={() => {
+                              if (header.wageContractFile) handleFileDownload(header.wageContractFile.id)
+                            }}
+                          >
                             {header.wageContractFile.fileName}
                           </button>
-                        </td>
-                      </tr>
-                    )}
+                        ) : '-'}
+                      </td>
+                    </tr>
                     <tr>
                       <th>계약일</th>
                       <td>{formatDate(header?.contractDate)}</td>
@@ -300,69 +352,76 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                   ></button>
                 </div>
               </div>
+              {!salary && (
+                <div className="sub-item-bx">
+                  <div className="empty-data">급여정보가 등록되지 않았습니다.</div>
+                </div>
+              )}
               {salary && (
                 <>
-                  <div className="sub-item-bx">
-                    <div className="pay-table-header">
-                      <div className="pay-table-tit">연봉총액</div>
-                      <div className="auto-right">
-                        <div className="total-pay">{formatAmount(salary.annualSalary)}원</div>
+                  {/* 포괄연봉제 / 비포괄연봉제: 연봉총액 + 급여 테이블 */}
+                  {contractClassification !== CONTRACT_PART_TIME && (
+                    <div className="sub-item-bx">
+                      <div className="pay-table-header">
+                        <div className="pay-table-tit">연봉총액</div>
+                        <div className="auto-right">
+                          <div className="total-pay">{formatAmount(salary.annualSalary)}원</div>
+                        </div>
                       </div>
+                      <table className="pay-table">
+                        <colgroup>
+                          <col />
+                          <col width={'50px'} />
+                          <col width={'105px'} />
+                        </colgroup>
+                        <tbody>
+                          <tr>
+                            <td className="bold">월급여 총액</td>
+                            <td></td>
+                            <td className="bold al-r">{formatAmount(salary.monthlyTotalSalary)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="bold">통상시급</td>
+                            <td></td>
+                            <td className="bold al-r">{formatAmount(salary.timelySalary)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">기본급</td>
+                            <td className="al-r">{salary.monthlyTime ?? 0}시간</td>
+                            <td className="al-r">{formatAmount(salary.monthlyBaseSalary)}원</td>
+                          </tr>
+                          {/* 포괄연봉제만: 수당 항목 */}
+                          {contractClassification === CONTRACT_COMPREHENSIVE && (
+                            <>
+                              <tr>
+                                <td className="tit">연장수당</td>
+                                <td className="al-r">{salary.monthlyOvertimeAllowanceTime ?? 0}시간</td>
+                                <td className="al-r">{formatAmount(salary.monthlyOvertimeAllowance ?? 0)}원</td>
+                              </tr>
+                              <tr>
+                                <td className="tit">야간수당</td>
+                                <td className="al-r">{salary.monthlyNightAllowanceTime ?? 0}시간</td>
+                                <td className="al-r">{formatAmount(salary.monthlyNightAllowance ?? 0)}원</td>
+                              </tr>
+                              <tr>
+                                <td className="tit">휴일근무수당</td>
+                                <td className="al-r">{salary.monthlyHolidayAllowanceTime ?? 0}시간</td>
+                                <td className="al-r">{formatAmount(salary.monthlyHolidayAllowance ?? 0)}원</td>
+                              </tr>
+                              <tr>
+                                <td className="tit">추가휴일근무수당</td>
+                                <td className="al-r">{salary.monthlyAddHolidayAllowanceTime ?? 0}시간</td>
+                                <td className="al-r">{formatAmount(salary.monthlyAddHolidayAllowance ?? 0)}원</td>
+                              </tr>
+                            </>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
-                    <table className="pay-table">
-                      <colgroup>
-                        <col />
-                        <col width={'50px'} />
-                        <col width={'105px'} />
-                      </colgroup>
-                      <tbody>
-                        <tr>
-                          <td className="bold">월급여 총액</td>
-                          <td></td>
-                          <td className="bold al-r">{formatAmount(salary.monthlyTotalSalary)}원</td>
-                        </tr>
-                        <tr>
-                          <td className="bold">통상시급</td>
-                          <td></td>
-                          <td className="bold al-r">{formatAmount(salary.timelySalary)}원</td>
-                        </tr>
-                        <tr>
-                          <td className="tit">기본급</td>
-                          <td className="al-r">{salary.monthlyTime ?? 0}시간</td>
-                          <td className="al-r">{formatAmount(salary.monthlyBaseSalary)}원</td>
-                        </tr>
-                        {salary.monthlyOvertimeAllowance !== undefined && (
-                          <tr>
-                            <td className="tit">연장수당</td>
-                            <td className="al-r">{salary.monthlyOvertimeAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyOvertimeAllowance)}원</td>
-                          </tr>
-                        )}
-                        {salary.monthlyNightAllowance !== undefined && (
-                          <tr>
-                            <td className="tit">야간수당</td>
-                            <td className="al-r">{salary.monthlyNightAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyNightAllowance)}원</td>
-                          </tr>
-                        )}
-                        {salary.monthlyHolidayAllowance !== undefined && (
-                          <tr>
-                            <td className="tit">휴일근무수당</td>
-                            <td className="al-r">{salary.monthlyHolidayAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyHolidayAllowance)}원</td>
-                          </tr>
-                        )}
-                        {salary.monthlyAddHolidayAllowance !== undefined && (
-                          <tr>
-                            <td className="tit">추가휴일근무수당</td>
-                            <td className="al-r">{salary.monthlyAddHolidayAllowanceTime ?? 0}시간</td>
-                            <td className="al-r">{formatAmount(salary.monthlyAddHolidayAllowance)}원</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                  {(salary.mealAllowance !== undefined || salary.vehicleAllowance !== undefined || salary.childcareAllowance !== undefined) && (
+                  )}
+
+                  {/* 포괄/비포괄: 비과세 항목 */}
+                  {contractClassification !== CONTRACT_PART_TIME && (
                     <div className="sub-item-bx">
                       <div className="pay-table-header">
                         <div className="pay-table-tit">비과세 항목</div>
@@ -373,38 +432,28 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                           <col />
                         </colgroup>
                         <tbody>
-                          {salary.mealAllowance !== undefined && (
-                            <tr>
-                              <td className="tit">식대</td>
-                              <td className="al-r">{formatAmount(salary.mealAllowance)}원</td>
-                            </tr>
-                          )}
-                          {salary.vehicleAllowance !== undefined && (
-                            <tr>
-                              <td className="tit">자가운전보조금</td>
-                              <td className="al-r">{formatAmount(salary.vehicleAllowance)}원</td>
-                            </tr>
-                          )}
-                          {salary.childcareAllowance !== undefined && (
-                            <tr>
-                              <td className="tit">육아수당</td>
-                              <td className="al-r">{formatAmount(salary.childcareAllowance)}원</td>
-                            </tr>
-                          )}
+                          <tr>
+                            <td className="tit">식대</td>
+                            <td className="al-r">{formatAmount(salary.mealAllowance ?? 0)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">자가운전보조금</td>
+                            <td className="al-r">{formatAmount(salary.vehicleAllowance ?? 0)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">육아수당</td>
+                            <td className="al-r">{formatAmount(salary.childcareAllowance ?? 0)}원</td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
                   )}
-                  {(salary.weekDayAllowanceAmount !== undefined || salary.overtimeDayAllowanceAmount !== undefined || salary.nightDayAllowanceAmount !== undefined) && (
+
+                  {/* 비포괄연봉제: 추가근무시급 */}
+                  {contractClassification === CONTRACT_NON_COMPREHENSIVE && (
                     <div className="sub-item-bx">
                       <div className="pay-table-header">
-                        <div className="pay-table-tit">시급</div>
-                        <div className="auto-right">
-                          <button
-                            className="contract-arr"
-                            onClick={() => setPartStaffPaySheet(true)}
-                          ></button>
-                        </div>
+                        <div className="pay-table-tit">추가근무시급</div>
                       </div>
                       <table className="pay-table">
                         <colgroup>
@@ -412,44 +461,57 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                           <col />
                         </colgroup>
                         <tbody>
-                          {salary.weekDayAllowanceAmount !== undefined && (
-                            <tr>
-                              <td className="tit">평일시급</td>
-                              <td className="al-r">{formatAmount(salary.weekDayAllowanceAmount)}원</td>
-                            </tr>
-                          )}
-                          {salary.overtimeDayAllowanceAmount !== undefined && (
-                            <tr>
-                              <td className="tit">연장근무시급</td>
-                              <td className="al-r">{formatAmount(salary.overtimeDayAllowanceAmount)}원</td>
-                            </tr>
-                          )}
-                          {salary.nightDayAllowanceAmount !== undefined && (
-                            <tr>
-                              <td className="tit">야간근무시급</td>
-                              <td className="al-r">{formatAmount(salary.nightDayAllowanceAmount)}원</td>
-                            </tr>
-                          )}
-                          {salary.holidayAllowanceTimeAmount !== undefined && (
-                            <tr>
-                              <td className="tit">휴일근무시급</td>
-                              <td className="al-r">{formatAmount(salary.holidayAllowanceTimeAmount)}원</td>
-                            </tr>
-                          )}
+                          <tr>
+                            <td className="tit">평일시급</td>
+                            <td className="al-r">{formatAmount(salary.weekDayAllowanceAmount ?? 0)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">연장근무시급</td>
+                            <td className="al-r">{formatAmount(salary.overtimeDayAllowanceAmount ?? 0)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">휴일근무시급</td>
+                            <td className="al-r">{formatAmount(salary.holidayAllowanceTimeAmount ?? 0)}원</td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
                   )}
+
+                  {/* 파트타임: 시급 */}
+                  {contractClassification === CONTRACT_PART_TIME && (
+                    <div className="sub-item-bx">
+                      <div className="pay-table-header">
+                        <div className="pay-table-tit">시급</div>
+                      </div>
+                      <table className="pay-table">
+                        <colgroup>
+                          <col />
+                          <col />
+                        </colgroup>
+                        <tbody>
+                          <tr>
+                            <td className="tit">평일시급</td>
+                            <td className="al-r">{formatAmount(salary.weekDayAllowanceAmount ?? 0)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">연장근무시급</td>
+                            <td className="al-r">{formatAmount(salary.overtimeDayAllowanceAmount ?? 0)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">휴일근무시급</td>
+                            <td className="al-r">{formatAmount(salary.holidayAllowanceTimeAmount ?? 0)}원</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* 공통: 상여금 */}
                   {salary.bonuses && salary.bonuses.length > 0 && (
                     <div className="sub-item-bx">
                       <div className="pay-table-header">
                         <div className="pay-table-tit">상여금</div>
-                        <div className="auto-right">
-                          <button
-                            className="contract-arr"
-                            onClick={() => setBonusPaySheet(true)}
-                          ></button>
-                        </div>
                       </div>
                       <table className="pay-table">
                         <colgroup>
@@ -494,17 +556,17 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                         <tr key={wh.id ?? i}>
                           <th>{DAY_LABEL[wh.dayType] ?? wh.dayType}</th>
                           <td>
-                            {wh.dayType === 'SATURDAY' && !wh.everySaturdayWork && (
-                              <div>격주근무</div>
+                            {wh.dayType === 'SATURDAY' && (
+                              <div>{wh.everySaturdayWork ? '매주근무' : '격주근무'}</div>
                             )}
-                            {wh.dayType === 'SUNDAY' && !wh.everySundayWork && (
-                              <div>격주근무</div>
+                            {wh.dayType === 'SUNDAY' && (
+                              <div>{wh.everySundayWork ? '매주근무' : '격주근무'}</div>
                             )}
                             {wh.workStartTime && wh.workEndTime && (
-                              <div>{wh.workStartTime} ~ {wh.workEndTime}</div>
+                              <div>{wh.workStartTime.slice(0, 5)} ~ {wh.workEndTime.slice(0, 5)}</div>
                             )}
                             {wh.isBreak && wh.breakStartTime && wh.breakEndTime && (
-                              <div>{wh.breakStartTime} ~ {wh.breakEndTime}&nbsp; 브레이크타임</div>
+                              <div>{wh.breakStartTime.slice(0, 5)} ~ {wh.breakEndTime.slice(0, 5)}&nbsp; 휴게시간</div>
                             )}
                           </td>
                         </tr>
@@ -555,6 +617,49 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
             </div>
           </div>
         </div>
+        {/* 계약이력 */}
+        {employeeContracts && employeeContracts.length > 1 && (
+          <div className="sub-cont-wrap">
+            <div className="sub-cont-item-wrap">
+              <div className="sub-cont-tit-wrap">
+                <div className="sub-cont-tit">계약이력</div>
+              </div>
+              <div className="sub-item-bx">
+                <ul className="career-wrap">
+                  {employeeContracts
+                    .filter((c) => c.id !== id)
+                    .map((c) => {
+                      const h = c.employmentContractHeader
+                      const badge = h?.electronicContractStatus
+                        ? CONTRACT_STATUS_BADGE[h.electronicContractStatus]
+                        : null
+                      return (
+                        <li
+                          className="career-item"
+                          key={c.id}
+                          onClick={() => router.push(`/contract/${c.id}`)}
+                        >
+                          <div className="career-item-tit">
+                            {h?.contractClassificationName ?? '-'}
+                            {badge && (
+                              <span className={badge.className}>
+                                {badge.label}
+                              </span>
+                            )}
+                          </div>
+                          <div className="career-item-desc">
+                            <span>
+                              {formatDate(h?.contractStartDate)} ~ {formatDate(h?.contractEndDate)}
+                            </span>
+                          </div>
+                        </li>
+                      )
+                    })}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="content-pagination">
         <button
@@ -564,15 +669,12 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
         >
           {sendEmailMutation.isPending ? '전송 중...' : '직원에게 계약서 전송'}
         </button>
-        <button className="btn-form block sky brd">
-          계약서(미날인원본) 다운로드
-        </button>
         <button
-          className="btn-form block red mt8"
-          onClick={handleDelete}
-          disabled={deleteContractMutation.isPending}
+          className="btn-form block sky brd"
+          onClick={handleDownloadDocx}
+          disabled={downloadDocxMutation.isPending}
         >
-          {deleteContractMutation.isPending ? '삭제 중...' : '삭제'}
+          {downloadDocxMutation.isPending ? '다운로드 중...' : '계약서(미날인원본) 다운로드'}
         </button>
       </div>
     </>

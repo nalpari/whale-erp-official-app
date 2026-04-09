@@ -2,28 +2,18 @@
 import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useContractSearchStore } from '@/store/useContractSearchStore'
+import { useCommonCodeHierarchy } from '@/hooks/queries/use-common-code-queries'
+import { CONTRACT_STATUS_OPTIONS } from '@/lib/constants'
+import { useEmployeeCommonCode } from '@/hooks/queries/use-employee-queries'
+import { useAuthStore } from '@/store/useAuthStore'
 import { Sheet } from 'react-modal-sheet'
 import type { ContractClassificationType } from '@/types/contract'
 
-// 근무여부
-const WORK_STATUS_OPTIONS = [
-  { value: 'EMPWK_001', label: '근무' },
-  { value: 'EMPWK_002', label: '휴직' },
-  { value: 'EMPWK_003', label: '퇴사' },
-] as const
-
-// 근무요일
+// 근무요일 (도메인 고정값이므로 상수 유지)
 const WORK_DAY_OPTIONS = [
   { value: 'WEEKDAY', label: '평일' },
   { value: 'SATURDAY', label: '토요일' },
   { value: 'SUNDAY', label: '일요일' },
-] as const
-
-// 전자계약 여부
-const ELECTRONIC_CONTRACT_OPTIONS = [
-  { value: '', label: '전체' },
-  { value: 'ECNT_002', label: '전자계약' },
-  { value: 'ECNT_001', label: '서류계약' },
 ] as const
 
 export default function ContractSearchSheet() {
@@ -34,6 +24,12 @@ export default function ContractSearchSheet() {
     (state) => state.setContractSearchSheet,
   )
   const { searchParams, setSearchParams, search, reset } = useContractSearchStore()
+  const headOfficeId = useAuthStore((s) => s.headOfficeId)
+  const { data: commonCode } = useEmployeeCommonCode(headOfficeId ?? undefined)
+  const employeeClassifications = commonCode?.codeMemoContent?.EMPLOYEE ?? []
+  const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK')
+  const { data: workStatusCodes = [] } = useCommonCodeHierarchy('EMPWK')
+  const { data: electronicContractCodes = [] } = useCommonCodeHierarchy('ECNT')
 
   // 로컬 폼 상태 — store의 현재 검색 조건으로 초기화
   const [workStatus, setWorkStatus] = useState<string>(searchParams.workStatus ?? '')
@@ -85,7 +81,7 @@ export default function ContractSearchSheet() {
       memberName: memberName || undefined,
       workDays: workDays.length > 0 ? workDays : undefined,
       memberClassification: memberClassification || undefined,
-      contractClassification: (contractClassification as ContractClassificationType) || undefined,
+      contractClassification: (contractClassification || undefined) as ContractClassificationType | undefined,
       contractStatus: contractStatus || undefined,
       electronicContract: electronicContract ? [electronicContract] : undefined,
       paymentStartDate: paymentStartDate || undefined,
@@ -132,15 +128,15 @@ export default function ContractSearchSheet() {
                 <div className="sheet-data-filed">
                   <div className="filed-tit">근무여부</div>
                   <div className="flex g8">
-                    {WORK_STATUS_OPTIONS.map((option) => (
+                    {workStatusCodes.map((item) => (
                       <button
-                        key={option.value}
-                        className={`radio-btn block${workStatus === option.value ? ' act' : ''}`}
+                        key={item.code}
+                        className={`radio-btn block${workStatus === item.code ? ' act' : ''}`}
                         onClick={() =>
-                          setWorkStatus(workStatus === option.value ? '' : option.value)
+                          setWorkStatus(workStatus === item.code ? '' : item.code)
                         }
                       >
-                        {option.label}
+                        {item.name}
                       </button>
                     ))}
                   </div>
@@ -152,6 +148,7 @@ export default function ContractSearchSheet() {
                       type="text"
                       className="input-frame"
                       value={memberName}
+                      maxLength={50}
                       onChange={(e) => setMemberName(e.target.value)}
                       placeholder="직원명을 입력하세요"
                     />
@@ -180,7 +177,11 @@ export default function ContractSearchSheet() {
                       onChange={(e) => setMemberClassification(e.target.value)}
                     >
                       <option value="">선택</option>
-                      <option value="본사 정직원">본사 정직원</option>
+                      {employeeClassifications.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -193,9 +194,11 @@ export default function ContractSearchSheet() {
                       onChange={(e) => setContractClassification(e.target.value)}
                     >
                       <option value="">선택</option>
-                      <option value="CNTCFWK_001">포괄</option>
-                      <option value="CNTCFWK_002">비포괄</option>
-                      <option value="CNTCFWK_003">파트타임</option>
+                      {contractClassifications.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -208,19 +211,30 @@ export default function ContractSearchSheet() {
                       onChange={(e) => setContractStatus(e.target.value)}
                     >
                       <option value="">선택</option>
+                      {CONTRACT_STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
                 <div className="sheet-data-filed">
                   <div className="filed-tit">전자계약 여부</div>
                   <div className="flex g8">
-                    {ELECTRONIC_CONTRACT_OPTIONS.map((option) => (
+                    <button
+                      className={`radio-btn block${electronicContract === '' ? ' act' : ''}`}
+                      onClick={() => setElectronicContract('')}
+                    >
+                      전체
+                    </button>
+                    {electronicContractCodes.map((item) => (
                       <button
-                        key={option.value === '' ? 'all' : option.value}
-                        className={`radio-btn block${electronicContract === option.value ? ' act' : ''}`}
-                        onClick={() => setElectronicContract(option.value)}
+                        key={item.code}
+                        className={`radio-btn block${electronicContract === item.code ? ' act' : ''}`}
+                        onClick={() => setElectronicContract(item.code)}
                       >
-                        {option.label}
+                        {item.name}
                       </button>
                     ))}
                   </div>

@@ -50,7 +50,7 @@ export default function BonusPaySheet() {
     const newToggles: Record<string, boolean> = {}
     for (const bonus of bonuses) {
       if (bonus.bonusCode) {
-        newAmounts[bonus.bonusCode] = bonus.amount
+        newAmounts[bonus.bonusCode] = bonus.amount ?? 0
         newToggles[bonus.bonusCode] = true
       }
     }

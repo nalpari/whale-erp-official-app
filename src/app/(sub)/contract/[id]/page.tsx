@@ -22,12 +22,22 @@ export default function ContractDetailPage() {
   if (isLoading) {
     return (
       <div className="container sub">
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+        <div className="empty-data">
           불러오는 중...
         </div>
       </div>
     )
   }
 
-  return <ContractDetail key={detail?.id} initialData={detail} />
+  if (!detail) {
+    return (
+      <div className="container sub">
+        <div className="empty-data">
+          계약 정보를 찾을 수 없습니다.
+        </div>
+      </div>
+    )
+  }
+
+  return <ContractDetail key={detail.id} initialData={detail} />
 }

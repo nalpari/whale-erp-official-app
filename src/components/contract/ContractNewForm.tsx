@@ -6,12 +6,19 @@ import {
   useCreateContractWorkHours,
   useCreateContractSalaryInfo,
 } from '@/hooks/queries/use-contract-queries'
+import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
+import { useCommonCodeHierarchy } from '@/hooks/queries/use-common-code-queries'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useStoreStore } from '@/store/useStoreStore'
+import { usePopupControler } from '@/store/usePopupControler'
 import { getErrorMessage } from '@/lib/api'
+import { DEFAULT_CONTRACT_TYPE, CONTRACT_COMPREHENSIVE, DEFAULT_SALARY_CYCLE } from '@/types/contract'
 import type {
   ContractHeaderCreateRequest,
   ContractWorkHour,
   ContractSalaryInfoCreateRequest,
   ContractClassificationType,
+  ContractType,
   SalaryCycle,
   SalaryMonth,
   DayType,
@@ -29,8 +36,30 @@ const DEFAULT_WORK_HOURS: ContractWorkHour[] = [
 
 export default function ContractNewForm() {
   const router = useRouter()
+  const openAlert = usePopupControler((s) => s.openAlert)
   const [step, setStep] = useState(0)
   const [contractId, setContractId] = useState<number | null>(null)
+
+  // 조직 정보
+  const authHeadOfficeId = useAuthStore((s) => s.headOfficeId)
+  const selectedHeadOffice = useStoreStore((s) => s.selectedHeadOffice)
+  const selectedStore = useStoreStore((s) => s.selectedStore)
+  const headOfficeId = authHeadOfficeId ?? selectedHeadOffice?.id ?? null
+
+  // 직원 목록
+  const { data: employeeList = [] } = useEmployeeListByType(
+    {
+      headOfficeId: headOfficeId ?? 0,
+      employeeType: 'ALL',
+    },
+    !!headOfficeId,
+  )
+
+  // 공통코드
+  const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK')
+  const { data: electronicContractCodes = [] } = useCommonCodeHierarchy('ECNT')
+  const { data: salaryCycleCodes = [] } = useCommonCodeHierarchy('SLRCC')
+  const { data: salaryMonthCodes = [] } = useCommonCodeHierarchy('SLRCF')
 
   // Mutations
   const createHeader = useCreateContractHeader()
@@ -40,8 +69,9 @@ export default function ContractNewForm() {
   // Step 1: 계약정보
   const [employeeInfoId, setEmployeeInfoId] = useState<number | undefined>()
   const [memberId, setMemberId] = useState<number | undefined>()
-  const [contractClassification, setContractClassification] = useState<ContractClassificationType>('CNTCFWK_001')
-  const [salaryCycle, setSalaryCycle] = useState<SalaryCycle>('SLRCC_001')
+  const [contractType, setContractType] = useState<ContractType>(DEFAULT_CONTRACT_TYPE)
+  const [contractClassification, setContractClassification] = useState<ContractClassificationType>(CONTRACT_COMPREHENSIVE)
+  const [salaryCycle, setSalaryCycle] = useState<SalaryCycle>(DEFAULT_SALARY_CYCLE)
   const [salaryMonth, setSalaryMonth] = useState<SalaryMonth>('SLRCF_002')
   const [salaryDay, setSalaryDay] = useState(10)
   const [contractStartDate, setContractStartDate] = useState('')
@@ -76,19 +106,28 @@ export default function ContractNewForm() {
   // Step 1 저장
   const handleStep1 = async () => {
     if (!employeeInfoId || !memberId) {
-      alert('직원을 선택해주세요.')
+      openAlert({ message: '직원을 선택해주세요.', confirmText: '확인' })
+      return
+    }
+    if (!headOfficeId) {
+      openAlert({ message: '본사 정보를 확인해주세요.', confirmText: '확인' })
       return
     }
     if (!contractStartDate || !contractDate) {
-      alert('계약기간과 계약일을 입력해주세요.')
+      openAlert({ message: '계약기간과 계약일을 입력해주세요.', confirmText: '확인' })
+      return
+    }
+    if (contractEndDate && contractEndDate < contractStartDate) {
+      openAlert({ message: '계약 종료일이 시작일보다 이전입니다.', confirmText: '확인' })
       return
     }
     try {
       const request: ContractHeaderCreateRequest = {
         employeeInfoId,
         memberId,
-        headOfficeOrganizationId: 0, // TODO: authStore.headOfficeId 또는 선택값
-        contractType: 'ECNT_001',
+        headOfficeOrganizationId: headOfficeId,
+        storeId: selectedStore?.id ?? undefined,
+        contractType,
         contractClassification,
         nationalPensionEnrolled: insuranceNP,
         healthInsuranceEnrolled: insuranceHI,
@@ -110,21 +149,25 @@ export default function ContractNewForm() {
       setContractId(newContractId)
       setStep(1)
     } catch (error) {
-      alert(getErrorMessage(error, '계약정보 저장에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '계약정보 저장에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
   // Step 2 저장
   const handleStep2 = async () => {
     if (!contractId) return
+    // isWork=false인 항목은 시간값 초기화
+    const cleanedWorkHours = workHours.map((wh) =>
+      wh.isWork ? wh : { ...wh, workStartTime: undefined, workEndTime: undefined, breakStartTime: undefined, breakEndTime: undefined, isBreak: false },
+    )
     try {
       await createWorkHours.mutateAsync({
         contractId,
-        workHours,
+        workHours: cleanedWorkHours,
       })
       setStep(2)
     } catch (error) {
-      alert(getErrorMessage(error, '근무시간 저장에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '근무시간 저장에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
@@ -141,10 +184,13 @@ export default function ContractNewForm() {
         monthlyBaseAmount,
       }
       await createSalaryInfo.mutateAsync(request)
-      alert('계약이 등록되었습니다.')
-      router.push('/contract')
+      openAlert({
+        message: '계약이 등록되었습니다.',
+        confirmText: '확인',
+        onConfirm: () => router.push('/contract'),
+      })
     } catch (error) {
-      alert(getErrorMessage(error, '급여정보 저장에 실패했습니다.'))
+      openAlert({ message: getErrorMessage(error, '급여정보 저장에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
@@ -180,12 +226,34 @@ export default function ContractNewForm() {
                           className="select-form"
                           value={employeeInfoId ?? ''}
                           onChange={(e) => {
-                            setEmployeeInfoId(Number(e.target.value) || undefined)
-                            setMemberId(Number(e.target.value) || undefined)
+                            const selected = employeeList.find((emp) => emp.employeeInfoId === Number(e.target.value))
+                            setEmployeeInfoId(selected?.employeeInfoId)
+                            setMemberId(selected?.memberId ?? undefined)
                           }}
                         >
                           <option value="">직원을 선택해주세요</option>
+                          {employeeList.map((emp) => (
+                            <option key={emp.employeeInfoId} value={emp.employeeInfoId}>
+                              {emp.employeeName} ({emp.employeeNumber})
+                            </option>
+                          ))}
                         </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="sub-item-bx">
+                    <div className="data-filed">
+                      <div className="filed-tit">계약종류 <span className="imp">*</span></div>
+                      <div className="flex g8">
+                        {electronicContractCodes.map((item) => (
+                          <button
+                            key={item.code}
+                            className={`radio-btn block${contractType === item.code ? ' act' : ''}`}
+                            onClick={() => setContractType(item.code as ContractType)}
+                          >
+                            {item.name}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -220,9 +288,11 @@ export default function ContractNewForm() {
                       <div className="filed-tit">계약분류 <span className="imp">*</span></div>
                       <div className="block">
                         <select className="select-form" value={contractClassification} onChange={(e) => setContractClassification(e.target.value as ContractClassificationType)}>
-                          <option value="CNTCFWK_001">포괄연봉제</option>
-                          <option value="CNTCFWK_002">비포괄연봉제</option>
-                          <option value="CNTCFWK_003">파트타임</option>
+                          {contractClassifications.map((item) => (
+                            <option key={item.code} value={item.code}>
+                              {item.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -231,8 +301,8 @@ export default function ContractNewForm() {
                     <div className="data-filed">
                       <div className="filed-tit">4대보험</div>
                       <div className="flex g8" style={{ flexWrap: 'wrap' }}>
-                        <button className={`radio-btn block${insuranceHI ? ' act' : ''}`} onClick={() => { setInsuranceHI(!insuranceHI); setInsuranceNP(!insuranceNP) }}>건강보험/국민연금</button>
-                        <button className={`radio-btn block${insuranceEI ? ' act' : ''}`} onClick={() => { setInsuranceEI(!insuranceEI); setInsuranceWC(!insuranceWC) }}>고용보험/산재보험</button>
+                        <button className={`radio-btn block${insuranceHI && insuranceNP ? ' act' : ''}`} onClick={() => { const next = !(insuranceHI && insuranceNP); setInsuranceHI(next); setInsuranceNP(next) }}>건강보험/국민연금</button>
+                        <button className={`radio-btn block${insuranceEI && insuranceWC ? ' act' : ''}`} onClick={() => { const next = !(insuranceEI && insuranceWC); setInsuranceEI(next); setInsuranceWC(next) }}>고용보험/산재보험</button>
                       </div>
                     </div>
                   </div>
@@ -241,15 +311,17 @@ export default function ContractNewForm() {
                       <div className="filed-tit">급여지급일 <span className="imp">*</span></div>
                       <div className="flex g8">
                         <select className="select-form" value={salaryCycle} onChange={(e) => setSalaryCycle(e.target.value as SalaryCycle)}>
-                          <option value="SLRCC_001">월급</option>
-                          <option value="SLRCC_002">시급</option>
+                          {salaryCycleCodes.map((item) => (
+                            <option key={item.code} value={item.code}>{item.name}</option>
+                          ))}
                         </select>
                         <select className="select-form" value={salaryMonth} onChange={(e) => setSalaryMonth(e.target.value as SalaryMonth)}>
-                          <option value="SLRCF_001">당월</option>
-                          <option value="SLRCF_002">익월</option>
+                          {salaryMonthCodes.map((item) => (
+                            <option key={item.code} value={item.code}>{item.name}</option>
+                          ))}
                         </select>
                         <select className="select-form" value={salaryDay} onChange={(e) => setSalaryDay(Number(e.target.value))}>
-                          {[10, 15, 20, 25].map((d) => (
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                             <option key={d} value={d}>{d}일</option>
                           ))}
                         </select>
@@ -355,7 +427,7 @@ export default function ContractNewForm() {
                     <div className="data-filed">
                       <div className="filed-tit">통상시급 <span className="imp">*</span></div>
                       <div className="block">
-                        <input type="number" className="input-frame" value={timelyAmount || ''} onChange={(e) => setTimelyAmount(Number(e.target.value))} placeholder="통상시급 입력" />
+                        <input type="number" className="input-frame" min="0" value={timelyAmount || ''} onChange={(e) => setTimelyAmount(Math.max(0, Number(e.target.value) || 0))} placeholder="통상시급 입력" />
                       </div>
                     </div>
                   </div>
@@ -363,7 +435,7 @@ export default function ContractNewForm() {
                     <div className="data-filed">
                       <div className="filed-tit">월 통상근로시간</div>
                       <div className="block">
-                        <input type="number" className="input-frame" value={monthlyTime || ''} onChange={(e) => setMonthlyTime(Number(e.target.value))} />
+                        <input type="number" className="input-frame" min="0" value={monthlyTime || ''} onChange={(e) => setMonthlyTime(Math.max(0, Number(e.target.value) || 0))} />
                       </div>
                     </div>
                   </div>
@@ -371,7 +443,7 @@ export default function ContractNewForm() {
                     <div className="data-filed">
                       <div className="filed-tit">월 기본급</div>
                       <div className="block">
-                        <input type="number" className="input-frame" value={monthlyBaseAmount || ''} onChange={(e) => setMonthlyBaseAmount(Number(e.target.value))} />
+                        <input type="number" className="input-frame" min="0" value={monthlyBaseAmount || ''} onChange={(e) => setMonthlyBaseAmount(Math.max(0, Number(e.target.value) || 0))} />
                       </div>
                       <div className="s-txt mt10">
                         자동 계산: {(timelyAmount * monthlyTime).toLocaleString('ko-KR')}원
@@ -382,7 +454,7 @@ export default function ContractNewForm() {
                     <div className="data-filed">
                       <div className="filed-tit">월급여 총액</div>
                       <div className="block">
-                        <input type="number" className="input-frame" value={monthlyTotalAmount || ''} onChange={(e) => setMonthlyTotalAmount(Number(e.target.value))} />
+                        <input type="number" className="input-frame" min="0" value={monthlyTotalAmount || ''} onChange={(e) => setMonthlyTotalAmount(Math.max(0, Number(e.target.value) || 0))} />
                       </div>
                     </div>
                   </div>
@@ -390,7 +462,7 @@ export default function ContractNewForm() {
                     <div className="data-filed">
                       <div className="filed-tit">연봉 총액</div>
                       <div className="block">
-                        <input type="number" className="input-frame" value={annualAmount || ''} onChange={(e) => setAnnualAmount(Number(e.target.value))} />
+                        <input type="number" className="input-frame" min="0" value={annualAmount || ''} onChange={(e) => setAnnualAmount(Math.max(0, Number(e.target.value) || 0))} />
                       </div>
                     </div>
                   </div>

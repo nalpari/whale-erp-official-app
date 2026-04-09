@@ -12,6 +12,7 @@ import {
   deleteContract,
   sendContractEmail,
   getMinimumWage,
+  downloadContractDocx,
 } from '@/lib/api/contract'
 import type {
   ContractSearchParams,
@@ -163,6 +164,13 @@ export const useDeleteContract = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: contractKeys.all })
     },
+  })
+}
+
+// 계약서 문서 다운로드 (DOCX)
+export const useDownloadContractDocx = () => {
+  return useMutation({
+    mutationFn: (contractId: number) => downloadContractDocx(contractId),
   })
 }
 

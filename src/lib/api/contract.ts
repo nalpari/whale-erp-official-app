@@ -21,14 +21,14 @@ const cleanParams = (params: object) => {
   )
 }
 
-// 목록 조회
+// 목록 조회 — 백엔드가 PageResponse를 직접 반환 (ApiResponse 래핑 없음)
 export const getContracts = async (
   params: ContractSearchParams,
 ): Promise<PaginatedResponse<ContractListItem>> => {
-  const response = await api.get<{ data: PaginatedResponse<ContractListItem> }>(BASE_URL, {
+  const response = await api.get<PaginatedResponse<ContractListItem>>(BASE_URL, {
     params: cleanParams(params),
   })
-  return response.data.data
+  return response.data
 }
 
 // 직원별 계약 목록 조회
@@ -126,6 +126,26 @@ export const deleteContract = async (id: number): Promise<void> => {
 // 이메일 전송
 export const sendContractEmail = async (id: number): Promise<void> => {
   await api.post(`${BASE_URL}/${id}/send-email`)
+}
+
+// 계약서 문서 다운로드 (DOCX)
+export const downloadContractDocx = async (contractId: number): Promise<void> => {
+  const response = await api.get<Blob>(`${BASE_URL}/${contractId}/download-docx`, {
+    responseType: 'blob',
+  })
+  const disposition = response.headers['content-disposition'] ?? ''
+  const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)/)
+  const filename = filenameMatch
+    ? decodeURIComponent(filenameMatch[1])
+    : `근로계약서_${contractId}.docx`
+  const url = URL.createObjectURL(response.data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 100)
 }
 
 // 최저임금 조회
