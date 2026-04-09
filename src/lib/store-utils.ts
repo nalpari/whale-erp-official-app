@@ -32,6 +32,43 @@ export function getToday(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// ── 에러 → 스텝 매핑 ──
+
+/** API 에러 details 필드명 → 점포 폼 step 번호 */
+const STORE_FIELD_STEP: Record<string, number> = {
+  // Step 1: 기본 정보
+  storeOwner: 1, organizationId: 1, storeName: 1, operationStatus: 1,
+  // Step 2: 연락처
+  ceoName: 2, businessNumber: 2, storeAddress: 2, storeAddressDetail: 2, ceoPhone: 2, storePhone: 2,
+}
+
+/** 에러 details에서 이동해야 할 가장 앞 스텝 번호 반환 */
+export function getStoreErrorStep(details: Record<string, string>): number | null {
+  let min: number | null = null
+  for (const field of Object.keys(details)) {
+    const step = STORE_FIELD_STEP[field]
+    if (step !== undefined && (min === null || step < min)) min = step
+  }
+  return min
+}
+
+/** 에러 details 메시지를 줄바꿈으로 합쳐 반환 */
+export function formatErrorDetails(details: Record<string, string>): string {
+  return Object.values(details).join('\n')
+}
+
+// ── 패턴 검증 ──
+
+/** 사업자등록번호 형식 검증 (XXX-XX-XXXXX) */
+export function isValidBusinessNumber(value: string): boolean {
+  return /^\d{3}-\d{2}-\d{5}$/.test(value)
+}
+
+/** 전화번호 형식 검증 (02-XXX(X)-XXXX 또는 0XX-XXX(X)-XXXX) */
+export function isValidPhoneNumber(value: string): boolean {
+  return /^0\d{1,2}-\d{3,4}-\d{4}$/.test(value)
+}
+
 // ── 공통 유틸 함수 ──
 
 export function formatDate(dateStr?: string | null): string {

@@ -5,8 +5,8 @@ import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
-import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
-import { buildOperatingHoursRequest, getOrganizationId } from "@/lib/store-utils";
+import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
+import { buildOperatingHoursRequest, getOrganizationId, getStoreErrorStep, formatErrorDetails, isValidBusinessNumber, isValidPhoneNumber } from "@/lib/store-utils";
 import StoreBasicInfoForm from "./storeform/StoreBasicInfoForm";
 import StoreContactForm from "./storeform/StoreContactForm";
 import StorePhotoForm from "./storeform/StorePhotoForm";
@@ -64,7 +64,10 @@ export default function StoreCreate() {
         if (state.storeOwner === "FRANCHISE" && !state.franchiseId) return false;
         return !!state.officeId && !!state.storeName;
       case 2:
-        return !!state.ceoName && !!state.businessNumber && !!state.storeAddress && !!state.ceoPhone;
+        if (!state.ceoName || !state.businessNumber || !state.storeAddress || !state.ceoPhone) return false;
+        if (!isValidBusinessNumber(state.businessNumber)) return false;
+        if (!isValidPhoneNumber(state.ceoPhone)) return false;
+        return true;
       default:
         return true;
     }
@@ -124,8 +127,20 @@ export default function StoreCreate() {
         onConfirm: () => router.push("/storeinfo"),
       });
     } catch (err) {
-      if (isInterceptorHandled(err)) return
+      if (isInterceptorHandled(err)) return;
       console.error('[StoreCreate] 점포 등록 실패:', err);
+
+      const details = getErrorDetails(err);
+      if (details) {
+        const targetStep = getStoreErrorStep(details);
+        if (targetStep !== null) {
+          setStep(targetStep);
+          window.scrollTo({ top: 0 });
+        }
+        openAlert({ message: formatErrorDetails(details) });
+        return;
+      }
+
       openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
     }
   };

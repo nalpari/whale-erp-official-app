@@ -1,6 +1,7 @@
 "use client";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
+import { isValidBusinessNumber, isValidPhoneNumber } from "@/lib/store-utils";
 
 function formatBusinessNumber(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -78,6 +79,9 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             {submitted && !businessNumber && (
               <div className="warning mt10">* 필수 입력 항목입니다.</div>
             )}
+            {submitted && businessNumber && !isValidBusinessNumber(businessNumber) && (
+              <div className="warning mt10">* 사업자등록번호 형식이 올바르지 않습니다.</div>
+            )}
           </div>
         </div>
         <div className="sub-item-bx">
@@ -136,6 +140,9 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             </div>
             {submitted && !ceoPhone && (
               <div className="warning mt10">* 필수 입력 항목입니다.</div>
+            )}
+            {submitted && ceoPhone && !isValidPhoneNumber(ceoPhone) && (
+              <div className="warning mt10">* 대표자 전화번호 형식이 올바르지 않습니다.</div>
             )}
             <div className="s-txt mt10">※ 숫자만 입력 가능</div>
           </div>

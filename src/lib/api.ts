@@ -19,6 +19,17 @@ export function getErrorMessage(error: unknown, fallback = '알 수 없는 오�
   return fallback
 }
 
+/** 서버 에러 응답의 details 객체 추출 (필드별 검증 오류 메시지) */
+export function getErrorDetails(error: unknown): Record<string, string> | null {
+  if (axios.isAxiosError(error)) {
+    const details = error.response?.data?.details
+    if (details && typeof details === 'object' && Object.keys(details).length > 0) {
+      return details as Record<string, string>
+    }
+  }
+  return null
+}
+
 const handledErrors = new WeakSet<object>()
 
 /** 인터셉터에서 이미 alert 처리된 에러인지 확인 */

@@ -5,14 +5,15 @@ import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
-import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
-import { getOrganizationId } from "@/lib/store-utils";
+import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
+import { getOrganizationId, getStoreErrorStep, formatErrorDetails, isValidBusinessNumber, isValidPhoneNumber } from "@/lib/store-utils";
 import StoreBasicInfoForm from "../storeform/StoreBasicInfoForm";
 import StoreContactForm from "../storeform/StoreContactForm";
 
 export default function StoreEditInfo({ id }: { id: number }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
   const openAlert = usePopupControler((state) => state.openAlert);
   // TODO: 공통 로딩 화면으로 교체 (수정 pending)
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
@@ -99,6 +100,17 @@ export default function StoreEditInfo({ id }: { id: number }) {
       return;
     }
 
+    const hasPatternError =
+      (form.businessNumber && !isValidBusinessNumber(form.businessNumber)) ||
+      (form.ceoPhone && !isValidPhoneNumber(form.ceoPhone));
+
+    if (hasPatternError) {
+      setSubmitted(true);
+      setStep(2);
+      window.scrollTo({ top: 0 });
+      return;
+    }
+
     try {
       const organizationId = getOrganizationId(form.storeOwner, form.officeId, form.franchiseId);
 
@@ -130,8 +142,20 @@ export default function StoreEditInfo({ id }: { id: number }) {
         onConfirm: () => router.push(`/storeinfo/${id}`),
       });
     } catch (err) {
-      if (isInterceptorHandled(err)) return
+      if (isInterceptorHandled(err)) return;
       console.error('[StoreEditInfo] 점포정보 저장 실패:', err);
+
+      const details = getErrorDetails(err);
+      if (details) {
+        const targetStep = getStoreErrorStep(details);
+        if (targetStep !== null) {
+          setStep(targetStep);
+          window.scrollTo({ top: 0 });
+        }
+        openAlert({ message: formatErrorDetails(details) });
+        return;
+      }
+
       openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
     }
   };
@@ -141,7 +165,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
       <div className="container sub">
         <div className="sub-content-body">
           {step === 1 && <StoreBasicInfoForm />}
-          {step === 2 && <StoreContactForm />}
+          {step === 2 && <StoreContactForm submitted={submitted} />}
         </div>
       </div>
       <div className="content-pagination">
