@@ -72,13 +72,23 @@ export function getAttendanceDayStatus(
   const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const isPast = recordDate < todayMidnight
 
-  // 출근 기록 없음
+  // 출퇴근 모두 완료 → 근무
+  if (record.workStartTime && record.workEndTime) return '근무'
+
+  const hasContract = record.contractStartTime && record.contractEndTime
+
+  // 계약 있고 출근 기록 없음 → 과거: 결근, 오늘: 지연
+  if (hasContract && !record.workStartTime) {
+    return isPast ? '결근' : '지연'
+  }
+
+  // 출근 기록 없음 (계약 없는 경우 포함)
   if (record.recordId === null) {
     if (isPast) return '결근'
     return '미출근'
   }
 
-  // 출근 기록 있음 — 지연 판단: 계약 출근 시각 기준 30분 초과 시 지연 (화면정의서 Note #7)
+  // 출근 기록 있음 (퇴근 전) — 지연 판단: 계약 출근 시각 기준 30분 초과 시 지연 (화면정의서 Note #7)
   if (record.workStartTime && record.contractStartTime) {
     const contractStartMin = timeToMinutes(record.contractStartTime)
     const workStartMin = timeToMinutes(record.workStartTime)

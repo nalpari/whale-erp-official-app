@@ -23,8 +23,14 @@ export function getErrorMessage(error: unknown, fallback = '알 수 없는 오�
 export function getErrorDetails(error: unknown): Record<string, string> | null {
   if (axios.isAxiosError(error)) {
     const details = error.response?.data?.details
-    if (details && typeof details === 'object' && Object.keys(details).length > 0) {
-      return details as Record<string, string>
+    if (details && typeof details === 'object' && !Array.isArray(details)) {
+      const entries = Object.entries(details as Record<string, unknown>)
+      if (entries.length === 0) return null
+      const result: Record<string, string> = {}
+      for (const [key, value] of entries) {
+        result[key] = typeof value === 'string' ? value : String(value)
+      }
+      return result
     }
   }
   return null

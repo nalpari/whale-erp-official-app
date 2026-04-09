@@ -119,46 +119,21 @@ const STATUS_BADGE: Record<CommuteDayDisplayStatus, { label: string; className: 
 };
 
 function RecordRow({ record }: { record: AttendanceRecord }) {
+  const status = getAttendanceDayStatus(record);
+  const badge = STATUS_BADGE[status];
   const workMin = calcWorkMinutes(record.workStartTime, record.workEndTime);
   const timeRange = record.workStartTime
     ? `${formatTime(record.workStartTime)}~${formatTime(record.workEndTime) || "진행 중"}`
     : "-";
 
   const hasFullRecord = record.workStartTime && record.workEndTime;
-  const hasContract = record.contractStartTime && record.contractEndTime;
   const totalMin = Math.floor(workMin);
-
-  let badgeClass: string;
-  let badgeLabel: string;
-
-  if (hasFullRecord) {
-    badgeClass = STATUS_BADGE["근무"].className;
-    badgeLabel = STATUS_BADGE["근무"].label;
-  } else if (hasContract && !record.workStartTime) {
-    const [year, month, day] = record.date.split("-").map(Number);
-    const recordDate = new Date(year, month - 1, day);
-    const now = new Date();
-    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    if (recordDate < todayMidnight) {
-      badgeClass = STATUS_BADGE["결근"].className;
-      badgeLabel = STATUS_BADGE["결근"].label;
-    } else {
-      badgeClass = STATUS_BADGE["지연"].className;
-      badgeLabel = STATUS_BADGE["지연"].label;
-    }
-  } else {
-    const status = getAttendanceDayStatus(record);
-    const badge = STATUS_BADGE[status];
-    badgeClass = badge.className;
-    badgeLabel = badge.label;
-  }
 
   return (
     <div className="commute-list-data-item">
       <div className="commute-list-data-time">{timeRange}</div>
       <div className="commute-list-data-work">
-        <span className={badgeClass}>{badgeLabel}</span>
+        <span className={badge.className}>{badge.label}</span>
         {hasFullRecord && (
           <span className="time">{Math.floor(totalMin / 60)}시간 {totalMin % 60}분</span>
         )}

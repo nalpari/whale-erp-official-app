@@ -47,7 +47,11 @@ export function getStoreErrorStep(details: Record<string, string>): number | nul
   let min: number | null = null
   for (const field of Object.keys(details)) {
     const step = STORE_FIELD_STEP[field]
-    if (step !== undefined && (min === null || step < min)) min = step
+    if (step !== undefined && (min === null || step < min)) {
+      min = step
+    } else if (step === undefined) {
+      console.warn(`[getStoreErrorStep] 매핑되지 않은 에러 필드: ${field}`)
+    }
   }
   return min
 }

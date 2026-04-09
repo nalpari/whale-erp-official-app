@@ -88,8 +88,31 @@ export default function StoreEditInfo({ id }: { id: number }) {
     );
   }
 
-  const handleNext = () => { window.scrollTo({ top: 0 }); setStep(step + 1); };
-  const handlePrev = () => { window.scrollTo({ top: 0 }); setStep(step - 1); };
+  const validateStep = (s: number): boolean => {
+    const state = useStoreFormStore.getState();
+    if (s === 1) {
+      if (state.storeOwner === "FRANCHISE" && !state.franchiseId) return false;
+      return !!state.officeId && !!state.storeName;
+    }
+    if (s === 2) {
+      if (!state.ceoName || !state.businessNumber || !state.storeAddress || !state.ceoPhone) return false;
+      if (!isValidBusinessNumber(state.businessNumber)) return false;
+      if (!isValidPhoneNumber(state.ceoPhone)) return false;
+      return true;
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!validateStep(step)) {
+      setSubmitted(true);
+      return;
+    }
+    setSubmitted(false);
+    window.scrollTo({ top: 0 });
+    setStep(step + 1);
+  };
+  const handlePrev = () => { setSubmitted(false); window.scrollTo({ top: 0 }); setStep(step - 1); };
 
   const handleSave = async () => {
     if (isUpdating) return;
@@ -108,6 +131,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
       setSubmitted(true);
       setStep(2);
       window.scrollTo({ top: 0 });
+      openAlert({ message: "입력값 형식을 확인해주세요." });
       return;
     }
 
@@ -164,7 +188,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreBasicInfoForm />}
+          {step === 1 && <StoreBasicInfoForm submitted={submitted} />}
           {step === 2 && <StoreContactForm submitted={submitted} />}
         </div>
       </div>
