@@ -112,28 +112,56 @@ function ContractWorkHourRow({ item }: { item: ContractWorkHour }) {
 
 const STATUS_BADGE: Record<CommuteDayDisplayStatus, { label: string; className: string }> = {
   근무: { label: "근무", className: "badge d-green" },
-  지연: { label: "지연", className: "badge orange" },
+  지연: { label: "지연", className: "badge l-org" },
   미출근: { label: "미출근", className: "badge grey" },
   결근: { label: "결근", className: "badge d-red" },
   휴일: { label: "휴일", className: "badge grey" },
 };
 
 function RecordRow({ record }: { record: AttendanceRecord }) {
-  const status = getAttendanceDayStatus(record);
-  const badge = STATUS_BADGE[status];
   const workMin = calcWorkMinutes(record.workStartTime, record.workEndTime);
-  // workStartTime이 null이면 "-" 표시, workEndTime이 null이면 "진행 중" 표시
   const timeRange = record.workStartTime
     ? `${formatTime(record.workStartTime)}~${formatTime(record.workEndTime) || "진행 중"}`
     : "-";
+
+  const hasFullRecord = record.workStartTime && record.workEndTime;
+  const hasContract = record.contractStartTime && record.contractEndTime;
+  const totalMin = Math.floor(workMin);
+
+  let badgeClass: string;
+  let badgeLabel: string;
+
+  if (hasFullRecord) {
+    badgeClass = STATUS_BADGE["근무"].className;
+    badgeLabel = STATUS_BADGE["근무"].label;
+  } else if (hasContract && !record.workStartTime) {
+    const [year, month, day] = record.date.split("-").map(Number);
+    const recordDate = new Date(year, month - 1, day);
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (recordDate < todayMidnight) {
+      badgeClass = STATUS_BADGE["결근"].className;
+      badgeLabel = STATUS_BADGE["결근"].label;
+    } else {
+      badgeClass = STATUS_BADGE["지연"].className;
+      badgeLabel = STATUS_BADGE["지연"].label;
+    }
+  } else {
+    const status = getAttendanceDayStatus(record);
+    const badge = STATUS_BADGE[status];
+    badgeClass = badge.className;
+    badgeLabel = badge.label;
+  }
 
   return (
     <div className="commute-list-data-item">
       <div className="commute-list-data-time">{timeRange}</div>
       <div className="commute-list-data-work">
-        {/* 퇴근 기록이 있을 때만 근무시간 표시 (진행 중이면 0분 숨김) */}
-        {record.workEndTime && <span className="time">{formatMinutes(workMin)}</span>}
-        <span className={badge.className}>{badge.label}</span>
+        <span className={badgeClass}>{badgeLabel}</span>
+        {hasFullRecord && (
+          <span className="time">{Math.floor(totalMin / 60)}시간 {totalMin % 60}분</span>
+        )}
       </div>
     </div>
   );
