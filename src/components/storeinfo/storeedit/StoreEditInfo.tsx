@@ -123,15 +123,11 @@ export default function StoreEditInfo({ id }: { id: number }) {
       return;
     }
 
-    const hasPatternError =
-      (form.businessNumber && !isValidBusinessNumber(form.businessNumber)) ||
-      (form.ceoPhone && !isValidPhoneNumber(form.ceoPhone));
-
-    if (hasPatternError) {
+    if (!validateStep(2)) {
       setSubmitted(true);
       setStep(2);
       window.scrollTo({ top: 0 });
-      openAlert({ message: "입력값 형식을 확인해주세요." });
+      openAlert({ message: "필수 입력 항목과 입력값 형식을 확인해주세요." });
       return;
     }
 
