@@ -3,7 +3,7 @@
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useRouter } from "next/navigation";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { useStoreDetail, useDeleteStore } from "@/hooks/queries/use-store-queries";
 import type { OperatingHour } from "@/types/store";
@@ -54,8 +54,9 @@ export default function StoreInfoDetail({ id }: { id: number }) {
   const setOnDelete = useHeaderStore((state) => state.setOnDelete);
   const setShowDeleteButton = useHeaderStore((state) => state.setShowDeleteButton);
   const { mutateAsync: deleteStoreAsync } = useDeleteStore();
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const { data, isLoading, isError } = useStoreDetail(id);
+  const { data, isLoading, isError } = useStoreDetail(id, !isDeleting);
 
   const handleDelete = useCallback(() => {
     openAlert({
@@ -63,10 +64,12 @@ export default function StoreInfoDetail({ id }: { id: number }) {
       confirmText: "삭제",
       cancelText: "취소",
       onConfirm: async () => {
+        setIsDeleting(true);
         try {
           await deleteStoreAsync(id);
-          router.push("/storeinfo");
+          router.replace("/storeinfo");
         } catch (err) {
+          setIsDeleting(false);
           if (isInterceptorHandled(err)) return
           console.error('[StoreInfoDetail] 점포 삭제 실패:', err);
           openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
@@ -92,6 +95,10 @@ export default function StoreInfoDetail({ id }: { id: number }) {
       setOnDelete(handleDelete);
     }
   }, [data, handleDelete, setOnDelete]);
+
+  if (isDeleting) {
+    return <></>;
+  }
 
   if (isError) {
     return (
