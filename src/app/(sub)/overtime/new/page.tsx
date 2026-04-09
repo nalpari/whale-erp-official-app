@@ -2,16 +2,16 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHeaderStore } from '@/store/useHeaderStore'
-import PartTimerPayDetail from '@/components/parttimer/PartTimerPayDetail'
+import OverTimeDetail from '@/components/overtime/OverTimeDetail'
 
-export default function PartTimerNewPage() {
+export default function OverTimeNewPage() {
   const router = useRouter()
   const setOnBack = useHeaderStore((s) => s.setOnBack)
 
   useEffect(() => {
-    setOnBack(() => router.push('/parttimer'))
+    setOnBack(() => router.push('/overtime'))
     return () => setOnBack(null)
   }, [router, setOnBack])
 
-  return <PartTimerPayDetail isNew />
+  return <OverTimeDetail isNew />
 }

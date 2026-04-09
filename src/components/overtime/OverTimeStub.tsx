@@ -1,228 +1,195 @@
-export default function OverTimeStub() {
+'use client'
+import { useRouter, useParams } from 'next/navigation'
+import { formatAmount, formatDate, formatDateShort, parseLocalDate } from '@/lib/overtime-utils'
+import type { OvertimeAllowanceDetail, OvertimeAllowanceItemDto } from '@/types/overtime'
+
+interface OverTimeStubProps {
+  initialData?: OvertimeAllowanceDetail
+  isPreview?: boolean
+}
+
+// 주차별로 그룹핑
+const groupByWeek = (items: OvertimeAllowanceItemDto[]) => {
+  const weeks: { weekStart: string; weekEnd: string; items: OvertimeAllowanceItemDto[] }[] = []
+  const sorted = [...items].filter((i) => i.workDay).sort((a, b) => a.workDay.localeCompare(b.workDay))
+
+  for (const item of sorted) {
+    const d = parseLocalDate(item.workDay)
+    const day = d.getDay()
+    const weekStart = new Date(d)
+    weekStart.setDate(d.getDate() - day)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+
+    const weekKey = formatDate(weekStart)
+    let week = weeks.find((w) => w.weekStart === weekKey)
+    if (!week) {
+      week = { weekStart: weekKey, weekEnd: formatDate(weekEnd), items: [] }
+      weeks.push(week)
+    }
+    week.items.push(item)
+  }
+  return weeks
+}
+
+const formatWeekRange = (start: string, end: string) => {
+  const s = parseLocalDate(start)
+  const e = parseLocalDate(end)
+  return `${s.getMonth() + 1}.${String(s.getDate()).padStart(2, '0')}~${e.getMonth() + 1}.${String(e.getDate()).padStart(2, '0')}`
+}
+
+export default function OverTimeStub({ initialData, isPreview = false }: OverTimeStubProps) {
+  const router = useRouter()
+  const params = useParams()
+  const id = params?.id
+
+  if (!initialData) {
+    return (
+      <div className="container sub">
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+          데이터가 없습니다.
+        </div>
+      </div>
+    )
+  }
+
+  const weeks = groupByWeek(initialData.details ?? [])
+  const totalPayment = (initialData.details ?? []).reduce((sum, i) => sum + (i.actualPaymentAmount || 0), 0)
+  const totalDeduction = (initialData.details ?? []).reduce((sum, i) => sum + (i.deductionAmount || 0), 0)
+  const totalHours = (initialData.details ?? []).reduce((sum, i) => sum + (i.actualOvertimeHours || 0), 0)
+  const actualPayment = totalPayment - totalDeduction
+
   return (
     <div className="container sub">
       <div className="sub-content-body">
+        <button
+          className="work-time-edit"
+          onClick={() => {
+            if (isPreview) {
+              router.push('/overtime/new/time')
+            } else {
+              router.push(`/overtime/${id}/time`)
+            }
+          }}
+        >
+          <div className="work-time-edit-tit">
+            <i className="time-edit-icon"></i>
+            <span>근무시간 수정</span>
+          </div>
+          <div className="auto-right">
+            <i className="contract-arr"></i>
+          </div>
+        </button>
+
         <div className="sub-cont-wrap">
           <div className="sub-cont-item-wrap">
             <div className="sub-cont-tit-wrap">
               <div className="sub-cont-tit">
-                연장근무 내역 <span className="imp"> *</span>
+                연장근무 내역<span className="imp"> *</span>
               </div>
             </div>
             <div className="pay-stub-wrap">
-              <div className="pay-stub-item day">
-                <div className="pay-stub-item-head">
-                  <div className="pay-stub-item-head-tit">2025.11.03 (월)</div>
-                  <div className="pay-stub-item-head-val">78,133.60원</div>
-                </div>
-                <ul className="pay-stub-table-list">
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시간</div>
-                    <div className="pay-stub-table-list-val">8</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시급</div>
-                    <div className="pay-stub-table-list-val">10,100</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">지급액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">공제액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                </ul>
-              </div>
-              <div className="pay-stub-item day">
-                <div className="pay-stub-item-head">
-                  <div className="pay-stub-item-head-tit">2025.11.03 (월)</div>
-                  <div className="pay-stub-item-head-val">78,133.60원</div>
-                </div>
-                <ul className="pay-stub-table-list">
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시간</div>
-                    <div className="pay-stub-table-list-val">8</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시급</div>
-                    <div className="pay-stub-table-list-val">10,100</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">지급액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">공제액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                </ul>
-              </div>
-              <div className="pay-stub-item week">
-                <div className="pay-stub-item-head">
-                  <div className="pay-stub-item-head-tit">
-                    <span>주간소계</span>
-                    <span>11.03~11.09</span>
+              {weeks.map((week) => {
+                const weekPayment = week.items.reduce((sum, i) => sum + (i.actualPaymentAmount || 0), 0)
+                const weekDeduction = week.items.reduce((sum, i) => sum + (i.deductionAmount || 0), 0)
+                const weekHours = week.items.reduce((sum, i) => sum + (i.actualOvertimeHours || 0), 0)
+
+                return (
+                  <div key={week.weekStart}>
+                    {/* 일별 연장근무 기록 */}
+                    {week.items.map((item) => (
+                      <div className="pay-stub-item day" key={item.workDay}>
+                        <div className="pay-stub-item-head">
+                          <div className="pay-stub-item-head-tit">{formatDateShort(item.workDay)}</div>
+                          <div className="pay-stub-item-head-val">
+                            {formatAmount(item.actualPaymentAmount - item.deductionAmount)}원
+                          </div>
+                        </div>
+                        <ul className="pay-stub-table-list">
+                          <li className="pay-stub-table-list-item">
+                            <div className="pay-stub-table-list-tit">시간</div>
+                            <div className="pay-stub-table-list-val">{item.actualOvertimeHours}</div>
+                          </li>
+                          <li className="pay-stub-table-list-item">
+                            <div className="pay-stub-table-list-tit">시급</div>
+                            <div className="pay-stub-table-list-val">{formatAmount(item.applyTimelyAmount)}</div>
+                          </li>
+                          <li className="pay-stub-table-list-item">
+                            <div className="pay-stub-table-list-tit">지급액</div>
+                            <div className="pay-stub-table-list-val">{formatAmount(item.actualPaymentAmount)}</div>
+                          </li>
+                          <li className="pay-stub-table-list-item">
+                            <div className="pay-stub-table-list-tit">공제액</div>
+                            <div className="pay-stub-table-list-val">{formatAmount(item.deductionAmount)}</div>
+                          </li>
+                        </ul>
+                      </div>
+                    ))}
+
+                    {/* 주간소계 */}
+                    <div className="pay-stub-item week">
+                      <div className="pay-stub-item-head">
+                        <div className="pay-stub-item-head-tit">
+                          <span>주간소계</span>
+                          <span>{formatWeekRange(week.weekStart, week.weekEnd)}</span>
+                        </div>
+                        <div className="pay-stub-item-head-val">{formatAmount(weekPayment - weekDeduction)}원</div>
+                      </div>
+                      <ul className="pay-stub-table-list">
+                        <li className="pay-stub-table-list-item">
+                          <div className="pay-stub-table-list-tit">근무시간</div>
+                          <div className="pay-stub-table-list-val">{weekHours}시간</div>
+                        </li>
+                        <li className="pay-stub-table-list-item">
+                          <div className="pay-stub-table-list-tit">지급액</div>
+                          <div className="pay-stub-table-list-val">{formatAmount(weekPayment)}</div>
+                        </li>
+                        <li className="pay-stub-table-list-item">
+                          <div className="pay-stub-table-list-tit">공제액</div>
+                          <div className="pay-stub-table-list-val">{formatAmount(weekDeduction)}</div>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
-                  <div className="pay-stub-item-head-val">78,133.60원</div>
-                </div>
-                <ul className="pay-stub-table-list">
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시간</div>
-                    <div className="pay-stub-table-list-val">8</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시급</div>
-                    <div className="pay-stub-table-list-val">10,100</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">지급액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">공제액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                </ul>
-              </div>
-              <div className="pay-stub-item day">
-                <div className="pay-stub-item-head">
-                  <div className="pay-stub-item-head-tit">2025.11.03 (월)</div>
-                  <div className="pay-stub-item-head-val">78,133.60원</div>
-                </div>
-                <ul className="pay-stub-table-list">
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시간</div>
-                    <div className="pay-stub-table-list-val">8</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시급</div>
-                    <div className="pay-stub-table-list-val">10,100</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">지급액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">공제액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                </ul>
-              </div>
-              <div className="pay-stub-item day">
-                <div className="pay-stub-item-head">
-                  <div className="pay-stub-item-head-tit">2025.11.03 (월)</div>
-                  <div className="pay-stub-item-head-val">78,133.60원</div>
-                </div>
-                <ul className="pay-stub-table-list">
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시간</div>
-                    <div className="pay-stub-table-list-val">8</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시급</div>
-                    <div className="pay-stub-table-list-val">10,100</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">지급액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">공제액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                </ul>
-              </div>
-              <div className="pay-stub-item week">
-                <div className="pay-stub-item-head">
-                  <div className="pay-stub-item-head-tit">
-                    <span>주간소계</span>
-                    <span>11.03~11.09</span>
-                  </div>
-                  <div className="pay-stub-item-head-val">78,133.60원</div>
-                </div>
-                <ul className="pay-stub-table-list">
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시간</div>
-                    <div className="pay-stub-table-list-val">8</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시급</div>
-                    <div className="pay-stub-table-list-val">10,100</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">지급액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">공제액</div>
-                    <div className="pay-stub-table-list-val">96,960</div>
-                  </li>
-                </ul>
-              </div>
+                )
+              })}
+
+              {/* 급여 합계 */}
               <div className="pay-stub-item last-week">
                 <div className="pay-stub-item-head">
                   <div className="pay-stub-item-head-tit">급여합계</div>
-                  <div className="pay-stub-item-head-val">78,133.60원</div>
+                  <div className="pay-stub-item-head-val">{formatAmount(totalPayment)}원</div>
                 </div>
                 <ul className="pay-stub-table-list">
                   <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시간</div>
-                    <div className="pay-stub-table-list-val">202</div>
+                    <div className="pay-stub-table-list-tit">총 시간</div>
+                    <div className="pay-stub-table-list-val">{totalHours}시간</div>
                   </li>
                   <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">시급</div>
-                    <div className="pay-stub-table-list-val">0</div>
+                    <div className="pay-stub-table-list-tit">지급총액</div>
+                    <div className="pay-stub-table-list-val">{formatAmount(totalPayment)}</div>
                   </li>
                   <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">지급액</div>
-                    <div className="pay-stub-table-list-val">2,036,160</div>
-                  </li>
-                  <li className="pay-stub-table-list-item">
-                    <div className="pay-stub-table-list-tit">공제액</div>
-                    <div className="pay-stub-table-list-val">67,193</div>
+                    <div className="pay-stub-table-list-tit">공제총액</div>
+                    <div className="pay-stub-table-list-val">{formatAmount(totalDeduction)}</div>
                   </li>
                 </ul>
+              </div>
+
+              {/* 실지급액 */}
+              <div className="pay-stub-item total">
+                <div className="pay-stub-item-head">
+                  <div className="pay-stub-item-head-tit">실지급액</div>
+                  <div className="pay-stub-item-head-val">
+                    {formatAmount(actualPayment)}원
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="sub-cont-wrap">
-          <div className="sub-cont-item-wrap">
-            <div className="sub-cont-tit-wrap">
-              <div className="sub-cont-tit">등록 및 수정 이력</div>
-            </div>
-            <div className="sub-item-bx">
-              <table className="info-table">
-                <colgroup>
-                  <col style={{ width: "95px" }} />
-                  <col />
-                </colgroup>
-                <tbody>
-                  <tr>
-                    <th>등록일</th>
-                    <td>
-                      <div className="data-list">
-                        <span>홍길동</span>
-                        <span>2025.08.06</span>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>최근수정일</th>
-                    <td>
-                      <div className="data-list">
-                        <span>홍길동</span>
-                        <span>2025.08.06</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
-  );
+  )
 }

@@ -11,6 +11,8 @@ import {
   useDownloadPayrollExcel,
 } from '@/hooks/queries/use-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
+import { uploadAttachment, getFileDownloadUrl, triggerFileDownload } from '@/lib/api/file'
+import { useFileInfo } from '@/hooks/queries/use-file-queries'
 import { getLatestPayroll } from '@/lib/api/payroll'
 import { getOvertimeStatements, getOvertimeStatement } from '@/lib/api/overtime'
 import { useHeadOfficeTree, useStoreOptions } from '@/hooks/queries/use-store-queries'
@@ -31,6 +33,10 @@ interface FullTimerPayDetailProps {
   isNew?: boolean
   initialData?: PayrollStatementDetail
 }
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.xlsx', '.xls', '.csv', '.docx', '.doc', '.hwp', '.txt']
+const ALLOWED_ACCEPT = ALLOWED_EXTENSIONS.join(',')
 
 const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
 
@@ -213,7 +219,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   const [paymentDate, setPaymentDate] = useState(initialData?.paymentDate ?? '')
   const [remarks, setRemarks] = useState(initialData?.remarks ?? '')
   const [attachmentFile, setAttachmentFile] = useState<File | undefined>()
-  const [useFileMode, setUseFileMode] = useState(false)
+  const [useFileMode, setUseFileMode] = useState(!!initialData?.attachmentFileId)
+  const { data: existingFileInfo = null } = useFileInfo(initialData?.attachmentFileId ?? undefined)
   const [paymentItems, setPaymentItems] = useState<PaymentItem[]>(initialData?.paymentItems ?? [])
   const [deductionItems, setDeductionItems] = useState<DeductionItem[]>(initialData?.deductionItems ?? [])
 
@@ -357,11 +364,26 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
         alert('급여명세서가 등록되었습니다.')
         router.push('/fulltimer')
       } else if (id) {
+        // 파일 모드가 켜져있고 새 파일이 선택된 경우 먼저 업로드
+        let fileId: number | null = initialData?.attachmentFileId ?? null
+        if (useFileMode && attachmentFile) {
+          const uploaded = await uploadAttachment(
+            attachmentFile,
+            'PAYROLL_ATTACHMENT',
+            'PAYROLL_STATEMENT',
+            id,
+          )
+          fileId = uploaded.id
+        } else if (!useFileMode) {
+          fileId = null
+        }
+
         const request: PayrollStatementUpdateRequest = {
           payrollYearMonth,
           settlementStartDate,
           settlementEndDate,
           paymentDate,
+          attachmentFileId: fileId,
           paymentItems,
           deductionItems,
           remarks: remarks || undefined,
@@ -376,12 +398,21 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
   }
 
   // 급여명세서 다운로드
+  const [isDownloadingFile, setIsDownloadingFile] = useState(false)
   const handleDownload = async () => {
     if (!id) return
     try {
-      await downloadExcelMutation.mutateAsync(id)
+      if (initialData?.attachmentFileId) {
+        setIsDownloadingFile(true)
+        const { downloadUrl, originalFileName } = await getFileDownloadUrl(initialData.attachmentFileId)
+        triggerFileDownload(downloadUrl, originalFileName)
+      } else {
+        await downloadExcelMutation.mutateAsync(id)
+      }
     } catch (error) {
       alert(getErrorMessage(error, '다운로드에 실패했습니다.'))
+    } finally {
+      setIsDownloadingFile(false)
     }
   }
 
@@ -421,10 +452,39 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
     }
   }
 
+  // 파일 첨부 시 지급/공제 데이터 백업 및 비우기
+  const [backupPaymentItems, setBackupPaymentItems] = useState<PaymentItem[]>([])
+  const [backupDeductionItems, setBackupDeductionItems] = useState<DeductionItem[]>([])
+
+  const clearPayItems = () => {
+    if (paymentItems.length > 0) setBackupPaymentItems(paymentItems)
+    if (deductionItems.length > 0) setBackupDeductionItems(deductionItems)
+    setPaymentItems([])
+    setDeductionItems([])
+  }
+
+  const restorePayItems = () => {
+    if (backupPaymentItems.length > 0) setPaymentItems(backupPaymentItems)
+    if (backupDeductionItems.length > 0) setDeductionItems(backupDeductionItems)
+  }
+
   // 파일 변경
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) setAttachmentFile(file)
+    if (!file) return
+    if (file.size > MAX_FILE_SIZE) {
+      openAlert({ message: '파일 크기는 10MB 이하만 등록할 수 있습니다.' })
+      e.target.value = ''
+      return
+    }
+    const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '')
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      openAlert({ message: `허용되지 않는 파일 형식입니다.\n(${ALLOWED_EXTENSIONS.join(', ')})` })
+      e.target.value = ''
+      return
+    }
+    setAttachmentFile(file)
+    clearPayItems()
   }
 
   return (
@@ -435,8 +495,8 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
             <button className="pay-head-btn" onClick={handleSendEmail}>
               <i className="email-icon"></i>이메일 전송
             </button>
-            <button className="pay-head-btn" onClick={handleDownload} disabled={downloadExcelMutation.isPending}>
-              <i className="download-icon"></i>{downloadExcelMutation.isPending ? '다운로드 중...' : '급여명세서 다운로드'}
+            <button className="pay-head-btn" onClick={handleDownload} disabled={downloadExcelMutation.isPending || isDownloadingFile}>
+              <i className="download-icon"></i>{downloadExcelMutation.isPending || isDownloadingFile ? '다운로드 중...' : '급여명세서 다운로드'}
             </button>
           </div>
         )}
@@ -636,7 +696,14 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                           type="checkbox"
                           id="toggle-btn"
                           checked={useFileMode}
-                          onChange={(e) => setUseFileMode(e.target.checked)}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            setUseFileMode(checked)
+                            if (!checked) {
+                              setAttachmentFile(undefined)
+                              restorePayItems()
+                            }
+                          }}
                         />
                         <label className="slider" htmlFor="toggle-btn"></label>
                       </div>
@@ -649,7 +716,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                           <input
                             type="file"
                             id="file-input"
-                            accept=".pdf,.png,.jpg,.jpeg"
+                            accept={ALLOWED_ACCEPT}
                             onChange={handleFileChange}
                           />
                           <label
@@ -661,7 +728,7 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                           </label>
                         </div>
                       </div>
-                      {attachmentFile && (
+                      {attachmentFile ? (
                         <div className="store-img-list">
                           <div className="store-img-bx">
                             <div className="store-img-tit">
@@ -675,16 +742,31 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                             <div className="store-img-btn-wrap">
                               <button
                                 className="img-delete"
-                                onClick={() => setAttachmentFile(undefined)}
+                                onClick={() => {
+                                  setAttachmentFile(undefined)
+                                  restorePayItems()
+                                }}
                               ></button>
                             </div>
                           </div>
                         </div>
-                      )}
+                      ) : !isNew && existingFileInfo ? (
+                        <div className="store-img-list">
+                          <div className="store-img-bx">
+                            <div className="store-img-tit">
+                              <span className="img-tit">
+                                {existingFileInfo.originalFileName.replace(/\.[^.]+$/, '')}
+                              </span>
+                              <span>
+                                .{existingFileInfo.originalFileName.split('.').pop()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                       <div className="filed-guide">
                         <span>
-                          등록가능한 파일 문서파일(PDF), 이미지파일 (PNG,JPG,
-                          JPEG)
+                          PDF, 이미지(PNG/JPG/GIF), 문서(Excel/Word/HWP/TXT) 파일을 등록할 수 있습니다.
                         </span>
                       </div>
                     </>
@@ -697,11 +779,12 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
             <div className="sub-cont-item-wrap">
               <div className="sub-cont-tit-wrap">
                 <div className="sub-cont-tit">
-                  급여정보<span className="imp"> *</span>
+                  급여정보{!(useFileMode && (attachmentFile || initialData?.attachmentFileId)) && <span className="imp"> *</span>}
                 </div>
                 <div className="auto-right ">
                   <button
                     className="flex g8"
+                    disabled={useFileMode && !!(attachmentFile || initialData?.attachmentFileId)}
                     onClick={() => {
                       if (isNew && !selectedEmployeeInfoId) {
                         alert('직원을 먼저 선택해주세요.')
@@ -710,57 +793,68 @@ export default function FullTimerPayDetail({ isNew = false, initialData }: FullT
                       setPaymentConditionSheet(true)
                     }}
                   >
-                    <span className="sub-btn-txt">상세내역 설정</span>
-                    <i className="sub-arr-btn"></i>
+                    <span className="sub-btn-txt" style={useFileMode && (attachmentFile || initialData?.attachmentFileId) ? { color: '#aaa' } : undefined}>상세내역 설정</span>
+                    {!(useFileMode && (attachmentFile || initialData?.attachmentFileId)) && <i className="sub-arr-btn"></i>}
                   </button>
                 </div>
               </div>
-              <div className="sub-item-bx">
-                <div className="pay-data-list">
-                  <div className="pay-data-item top">
-                    <div className="pay-data-item-tit">실지급액</div>
-                    <div className="pay-data-item-value">
-                      {formatAmount(actualPayment)}원
-                    </div>
-                  </div>
-                  <div className="pay-data-item">
-                    <div className="pay-data-item-tit">지급총액</div>
-                    <div className="pay-data-item-value">
-                      {formatAmount(totalPayment)}원
-                    </div>
-                  </div>
-                  <div className="pay-data-item">
-                    <div className="pay-data-item-tit">공제총액</div>
-                    <div className="pay-data-item-value">
-                      {formatAmount(totalDeduction)}원
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {paymentItems.length > 0 && (
+              {useFileMode && (attachmentFile || initialData?.attachmentFileId) && (
                 <div className="sub-item-bx">
-                  <dl className="pay-data-guide">
-                    <dt>산출식/산출방법 및 지급액</dt>
-                    {paymentItems
-                      .filter((item) => !['MEAL', 'VEHICLE', 'CHILD_CARE'].includes(item.itemCode))
-                      .filter((item) => item.itemCode === 'BASIC' || item.amount > 0)
-                      .map((item) => (
-                      <dd key={item.itemCode}>
-                        {item.itemCode === 'BASIC' && salaryInfo
-                          ? `기본급 : 월간 기본근무시간(${formatAmount(salaryInfo.monthlyTime)}시간) × 통상시급(${formatAmount(salaryInfo.timelySalary)}원) = ${formatAmount(item.amount)}원`
-                          : item.itemCode === 'OVERTIME' && salaryInfo
-                            ? `연장수당 : 연장 근무 시간(${salaryInfo.monthlyOvertimeAllowanceTime ?? 0}시간) × 통상시급 × 1.5 = ${formatAmount(item.amount)}원`
-                            : item.itemCode === 'NIGHT' && salaryInfo
-                              ? `야간수당 : 야간 근무 시간(${salaryInfo.monthlyNightAllowanceTime ?? 0}시간) × 통상시급 × 0.5 = ${formatAmount(item.amount)}원`
-                              : item.itemCode === 'MONTHLY_HOLIDAY' && salaryInfo
-                                ? `휴일근무수당 : 휴일 근무 시간(${salaryInfo.monthlyHolidayAllowanceTime ?? 0}시간) × 통상시급 × 0.5 = ${formatAmount(item.amount)}원`
-                                : item.itemCode === 'ADD' && salaryInfo
-                                  ? `추가근무수당 : 추가 근무 시간(${salaryInfo.monthlyAddHolidayAllowanceTime ?? 0}시간) × 통상시급 × 1.5 = ${formatAmount(item.amount)}원`
-                                  : `${item.remarks || item.itemCode}: ${formatAmount(item.amount)}원`}
-                      </dd>
-                    ))}
-                  </dl>
+                  <div className="filed-guide">
+                    <span>파일로 대체 시 급여정보를 수동으로 조정할 수 없습니다.</span>
+                  </div>
                 </div>
+              )}
+              {!(useFileMode && (attachmentFile || initialData?.attachmentFileId)) && (
+                <>
+                  <div className="sub-item-bx">
+                    <div className="pay-data-list">
+                      <div className="pay-data-item top">
+                        <div className="pay-data-item-tit">실지급액</div>
+                        <div className="pay-data-item-value">
+                          {formatAmount(actualPayment)}원
+                        </div>
+                      </div>
+                      <div className="pay-data-item">
+                        <div className="pay-data-item-tit">지급총액</div>
+                        <div className="pay-data-item-value">
+                          {formatAmount(totalPayment)}원
+                        </div>
+                      </div>
+                      <div className="pay-data-item">
+                        <div className="pay-data-item-tit">공제총액</div>
+                        <div className="pay-data-item-value">
+                          {formatAmount(totalDeduction)}원
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {paymentItems.length > 0 && (
+                    <div className="sub-item-bx">
+                      <dl className="pay-data-guide">
+                        <dt>산출식/산출방법 및 지급액</dt>
+                        {paymentItems
+                          .filter((item) => !['MEAL', 'VEHICLE', 'CHILD_CARE'].includes(item.itemCode))
+                          .filter((item) => item.itemCode === 'BASIC' || item.amount > 0)
+                          .map((item) => (
+                          <dd key={item.itemCode}>
+                            {item.itemCode === 'BASIC' && salaryInfo
+                              ? `기본급 : 월간 기본근무시간(${formatAmount(salaryInfo.monthlyTime)}시간) × 통상시급(${formatAmount(salaryInfo.timelySalary)}원) = ${formatAmount(item.amount)}원`
+                              : item.itemCode === 'OVERTIME' && salaryInfo
+                                ? `연장수당 : 연장 근무 시간(${salaryInfo.monthlyOvertimeAllowanceTime ?? 0}시간) × 통상시급 × 1.5 = ${formatAmount(item.amount)}원`
+                                : item.itemCode === 'NIGHT' && salaryInfo
+                                  ? `야간수당 : 야간 근무 시간(${salaryInfo.monthlyNightAllowanceTime ?? 0}시간) × 통상시급 × 0.5 = ${formatAmount(item.amount)}원`
+                                  : item.itemCode === 'MONTHLY_HOLIDAY' && salaryInfo
+                                    ? `휴일근무수당 : 휴일 근무 시간(${salaryInfo.monthlyHolidayAllowanceTime ?? 0}시간) × 통상시급 × 0.5 = ${formatAmount(item.amount)}원`
+                                    : item.itemCode === 'ADD' && salaryInfo
+                                      ? `추가근무수당 : 추가 근무 시간(${salaryInfo.monthlyAddHolidayAllowanceTime ?? 0}시간) × 통상시급 × 1.5 = ${formatAmount(item.amount)}원`
+                                      : `${item.remarks || item.itemCode}: ${formatAmount(item.amount)}원`}
+                          </dd>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

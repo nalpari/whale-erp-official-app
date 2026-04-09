@@ -7,7 +7,7 @@ interface PartTimerPayStubProps {
   isPreview?: boolean
 }
 
-const formatAmount = (amount: number) => amount.toLocaleString('ko-KR')
+const formatAmount = (amount: number) => (amount ?? 0).toLocaleString('ko-KR')
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -59,6 +59,17 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
   const weeklyAllowanceMap = new Map(
     (initialData.weeklyPaidHolidayAllowances ?? []).map((w) => [w.weekStartDate ?? String(w.workWeek), w]),
   )
+
+  const bonusItems = (initialData.bonusItems ?? [])
+    .filter((b) => b.isActive)
+    .map((b) => ({
+      name: b.bonusName,
+      amount: b.bonusAmount,
+      deduction: b.deductionAmount,
+      key: String(b.id ?? b.bonusName),
+    }))
+  const bonusTotal = bonusItems.reduce((sum, b) => sum + b.amount, 0)
+  const bonusDeductionTotal = bonusItems.reduce((sum, b) => sum + b.deduction, 0)
 
   const totalPayment = (initialData.paymentItems ?? []).reduce((sum, i) => sum + i.totalAmount, 0)
   const weeklyHolidayNet = (initialData.weeklyPaidHolidayAllowances ?? []).reduce((sum, w) => sum + (w.netAmount || 0), 0)
@@ -183,11 +194,33 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
                 )
               })}
 
+              {/* 상여금 */}
+              {bonusItems.length > 0 && (
+                <div className="pay-stub-item week">
+                  <div className="pay-stub-item-head">
+                    <div className="pay-stub-item-head-tit">상여금</div>
+                    <div className="pay-stub-item-head-val">{formatAmount(bonusTotal - bonusDeductionTotal)}원</div>
+                  </div>
+                  <ul className="pay-stub-table-list">
+                    {bonusItems.map((bonus, idx) => (
+                      <li className="pay-stub-table-list-item" key={bonus.key || idx}>
+                        <div className="pay-stub-table-list-tit">{bonus.name}</div>
+                        <div className="pay-stub-table-list-val">{formatAmount(bonus.amount)}원</div>
+                      </li>
+                    ))}
+                    <li className="pay-stub-table-list-item">
+                      <div className="pay-stub-table-list-tit">공제액</div>
+                      <div className="pay-stub-table-list-val">{formatAmount(bonusDeductionTotal)}</div>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
               {/* 급여 합계 */}
               <div className="pay-stub-item last-week">
                 <div className="pay-stub-item-head">
                   <div className="pay-stub-item-head-tit">급여소계</div>
-                  <div className="pay-stub-item-head-val">{formatAmount(totalPayment)}원</div>
+                  <div className="pay-stub-item-head-val">{formatAmount(totalPayment + bonusTotal)}원</div>
                 </div>
                 {insuranceDeduction > 0 && (
                   <div className="pay-stub-item-head">
@@ -207,6 +240,18 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
                     <div className="pay-stub-item-head-val">-{formatAmount(weeklyHolidayDeduction)}원</div>
                   </div>
                 )}
+                {bonusTotal > 0 && (
+                  <div className="pay-stub-item-head">
+                    <div className="pay-stub-item-head-tit">상여금 합계</div>
+                    <div className="pay-stub-item-head-val">+{formatAmount(bonusTotal)}원</div>
+                  </div>
+                )}
+                {bonusDeductionTotal > 0 && (
+                  <div className="pay-stub-item-head">
+                    <div className="pay-stub-item-head-tit">상여금 공제</div>
+                    <div className="pay-stub-item-head-val">-{formatAmount(bonusDeductionTotal)}원</div>
+                  </div>
+                )}
               </div>
 
               {/* 실지급액 */}
@@ -214,7 +259,7 @@ export default function PartTimerPayStub({ initialData, isPreview = false }: Par
                 <div className="pay-stub-item-head">
                   <div className="pay-stub-item-head-tit">실지급액</div>
                   <div className="pay-stub-item-head-val">
-                    {formatAmount(initialData.actualPaymentAmount)}원
+                    {formatAmount(initialData.actualPaymentAmount + bonusTotal - bonusDeductionTotal)}원
                   </div>
                 </div>
               </div>

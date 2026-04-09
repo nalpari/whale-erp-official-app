@@ -3,17 +3,18 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUpdatePartTimerPayroll } from '@/hooks/queries/use-parttime-payroll-queries'
 import { getErrorMessage } from '@/lib/api'
-import type { PartTimerPayrollDetail, PartTimerPaymentItem } from '@/types/parttime-payroll'
+import type { PartTimerPayrollDetail, PartTimerPaymentItem, PartTimerBonusDraft } from '@/types/parttime-payroll'
 import type { ContractWorkHour, ContractSalaryInfo, DayType } from '@/types/contract'
 
 interface PartTimerTimeEditProps {
   payrollId?: number
   initialData?: PartTimerPayrollDetail
   isPreview?: boolean
-  onPreviewSave?: (items: PartTimerPaymentItem[]) => void
+  onPreviewSave?: (items: PartTimerPaymentItem[], bonuses: PartTimerBonusDraft[]) => void
   contractWage?: number
   contractWorkHours?: ContractWorkHour[]
   contractSalaryInfo?: ContractSalaryInfo
+  initialBonusItems?: PartTimerBonusDraft[]
 }
 
 const DEDUCTION_RATE = 0.033
@@ -76,7 +77,7 @@ const generateDates = (startDate: string, endDate: string): string[] => {
   return dates
 }
 
-export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = false, onPreviewSave, contractWage, contractWorkHours, contractSalaryInfo }: PartTimerTimeEditProps) {
+export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = false, onPreviewSave, contractWage, contractWorkHours, contractSalaryInfo, initialBonusItems }: PartTimerTimeEditProps) {
   const router = useRouter()
   const updateMutation = useUpdatePartTimerPayroll()
 
@@ -108,6 +109,36 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
       }
     })
   })
+
+  // 상여금 항목 초기화 (이전 설정이 있으면 복원, 없으면 계약 기반으로 생성)
+  const [bonusItems, setBonusItems] = useState<PartTimerBonusDraft[]>(() => {
+    if (initialBonusItems && initialBonusItems.length > 0) return initialBonusItems
+    return (contractSalaryInfo?.bonuses ?? [])
+      .filter((b) => (b.bonusType ?? b.bonusName) && (b.amount ?? b.bonusAmount ?? 0) > 0)
+      .map((b) => {
+        const amount = b.amount ?? b.bonusAmount ?? 0
+        return {
+          bonusCode: b.bonusCode ?? String(b.id ?? ''),
+          bonusType: b.bonusType ?? b.bonusName ?? '',
+          amount,
+          deductionAmount: b.deductionAmount ?? Math.round(amount * DEDUCTION_RATE),
+          enabled: false,
+          memo: b.memo,
+        }
+      })
+  })
+
+  const updateBonusItem = (index: number, updates: Partial<PartTimerBonusDraft>) => {
+    setBonusItems((prev) => {
+      const updated = [...prev]
+      const item = { ...updated[index], ...updates }
+      if ('amount' in updates) {
+        item.deductionAmount = Math.round(item.amount * DEDUCTION_RATE)
+      }
+      updated[index] = item
+      return updated
+    })
+  }
 
   const updateItem = (index: number, updates: Partial<PartTimerPaymentItem>) => {
     setItems((prev) => {
@@ -188,8 +219,9 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
         console.warn('isPreview=true이지만 onPreviewSave가 전달되지 않았습니다.')
         return
       }
-      onPreviewSave(paymentItems)
-      router.back()
+      const enabledBonuses = bonusItems.filter((b) => b.enabled)
+      onPreviewSave(paymentItems, enabledBonuses)
+      router.push(payrollId ? `/parttimer/${payrollId}/stub` : '/parttimer/new/stub')
       return
     }
 
@@ -314,6 +346,57 @@ export default function PartTimerTimeEdit({ payrollId, initialData, isPreview = 
               </div>
             </div>
           ))}
+          {bonusItems.length > 0 && (
+            <div className="sub-cont-wrap">
+              <div className="sub-cont-item-wrap">
+                <div className="sub-cont-tit-wrap">
+                  <div className="sub-cont-tit s">상여금</div>
+                </div>
+                <div className="sub-item-bx">
+                  {bonusItems.map((bonus, index) => (
+                    <div key={bonus.bonusCode || index} style={{ marginBottom: index < bonusItems.length - 1 ? '12px' : 0 }}>
+                      <div className="flex g8" style={{ alignItems: 'center' }}>
+                        <div className="work-time-data-item-tit">{bonus.bonusType}</div>
+                        <div className="toggle-btn">
+                          <input
+                            type="checkbox"
+                            id={`bonus-toggle-${index}`}
+                            checked={bonus.enabled}
+                            onChange={(e) => updateBonusItem(index, { enabled: e.target.checked })}
+                          />
+                          <label className="slider" htmlFor={`bonus-toggle-${index}`}></label>
+                        </div>
+                      </div>
+                      {bonus.enabled && (
+                        <div className="flex g8" style={{ marginTop: '8px' }}>
+                          <div className="block">
+                            <div className="work-time-data-item-tit">지급액</div>
+                            <input
+                              type="text"
+                              className="input-frame al-r"
+                              inputMode="numeric"
+                              value={bonus.amount ? formatAmount(bonus.amount) : ''}
+                              onChange={(e) => updateBonusItem(index, { amount: parseAmount(e.target.value) })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="block">
+                            <div className="work-time-data-item-tit">공제액</div>
+                            <input
+                              type="text"
+                              className="input-frame al-r"
+                              readOnly
+                              value={formatAmount(bonus.deductionAmount)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="content-pagination">

@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePartTimerPayrollDetail } from '@/hooks/queries/use-parttime-payroll-queries'
+import { useHeaderStore } from '@/store/useHeaderStore'
 import PartTimerPayDetail from '@/components/parttimer/PartTimerPayDetail'
 
 export default function PartTimerPayDetailPage() {
@@ -11,11 +12,16 @@ export default function PartTimerPayDetailPage() {
   const id = isNaN(rawId) || rawId <= 0 ? undefined : rawId
   const { data: detail, isLoading } = usePartTimerPayrollDetail(id)
 
+  const setOnBack = useHeaderStore((s) => s.setOnBack)
+
   useEffect(() => {
     if (!id) {
       router.replace('/parttimer')
+      return
     }
-  }, [id, router])
+    setOnBack(() => router.push('/parttimer'))
+    return () => setOnBack(null)
+  }, [id, router, setOnBack])
 
   if (!id) return null
 

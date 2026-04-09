@@ -1,0 +1,51 @@
+'use client'
+import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import OverTimeWorkEdit from '@/components/overtime/OverTimeWorkEdit'
+import { safeSessionGet, safeSessionSet, updateOvertimePreview, OVERTIME_SESSION_KEYS } from '@/lib/overtime-utils'
+import type { OvertimeAllowanceItemDto } from '@/types/overtime'
+
+const PREVIEW_KEY = OVERTIME_SESSION_KEYS.PREVIEW
+const DRAFT_KEY = OVERTIME_SESSION_KEYS.FORM_DRAFT
+
+export default function OverTimeNewTimePage() {
+  const router = useRouter()
+
+  const [draftContractWage] = useState<number>(() => {
+    const draft = safeSessionGet<{ contractWage?: number }>(DRAFT_KEY)
+    return draft?.contractWage ?? 0
+  })
+
+  const [previewData] = useState<OvertimeAllowanceDetail | null>(() => {
+    return safeSessionGet<OvertimeAllowanceDetail>(PREVIEW_KEY)
+  })
+
+  useEffect(() => {
+    if (!previewData) {
+      router.replace('/overtime/new')
+    }
+  }, [previewData, router])
+
+  const handlePreviewSave = useCallback((items: OvertimeAllowanceItemDto[]) => {
+    // stubPreview 업데이트
+    updateOvertimePreview(PREVIEW_KEY, items)
+
+    // formDraft 업데이트
+    const draft = safeSessionGet<{ details?: OvertimeAllowanceItemDto[] }>(DRAFT_KEY)
+    if (draft) {
+      draft.details = items
+      safeSessionSet(DRAFT_KEY, draft)
+    }
+  }, [])
+
+  if (!previewData) return null
+
+  return (
+    <OverTimeWorkEdit
+      initialData={previewData}
+      isPreview
+      onPreviewSave={handlePreviewSave}
+      contractWage={draftContractWage}
+    />
+  )
+}

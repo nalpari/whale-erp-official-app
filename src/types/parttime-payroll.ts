@@ -13,6 +13,26 @@ export interface PartTimerPaymentItem {
   remarks?: string
 }
 
+// 파트타이머 상여금 — API 응답 (서버에서 내려오는 형태)
+export interface PartTimerBonusResponse {
+  id?: number
+  bonusName: string
+  bonusAmount: number
+  deductionAmount: number
+  isActive: boolean
+  itemOrder?: number
+}
+
+// 파트타이머 상여금 — 편집 중간 상태 (session storage / TimeEdit)
+export interface PartTimerBonusDraft {
+  bonusCode: string
+  bonusType: string
+  amount: number
+  deductionAmount: number
+  enabled: boolean
+  memo?: string
+}
+
 // 파트타이머 공제항목
 export interface PartTimerDeductionItem {
   id?: number
@@ -42,10 +62,13 @@ export interface WeeklyPaidHolidayAllowance {
 export interface PartTimerPayrollDetail {
   id: number
   memberId: number
+  employeeInfoId?: number
   memberName: string
   workStatus?: string
   employeeClassification?: string
   employeeClassificationName?: string
+  headOfficeId?: number
+  franchiseId?: number
   headOfficeName?: string
   franchiseName?: string
   storeName?: string
@@ -61,6 +84,7 @@ export interface PartTimerPayrollDetail {
   isEmailSend: boolean
   paymentItems: PartTimerPaymentItem[]
   deductionItems: PartTimerDeductionItem[]
+  bonusItems?: PartTimerBonusResponse[]
   weeklyPaidHolidayAllowances: WeeklyPaidHolidayAllowance[]
   createdAt?: string
   updatedAt?: string
@@ -103,6 +127,15 @@ export interface PartTimerPayrollSearchParams {
   size: number
 }
 
+// 상여금 저장 요청 항목
+export interface PartTimerBonusItemRequest {
+  bonusName?: string
+  bonusAmount?: number
+  deductionAmount?: number
+  isActive?: boolean
+  itemOrder?: number
+}
+
 // 등록 요청
 export interface PartTimerPayrollCreateRequest {
   employeeInfoId: number
@@ -112,6 +145,7 @@ export interface PartTimerPayrollCreateRequest {
   paymentDate: string
   paymentItems: Omit<PartTimerPaymentItem, 'id'>[]
   deductionItems?: Omit<PartTimerDeductionItem, 'id' | 'displayName'>[]
+  bonusItems?: PartTimerBonusItemRequest[]
   remarks?: string
 }
 
@@ -123,8 +157,29 @@ export interface PartTimerPayrollUpdateRequest {
   paymentDate: string
   paymentItems: PartTimerPaymentItem[]
   deductionItems?: PartTimerDeductionItem[]
+  bonusItems?: PartTimerBonusItemRequest[]
   remarks?: string
 }
+
+// ── 상여금 정규화 함수 ──
+
+/** API 응답 → Draft 변환 */
+export const normalizeBonusResponse = (b: PartTimerBonusResponse): PartTimerBonusDraft => ({
+  bonusCode: String(b.id ?? ''),
+  bonusType: b.bonusName,
+  amount: b.bonusAmount,
+  deductionAmount: b.deductionAmount,
+  enabled: b.isActive,
+})
+
+/** Draft → API 요청 변환 */
+export const bonusDraftToRequest = (b: PartTimerBonusDraft, order: number): PartTimerBonusItemRequest => ({
+  bonusName: b.bonusType,
+  bonusAmount: b.amount,
+  deductionAmount: b.deductionAmount,
+  isActive: b.enabled,
+  itemOrder: order,
+})
 
 // 일별 근무 기록 (daily-work-hours API 응답)
 export interface DailyWorkRecord {
