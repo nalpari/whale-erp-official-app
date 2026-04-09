@@ -36,6 +36,15 @@ export interface StoreFormValidationState {
   ceoPhone: string
 }
 
+export type StoreFocusableField =
+  | 'officeId'
+  | 'franchiseId'
+  | 'storeName'
+  | 'ceoName'
+  | 'businessNumber'
+  | 'storeAddress'
+  | 'ceoPhone'
+
 /** 오늘 날짜를 YYYY-MM-DD 로컬 타임존 문자열로 반환 */
 export function getToday(): string {
   const d = new Date()
@@ -122,6 +131,56 @@ export function getFirstInvalidStoreStep(
     if (!validateStoreStep(step, state)) return step
   }
   return null
+}
+
+/** 점포 폼에서 가장 먼저 포커스해야 할 필드 반환 */
+export function getFirstInvalidStoreField(state: StoreFormValidationState): StoreFocusableField | null {
+  if (!state.officeId) return 'officeId'
+  if (state.storeOwner === 'FRANCHISE' && !state.franchiseId) return 'franchiseId'
+  if (!state.storeName) return 'storeName'
+  if (!state.ceoName) return 'ceoName'
+  if (!state.businessNumber || !isValidBusinessNumber(state.businessNumber)) return 'businessNumber'
+  if (!state.storeAddress) return 'storeAddress'
+  if (!state.ceoPhone || !isValidPhoneNumber(state.ceoPhone)) return 'ceoPhone'
+  return null
+}
+
+export interface OperatingHourValidationResult {
+  hasOperatingTimeRangeError: boolean
+  hasBreakTimeRangeError: boolean
+  hasBreakOutsideOperatingError: boolean
+  isValid: boolean
+}
+
+function isEndBeforeStart(start?: string | null, end?: string | null): boolean {
+  if (!start || !end) return false
+  return end <= start
+}
+
+/** 영업시간/휴게시간 검증 */
+export function getOperatingHourValidation(hour: OperatingHourRequest): OperatingHourValidationResult {
+  const hasOperatingTimeRangeError = isEndBeforeStart(hour.openTime, hour.closeTime)
+  const hasBreakTimeRangeError = isEndBeforeStart(hour.breakStartTime, hour.breakEndTime)
+
+  const hasBreak = !!(hour.breakStartTime && hour.breakEndTime)
+  const hasOperatingTime = !!(hour.openTime && hour.closeTime)
+  const hasBreakOutsideOperatingError = hasBreak && (
+    !hasOperatingTime
+    || hour.breakStartTime < hour.openTime
+    || hour.breakEndTime > hour.closeTime
+  )
+
+  return {
+    hasOperatingTimeRangeError,
+    hasBreakTimeRangeError,
+    hasBreakOutsideOperatingError,
+    isValid: !hasOperatingTimeRangeError && !hasBreakTimeRangeError && !hasBreakOutsideOperatingError,
+  }
+}
+
+/** 점포 영업시간 전체 유효성 검증 */
+export function validateStoreOperatingHours(operating: OperatingHourRequest[]): boolean {
+  return operating.every((hour) => getOperatingHourValidation(hour).isValid)
 }
 
 // ── 공통 유틸 함수 ──

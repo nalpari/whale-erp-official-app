@@ -2,16 +2,11 @@
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import type { OperatingHourRequest } from "@/types/store";
-import { WEEKDAY_ORDER, WEEKDAY_LABEL } from "@/lib/store-utils";
+import { getOperatingHourValidation, WEEKDAY_ORDER, WEEKDAY_LABEL } from "@/lib/store-utils";
 
 type TimeField = 'openTime' | 'closeTime' | 'breakStartTime' | 'breakEndTime'
 
 const WEEKDAYS = WEEKDAY_ORDER.map((key) => ({ key, label: WEEKDAY_LABEL[key] }));
-
-function isEndBeforeStart(start?: string | null, end?: string | null): boolean {
-  if (!start || !end) return false;
-  return end <= start;
-}
 
 function TimeError({ show, message }: { show: boolean; message: string }) {
   if (!show) return null;
@@ -51,7 +46,7 @@ function TimeInput({
   );
 }
 
-export default function StoreOperatingHourForm() {
+export default function StoreOperatingHourForm({ submitted = false }: { submitted?: boolean }) {
   const operating = useStoreFormStore((s) => s.operating);
   const setOperating = useStoreFormStore((s) => s.setOperating);
 
@@ -84,6 +79,9 @@ export default function StoreOperatingHourForm() {
   const saturday = findHour(operating, "SATURDAY");
   const sunday = findHour(operating, "SUNDAY");
   const selectedWeekDays = weekday.selectWeekDayList ?? [];
+  const weekdayValidation = getOperatingHourValidation(weekday);
+  const saturdayValidation = getOperatingHourValidation(saturday);
+  const sundayValidation = getOperatingHourValidation(sunday);
 
   return (
     <div className="sub-cont-wrap">
@@ -112,7 +110,7 @@ export default function StoreOperatingHourForm() {
                 />
               </div>
             </div>
-            <TimeError show={isEndBeforeStart(weekday.openTime, weekday.closeTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && weekdayValidation.hasOperatingTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
@@ -132,7 +130,8 @@ export default function StoreOperatingHourForm() {
                 />
               </div>
             </div>
-            <TimeError show={isEndBeforeStart(weekday.breakStartTime, weekday.breakEndTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && weekdayValidation.hasBreakTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && weekdayValidation.hasBreakOutsideOperatingError} message="휴게시간은 영업시간 내에서만 설정할 수 있습니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">요일선택</div>
@@ -170,7 +169,7 @@ export default function StoreOperatingHourForm() {
                 />
               </div>
             </div>
-            <TimeError show={isEndBeforeStart(saturday.openTime, saturday.closeTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && saturdayValidation.hasOperatingTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
@@ -190,7 +189,8 @@ export default function StoreOperatingHourForm() {
                 />
               </div>
             </div>
-            <TimeError show={isEndBeforeStart(saturday.breakStartTime, saturday.breakEndTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && saturdayValidation.hasBreakTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && saturdayValidation.hasBreakOutsideOperatingError} message="휴게시간은 영업시간 내에서만 설정할 수 있습니다." />
           </div>
         </div>
 
@@ -214,7 +214,7 @@ export default function StoreOperatingHourForm() {
                 />
               </div>
             </div>
-            <TimeError show={isEndBeforeStart(sunday.openTime, sunday.closeTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && sundayValidation.hasOperatingTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
@@ -234,7 +234,8 @@ export default function StoreOperatingHourForm() {
                 />
               </div>
             </div>
-            <TimeError show={isEndBeforeStart(sunday.breakStartTime, sunday.breakEndTime)} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && sundayValidation.hasBreakTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && sundayValidation.hasBreakOutsideOperatingError} message="휴게시간은 영업시간 내에서만 설정할 수 있습니다." />
           </div>
         </div>
       </div>

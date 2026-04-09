@@ -6,7 +6,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
-import { formatStoreErrorDetails, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreStep } from "@/lib/store-utils";
+import { formatStoreErrorDetails, getFirstInvalidStoreField, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, type StoreFocusableField, validateStoreStep } from "@/lib/store-utils";
 import StoreBasicInfoForm from "../storeform/StoreBasicInfoForm";
 import StoreContactForm from "../storeform/StoreContactForm";
 
@@ -14,6 +14,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [focusField, setFocusField] = useState<StoreFocusableField | null>(null);
   const openAlert = usePopupControler((state) => state.openAlert);
   // TODO: 공통 로딩 화면으로 교체 (수정 pending)
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
@@ -96,13 +97,15 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const handleNext = () => {
     if (!validateStep(step)) {
       setSubmitted(true);
+      setFocusField(getFirstInvalidStoreField(useStoreFormStore.getState()));
       return;
     }
     setSubmitted(false);
+    setFocusField(null);
     window.scrollTo({ top: 0 });
     setStep(step + 1);
   };
-  const handlePrev = () => { setSubmitted(false); window.scrollTo({ top: 0 }); setStep(step - 1); };
+  const handlePrev = () => { setSubmitted(false); setFocusField(null); window.scrollTo({ top: 0 }); setStep(step - 1); };
 
   const handleSave = async () => {
     if (isUpdating) return;
@@ -111,8 +114,8 @@ export default function StoreEditInfo({ id }: { id: number }) {
     if (invalidStep !== null) {
       setSubmitted(true);
       setStep(invalidStep);
+      setFocusField(getFirstInvalidStoreField(form));
       window.scrollTo({ top: 0 });
-      openAlert({ message: "필수 입력 항목과 입력값 형식을 확인해주세요." });
       return;
     }
 
@@ -156,6 +159,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
         if (targetStep !== null) {
           setSubmitted(true);
           setStep(targetStep);
+          setFocusField(null);
           window.scrollTo({ top: 0 });
         }
         openAlert({ message: formatStoreErrorDetails(details) });
@@ -170,8 +174,8 @@ export default function StoreEditInfo({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreBasicInfoForm submitted={submitted} />}
-          {step === 2 && <StoreContactForm submitted={submitted} />}
+          {step === 1 && <StoreBasicInfoForm submitted={submitted} focusField={focusField} />}
+          {step === 2 && <StoreContactForm submitted={submitted} focusField={focusField} />}
         </div>
       </div>
       <div className="content-pagination">

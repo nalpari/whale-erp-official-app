@@ -6,7 +6,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
-import { buildOperatingHoursRequest, formatStoreErrorDetails, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreStep } from "@/lib/store-utils";
+import { buildOperatingHoursRequest, formatStoreErrorDetails, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreOperatingHours, validateStoreStep } from "@/lib/store-utils";
 import StoreBasicInfoForm from "./storeform/StoreBasicInfoForm";
 import StoreContactForm from "./storeform/StoreContactForm";
 import StorePhotoForm from "./storeform/StorePhotoForm";
@@ -89,6 +89,12 @@ export default function StoreCreate() {
       openAlert({ message: "필수 입력 항목과 입력값 형식을 확인해주세요." });
       return;
     }
+    if (!validateStoreOperatingHours(form.operating)) {
+      setSubmitted(true);
+      setStep(4);
+      window.scrollTo({ top: 0 });
+      return;
+    }
 
     try {
       const organizationId = getOrganizationId(form.storeOwner, form.officeId, form.franchiseId);
@@ -141,7 +147,7 @@ export default function StoreCreate() {
           {step === 1 && <StoreBasicInfoForm submitted={submitted} />}
           {step === 2 && <StoreContactForm submitted={submitted} />}
           {step === 3 && <StorePhotoForm />}
-          {step === 4 && <StoreOperatingHourForm />}
+          {step === 4 && <StoreOperatingHourForm submitted={submitted} />}
         </div>
       </div>
       <div className="content-pagination">
