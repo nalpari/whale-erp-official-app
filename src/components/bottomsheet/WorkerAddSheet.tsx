@@ -1,23 +1,83 @@
-"use client";
-import { useBottomSheetControler } from "@/store/useBottomSheetControler";
-import { Sheet } from "react-modal-sheet";
+'use client'
+import { useState } from 'react'
+import { useBottomSheetControler } from '@/store/useBottomSheetControler'
+import { Sheet } from 'react-modal-sheet'
+import WorkScheduleFields from '@/components/bottomsheet/WorkScheduleFields'
+import type { WorkerEditItem } from '@/types/schedule'
 
 export default function WorkerAddSheet() {
-  const workerAddSheet = useBottomSheetControler(
-    (state) => state.workerAddSheet
-  );
-  const setWorkerAddSheet = useBottomSheetControler(
-    (state) => state.setWorkerAddSheet
-  );
+  const workerAddSheet = useBottomSheetControler((state) => state.workerAddSheet)
+  const closeWorkerAddSheet = useBottomSheetControler((state) => state.closeWorkerAddSheet)
+  const onWorkerAdd = useBottomSheetControler((state) => state.onWorkerAdd)
+  const employees = useBottomSheetControler((state) => state.workerSheetEmployees)
+  const openTimePicker = useBottomSheetControler((state) => state.openTimePicker)
+  const defaultDates = useBottomSheetControler((state) => state.workerAddDefaultDates)
+
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [workStart, setWorkStart] = useState('')
+  const [workEnd, setWorkEnd] = useState('')
+  const [breakStart, setBreakStart] = useState('')
+  const [breakEnd, setBreakEnd] = useState('')
 
   const handleClose = () => {
-    setWorkerAddSheet(false);
-  };
+    closeWorkerAddSheet()
+  }
+
+  const handleOpenStart = () => {
+    setSelectedEmployeeId(null)
+    setFromDate(defaultDates.from)
+    setToDate(defaultDates.to)
+    setWorkStart('')
+    setWorkEnd('')
+    setBreakStart('')
+    setBreakEnd('')
+  }
+
+  const handleAdd = () => {
+    const emp = employees.find((e) => e.id === selectedEmployeeId)
+    if (!emp || emp.memberId === null || !fromDate || !toDate || !workStart || !workEnd) {
+      console.warn('[WorkerAddSheet] 유효성 검사 실패 — 필수 값 누락')
+      return
+    }
+
+    const hasBreak = !!breakStart && !!breakEnd
+
+    const newWorker: WorkerEditItem = {
+      shiftId: null,
+      workerId: emp.memberId,
+      workerName: emp.name,
+      contractType: emp.contractType,
+      hasWork: true,
+      workStartTime: workStart,
+      workEndTime: workEnd,
+      hasBreak,
+      breakStartTime: hasBreak ? breakStart : null,
+      breakEndTime: hasBreak ? breakEnd : null,
+      isDeleted: false,
+      isNew: true,
+      iconType: 0,
+    }
+    try {
+      onWorkerAdd?.(newWorker, fromDate, toDate)
+    } catch (err) {
+      console.error('[WorkerAddSheet] 근무자 추가 콜백 실패:', err)
+    } finally {
+      handleClose()
+    }
+  }
+
+  const selectedEmployee = employees.find((employee) => employee.id === selectedEmployeeId)
+  const isDateMissing = !fromDate || !toDate
+  const hasPartialBreak = (!!breakStart) !== (!!breakEnd)
+  const isValid = selectedEmployee != null && selectedEmployee.memberId !== null && !isDateMissing && workStart && workEnd && !hasPartialBreak
 
   return (
     <Sheet
       isOpen={workerAddSheet}
       onClose={handleClose}
+      onOpenStart={handleOpenStart}
       detent="content"
       disableScrollLocking={true}
     >
@@ -28,91 +88,55 @@ export default function WorkerAddSheet() {
             <div className="bottom-sheet-header">
               <h3>근무자 추가</h3>
             </div>
-            <div className=" bottom-sheet-body">
+            <div className="bottom-sheet-body">
               <div className="sheet-data-wrap">
                 <div className="sheet-data-filed">
-                  <div className="filed-tit">직원명</div>
+                  <div className="filed-tit">직원명<span className="imp">*</span></div>
                   <div className="block">
-                    <select name="" id="" className="select-form">
-                      <option value="1">김직원</option>
+                    <select
+                      className="select-form"
+                      value={selectedEmployeeId ?? ''}
+                      onChange={(e) => setSelectedEmployeeId(e.target.value ? Number(e.target.value) : null)}
+                    >
+                      <option value="">선택</option>
+                      {employees.filter((emp) => emp.memberId !== null).map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.name}{emp.employeeNumber ? ` (${emp.employeeNumber})` : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
-                <div className="sheet-data-filed">
-                  <div className="filed-tit">
-                    기간 선택 <span className="imp">*</span>
-                  </div>
-                  <div className="flex g8">
-                    <div className="date-picker-custom">
-                      <input
-                        type="text"
-                        className="date-picker-input"
-                        defaultValue="2025.10.28"
-                      />
-                    </div>
-                    <span>~</span>
-                    <div className="date-picker-custom">
-                      <input
-                        type="text"
-                        className="date-picker-input"
-                        defaultValue="2025.10.28"
-                      />
-                    </div>
-                  </div>
-                  <div className="warning mt5">
-                    기간 선택은 필수 입력 사항입니다.
-                  </div>
-                </div>
-                <div className="sheet-data-filed">
-                  <div className="filed-tit">
-                    근무시간<span className="imp">*</span>
-                  </div>
-                  <div className="flex g8">
-                    <div className="block">
-                      <select name="" id="" className="select-form">
-                        <option value="1">09:00</option>
-                      </select>
-                    </div>
-                    <div className="block">
-                      <select name="" id="" className="select-form">
-                        <option value="1">19:00</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="warning mt5">
-                    근무시간은 필수 입력 사항입니다.
-                  </div>
-                </div>
-                <div className="sheet-data-filed">
-                  <div className="filed-tit">
-                    휴계시간<span className="imp">*</span>
-                  </div>
-                  <div className="flex g8">
-                    <div className="block">
-                      <select name="" id="" className="select-form">
-                        <option value="1">09:00</option>
-                      </select>
-                    </div>
-                    <div className="block">
-                      <select name="" id="" className="select-form">
-                        <option value="1">19:00</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="warning mt5">
-                    휴계시간은 필수 입력 사항입니다.
-                  </div>
-                </div>
+                <WorkScheduleFields
+                  fromDate={fromDate}
+                  toDate={toDate}
+                  workStart={workStart}
+                  workEnd={workEnd}
+                  breakStart={breakStart}
+                  breakEnd={breakEnd}
+                  defaultDates={defaultDates}
+                  onFromDateChange={setFromDate}
+                  onToDateChange={setToDate}
+                  openTimePicker={openTimePicker}
+                  onWorkStartChange={setWorkStart}
+                  onWorkEndChange={setWorkEnd}
+                  onBreakStartChange={setBreakStart}
+                  onBreakEndChange={setBreakEnd}
+                />
               </div>
             </div>
             <div className="bottom-sheet-footer">
-              <button className="btn-form sky">취소</button>
-              <button className="btn-form blue">추가</button>
+              <button className="btn-form sky" onClick={handleClose}>
+                취소
+              </button>
+              <button className="btn-form blue" onClick={handleAdd} disabled={!isValid}>
+                추가
+              </button>
             </div>
           </div>
         </Sheet.Content>
       </Sheet.Container>
       <Sheet.Backdrop onTap={handleClose} />
     </Sheet>
-  );
+  )
 }

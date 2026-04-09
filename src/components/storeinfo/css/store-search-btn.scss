@@ -1,3 +1,17 @@
-.search-btn.act.filtered {
-  background-color: #ff8c00;
+// 검색 버튼 공통 스타일 오버라이드
+// 기본: 회색 + 아이콘 표시, filtered: 주황색
+
+.search-bx .search-btn {
+  .icon-search {
+    display: block;
+    width: 10px;
+    height: 10px;
+    background: url('/assets/images/contents/search_dot.svg') no-repeat center center;
+    background-size: cover;
+    transform: translateY(-1px);
+  }
+
+  &.filtered {
+    background-color: #ff8c00;
+  }
 }

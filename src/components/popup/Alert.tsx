@@ -18,7 +18,11 @@ export default function Alert() {
     setIsPending(true);
     try {
       await alertOptions?.onConfirm?.();
-      closeAlert();
+      // onConfirm 콜백 안에서 새 alert을 열었으면(= alertOptions가 교체됨) closeAlert 생략
+      const current = usePopupControler.getState().alertOptions;
+      if (current === alertOptions) {
+        closeAlert();
+      }
     } catch (err) {
       console.error('[Alert] onConfirm 콜백 실행 실패:', err);
       // 에러 시 팝업을 닫지 않음 — 호출측에서 에러 Alert를 다시 띄울 수 있도록 함

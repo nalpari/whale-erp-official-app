@@ -1,6 +1,8 @@
 export interface StoreOption {
   id: number
   storeName: string
+  franchiseId: number | null
+  headOfficeId: number | null
 }
 
 export interface StoreListItem {

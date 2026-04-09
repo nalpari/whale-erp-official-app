@@ -16,11 +16,13 @@ interface ContractOptionSheetProps {
 }
 
 export default function ContractOptionSheet({
-  year: initialYear = new Date().getFullYear(),
+  year: initialYear,
   timelyAmount: initialTimelyAmount = 0,
   weeklyHours: initialWeeklyHours = 40,
   onChange,
 }: ContractOptionSheetProps) {
+  const defaultYear = new Date().getFullYear();
+  const effectiveInitialYear = initialYear ?? defaultYear;
   const contractOptionSheet = useBottomSheetControler(
     (state) => state.contractOptionSheet
   );
@@ -28,23 +30,31 @@ export default function ContractOptionSheet({
     (state) => state.setContractOptionSheet
   );
 
-  const [year, setYear] = useState(initialYear);
+  const [year, setYear] = useState(effectiveInitialYear);
   const [timelyAmount, setTimelyAmount] = useState(initialTimelyAmount);
   const [weeklyHours, setWeeklyHours] = useState(initialWeeklyHours);
 
   const { data: minimumWageData, isLoading: isMinWageLoading } = useMinimumWage(year);
+  const minimumWage = minimumWageData?.minimumWage ?? 0;
   const minimumWageLabel = isMinWageLoading
     ? '...'
-    : minimumWageData?.minimumWage
-      ? `${minimumWageData.minimumWage.toLocaleString('ko-KR')}원`
+    : minimumWage
+      ? `${minimumWage.toLocaleString('ko-KR')}원`
       : '-';
+
+  // 바텀시트 열릴 때 prop 동기화 (최저시급 fallback은 부모에서 activeTimelyAmount로 처리)
+  const syncFromProps = () => {
+    setYear(effectiveInitialYear);
+    setWeeklyHours(initialWeeklyHours);
+    setTimelyAmount(initialTimelyAmount);
+  };
 
   const handleClose = () => {
     setContractOptionSheet(false);
   };
 
   const handleReset = () => {
-    setYear(new Date().getFullYear());
+    setYear(defaultYear);
     setTimelyAmount(0);
     setWeeklyHours(40);
   };
@@ -58,6 +68,7 @@ export default function ContractOptionSheet({
     <Sheet
       isOpen={contractOptionSheet}
       onClose={handleClose}
+      onOpenEnd={syncFromProps}
       detent="content"
       disableScrollLocking={true}
     >
@@ -81,7 +92,7 @@ export default function ContractOptionSheet({
                       onChange={(e) => setYear(Number(e.target.value))}
                     >
                       {Array.from({ length: 10 }, (_, i) => {
-                        const y = new Date().getFullYear() - 2 + i;
+                        const y = defaultYear - 2 + i;
                         return (
                           <option key={y} value={y}>
                             {y}년
@@ -99,8 +110,9 @@ export default function ContractOptionSheet({
                     <input
                       type="number"
                       className="input-frame al-r"
+                      min="0"
                       value={timelyAmount}
-                      onChange={(e) => setTimelyAmount(Number(e.target.value))}
+                      onChange={(e) => setTimelyAmount(Math.max(0, Number(e.target.value)))}
                     />
                   </div>
                   <div className="filed-guide">

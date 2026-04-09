@@ -4,6 +4,7 @@ import { useBottomSheetControler } from "@/store/useBottomSheetControler";
 import { useStoreSearchStore } from "@/store/useStoreSearchStore";
 import { OPERATION_STATUS } from "@/lib/store-utils";
 import { Sheet } from "react-modal-sheet";
+import "./css/date-input-fix.scss";
 
 export default function StoreSearchSheet() {
   const storeSearchSheet = useBottomSheetControler((state) => state.storeSearchSheet);

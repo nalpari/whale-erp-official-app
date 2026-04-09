@@ -27,7 +27,7 @@ export const getCalendarData = async (params: {
 
 // 직원 Selectbox 조회
 export const getEmployeeOptions = async (params: {
-  purpose: 'SEARCH' | 'REGISTER'
+  purpose: 'BROAD' | 'STRICT'
   headOfficeId?: number
   franchiseId?: number
   storeId?: number

@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useStoreStore } from "@/store/useStoreStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useDeleteTodos, useCalendarData } from "@/hooks/queries/use-todo-queries";
+import { isInterceptorHandled } from "@/lib/api";
 import { getCalendarData } from "@/lib/api/todo";
 import TodoCalendar from "@/components/todo/TodoCalendar";
 import type { CalendarDayData, OrgGroup, EmployeeGroup, TodoItem } from "@/types/todo";
@@ -79,10 +80,11 @@ export default function TodoContents() {
         });
       } catch (err) {
         console.error('[TodoContents] 월별 데이터 조회 실패:', { year: y, month: m }, err);
+        openAlert({ message: "일정을 불러오지 못했습니다. 다시 시도해주세요." });
         return [];
       }
     },
-    [headOfficeId, storeId]
+    [headOfficeId, openAlert, storeId]
   );
 
   // 날짜 변경
@@ -111,7 +113,15 @@ export default function TodoContents() {
         message: "해당 할 일을 삭제하시겠습니까?",
         confirmText: "삭제",
         cancelText: "취소",
-        onConfirm: () => deleteTodos([todoId]),
+        onConfirm: async () => {
+          try {
+            await deleteTodos([todoId]);
+          } catch (err) {
+            if (isInterceptorHandled(err)) return
+            console.error("[TodoContents] 삭제 실패:", err);
+            openAlert({ message: "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요." });
+          }
+        },
       });
     },
     [openAlert, deleteTodos]
@@ -171,6 +181,27 @@ export default function TodoContents() {
             {/* 일자 바 */}
             <div className="todo-date">
               <div className="todo-date-left">
+                <button
+                  type="button"
+                  aria-label="이전 날"
+                  onClick={() => moveDay(-1)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9999,
+                    border: "1px solid #EDEDED",
+                    background: "#FFFFFF",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <path d="M18.5 12L14.5 16L18.5 20" stroke="#777777" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
                 <span>
                   {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일{" "}
                   {DAY_NAMES[selectedDate.getDay()]}
@@ -184,15 +215,37 @@ export default function TodoContents() {
                     오늘
                   </button>
                 )}
+                <button
+                  type="button"
+                  aria-label="다음 날"
+                  onClick={() => moveDay(1)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9999,
+                    border: "1px solid #EDEDED",
+                    background: "#FFFFFF",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <path d="M14.5 20L18.5 16L14.5 12" stroke="#777777" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
               </div>
             </div>
+            {/* TODO: 공통 로딩 화면으로 교체 (목록 조회) */}
             {isLoading ? (
-              <div className="todo-empty">
-                <p>불러오는 중...</p>
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+                불러오는 중...
               </div>
             ) : isError ? (
-              <div className="todo-empty">
-                <p>데이터를 불러오지 못했습니다.</p>
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+                데이터를 불러오지 못했습니다.
               </div>
             ) : organizations.length > 0 ? (
               storeId

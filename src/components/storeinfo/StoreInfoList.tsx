@@ -9,7 +9,7 @@ import { useStoreStore } from "@/store/useStoreStore";
 import { useStoreInfiniteList } from "@/hooks/queries/use-store-queries";
 import { useStoreSearchStore } from "@/store/useStoreSearchStore";
 import { checkStoreSubscribe } from "@/lib/api/store";
-import { getErrorMessage } from "@/lib/api";
+import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { EXTERNAL_URLS } from "@/lib/constants";
 import { STATUS_MAP, formatDate } from "@/lib/store-utils";
 
@@ -93,6 +93,7 @@ export default function StoreInfoList() {
         });
       }
     } catch (err) {
+      if (isInterceptorHandled(err)) return
       console.error('[StoreInfoList] 구독 조회 실패:', err);
       openAlert({ message: getErrorMessage(err, "구독 정보를 확인할 수 없습니다.") });
     } finally {
@@ -118,12 +119,13 @@ export default function StoreInfoList() {
           <div className="search-count">
             검색결과 <span>{totalElements}건</span>
           </div>
-          <button className={`search-btn act${hasSearched ? " filtered" : ""}`} onClick={() => setStoreSearchSheet(true)}>
+          <button className={`search-btn${hasSearched ? " filtered" : ""}`} onClick={() => setStoreSearchSheet(true)}>
             <i className="icon-search"></i>
             <span>검색</span>
           </button>
         </div>
         <div className="sub-cont-wrap">
+          {/* TODO: 공통 로딩 화면으로 교체 (목록 조회) */}
           {isLoading ? (
             <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
               불러오는 중...

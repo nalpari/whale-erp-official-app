@@ -4,9 +4,9 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useCallback } from "react";
+import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
 import { useStoreDetail, useDeleteStore } from "@/hooks/queries/use-store-queries";
 import type { OperatingHour } from "@/types/store";
-import { getErrorMessage } from "@/lib/api";
 import { STATUS_MAP, WEEKDAY_LABEL, WEEKDAY_ORDER, ALL_DAYS, formatDate, formatTime, getFileNameAndExt } from "@/lib/store-utils";
 
 /** 개별 요일 엔트리들을 평일/토요일/일요일 + 정기휴일로 그룹핑 */
@@ -67,8 +67,9 @@ export default function StoreInfoDetail({ id }: { id: number }) {
           await deleteStoreAsync(id);
           router.push("/storeinfo");
         } catch (err) {
+          if (isInterceptorHandled(err)) return
           console.error('[StoreInfoDetail] 점포 삭제 실패:', err);
-          openAlert({ message: getErrorMessage(err, "삭제에 실패했습니다.") });
+          openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
         }
       },
     });
@@ -92,11 +93,22 @@ export default function StoreInfoDetail({ id }: { id: number }) {
     }
   }, [data, handleDelete, setOnDelete]);
 
+  if (isError) {
+    return (
+      <div className="container sub">
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#e74c3c" }}>
+          점포 정보를 불러올 수 없습니다.
+        </div>
+      </div>
+    );
+  }
+
+  // TODO: 공통 로딩 화면으로 교체 (상세 조회)
   if (isLoading || !data) {
     return (
       <div className="container sub">
         <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
-          {isError ? "점포 정보를 불러올 수 없습니다." : "불러오는 중..."}
+          불러오는 중...
         </div>
       </div>
     );

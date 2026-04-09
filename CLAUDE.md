@@ -120,206 +120,101 @@ Login supports multi-authority (조직) selection:
 - **SCSS**: 복잡한 컴포넌트 스타일 (7-1 패턴)
 - **Tailwind CSS 4**: 유틸리티 클래스
 - **기존 CSS/Sass 파일 수정 금지**: pub 프로젝트 코드 참조 시에도 새로운 스타일은 Tailwind 또는 컴포넌트 내 인라인 스타일로 처리
+- **`src/styles/` 디렉토리 수정 절대 금지**: `src/styles/` 하위의 모든 SCSS 파일(abstracts, base, components, layout)은 어떤 상황에서도 수정하지 않는다. 스타일 변경이 필요하면 Tailwind 유틸리티 클래스 또는 컴포넌트 내 인라인 스타일로 처리한다.
 
 # Code Conventions
 
-아래 항목을 코드 작성 시 반드시 준수한다.
+현재 문서는 "절대 규칙 목록"보다 "기본 원칙 + 예외 판단 기준"에 가깝게 운영한다.
+아래 항목은 새 코드를 작성할 때 우선 적용하되, 더 단순하고 읽기 쉬운 대안이 있으면 그 선택을 허용한다.
 
-## 1. 컴포넌트 간 통신: Zustand 전용
+## 1. 기본 원칙
 
-- **금지**: `window.dispatchEvent`, `CustomEvent`, `addEventListener` 등 DOM 이벤트 기반 컴포넌트 통신
-- **필수**: Zustand store에 콜백/상태를 등록하고 구독하는 패턴 사용
-- **이유**: Zustand devtools로 추적 가능, unmount/remount 시 이벤트 유실 방지
-- **패턴 예시**: Header ↔ 페이지 간 저장/삭제 버튼은 `useHeaderStore.setOnSave`/`setOnDelete`로 등록
+- 서버 데이터는 React Query, 클라이언트 UI 상태는 Zustand를 우선 사용한다.
+- 한 파일 안에서 해결 가능한 단순한 문제까지 패턴을 과도하게 추상화하지 않는다.
+- 규칙 준수 자체보다 유지보수성, 디버깅 용이성, 사용자 영향도를 우선 판단한다.
+- 반복해서 문제를 만들었던 항목만 명시적 가드레일로 남긴다.
 
-## 2. 데이터 페칭: React Query 일관성
+## 2. 상태 관리와 컴포넌트 통신
 
-- **금지**: 읽기(read) 쿼리에 수동 `useEffect` + `useState` + `useRef` 캐시 패턴
-- **필수**: `useQuery`/`useInfiniteQuery` 사용. 뮤테이션은 `useMutation` 사용
-- **이유**: 캐시, 리페치, 에러/로딩 상태, stale 관리를 React Query에 위임
-- **예외**: 캘린더 스와이프 등 일회성 직접 호출은 API 함수 직접 호출 허용 (단 try/catch 필수)
-- **isLoading/isError 활용 필수**: `useQuery` 반환값의 `isLoading`, `isError` 상태를 UI에 반영하여 로딩 중/에러/빈 상태를 명확히 구분할 것
-- **에러·로딩 분기 분리**: `isError`와 `isLoading`을 같은 조건문 안에서 혼합 처리 금지. 에러는 별도 분기로 먼저 체크하고, 로딩과 시각적으로 구분할 것 (에러 색상 ≠ 로딩 색상)
-  ```tsx
-  // ❌ 혼합 분기
-  if (isLoading || !data) {
-    return <div>{isError ? "에러" : "로딩 중..."}</div>
-  }
+- 페이지 간 공통 UI 상태와 콜백 연결은 Zustand store 패턴을 기본으로 사용한다.
+- `window.dispatchEvent`, `CustomEvent` 같은 DOM 이벤트 기반 통신은 특별한 이유가 없으면 피한다.
+- store는 렌더링에 필요한 값만 selector로 구독하고, 이벤트 핸들러에서만 필요한 값은 `getState()` 접근을 우선 검토한다.
+- 여러 필드를 한 번에 초기화해야 하는 경우에는 `setFields(partial)` 같은 배치 업데이트가 더 읽기 쉬운지 먼저 본다.
 
-  // ✅ 별도 분기
-  if (isError) {
-    return <div style={{ color: "#e74c3c" }}>불러올 수 없습니다.</div>
-  }
-  if (isLoading || !data) {
-    return <div>불러오는 중...</div>
-  }
-  ```
+## 3. 데이터 페칭과 비동기 처리
 
-## 3. 에러 처리: 빈 catch 블록 금지
+- 읽기 작업은 React Query를 우선 사용하고, 캐시/로딩/에러 상태를 훅 밖으로 흩뜨리지 않는다.
+- 일회성 직접 호출이나 사용자 액션 기반 요청은 API 함수를 바로 호출해도 되지만, 실패 처리 방식은 코드에 드러나야 한다.
+- `isLoading`, `isError`, 빈 상태는 가능한 한 분리해서 표현한다.
+- mutation은 기본적으로 팀이 읽기 쉬운 형태를 선택한다. 사용자 피드백이 필요한 흐름이면 `mutateAsync` + `try/catch`가 안전하고, 단순 토글이나 낙관적 UI는 `mutate()`도 허용한다.
 
-- **금지**: `catch { }`, `catch { /* noop */ }`, `catch { // 주석 }` — 어떤 형태든 err 바인딩 없는 catch 금지
-- **필수**: 최소 `console.error('[컴포넌트명] 동작 실패:', err)` 로깅. 유틸 함수(localStorage 래퍼 등)도 예외 없이 최소 `console.warn` 필수
-- **뮤테이션 훅**: `onError` 콜백에 `console.error` 로깅 추가. mutation은 `mutateAsync` + `try/catch` 전용 사용 (`mutate()` 단독 사용 금지 — onError만으로는 UI 에러 처리 불가)
-- **Promise 체인**: `.then()` 사용 시 반드시 `.catch()` 추가
-- **외부 제공 콜백**: 외부에서 주입된 콜백은 모두 `try/catch`로 감싸서 에러 전파 방지. 닫기 타이밍은 용도에 따라 구분:
-  - **결과 확인형** (Alert onConfirm — 저장/삭제 등 비동기 작업): `await` + `try/catch`, 성공 시에만 닫기. 실패 시 팝업 유지하여 사용자가 재시도 가능
-  - **UI 입력형** (바텀시트 onSelect — 시간 선택, 검색 등): `try/catch/finally`, finally에서 항상 닫기. 시트가 고착되면 앱이 멈춘 것으로 인식됨
-  ```tsx
-  // ✅ 결과 확인형 (Alert)
-  try {
-    await onConfirm?.();
-    closeAlert();
-  } catch (err) {
-    console.error('[Alert] 실패:', err);
-    // 팝업 유지 — 사용자가 재시도 가능
-  }
+## 4. 에러 처리
 
-  // ✅ UI 입력형 (바텀시트)
-  try {
-    onTimeSelect?.(time);
-  } catch (err) {
-    console.error('[TimePickerSheet] 실패:', err);
-  } finally {
-    handleClose(); // 항상 닫기
-  }
-  ```
+- 빈 `catch` 블록은 사용하지 않는다. 최소한 로그를 남기거나, 의도적으로 무시한 이유를 코드에 표현한다.
+- Alert, Popup, BottomSheet처럼 외부 콜백을 실행하는 지점은 예외 전파로 UI가 깨지지 않도록 감싼다.
+- Promise 체인을 유지할 때는 `.catch()`를 생략하지 않는다.
 
-## 4. 타입 안전성
+## 5. 타입과 값 표현
 
-- **Discriminated union 활용**: 상호 배타적 필드 조합은 union 타입으로 제약 (예: `hasPeriod: true → endDate 필수`, `hasPeriod: false → endDate?: never`)
-- **이중 부재 표현 금지**: `headOfficeId?: number | null`처럼 optional + null을 동시에 사용하지 않음. optional(`?:`)이면 `number`만, required면 `number | null`만 사용
-- **dead code 제거**: 미사용 타입/인터페이스는 즉시 삭제
-- **deprecated API 제거**: deprecated 표기한 함수/속성은 모든 호출부 마이그레이션 후 즉시 삭제 (deprecated 상태로 방치하지 않음)
-- **공유 타입 export**: 다른 파일에서 사용될 수 있는 타입은 반드시 `export` 선언 (예: `AlertOptions`)
+- `any`와 불필요한 타입 우회는 피하고, 가능한 범위에서 구체적인 타입이나 Zod 추론 타입을 사용한다.
+- `value!` 같은 non-null assertion은 정말 불가피한 경우가 아니면 명시적 가드로 대체한다.
+- optional과 `null`을 동시에 써서 부재 상태를 이중 표현하지 않는다.
+- 다른 파일에서 재사용될 가능성이 있는 타입은 export해 둔다.
+- discriminated union, 공통 유틸 타입, deprecated 정리는 권장하되, 코드 복잡도가 더 커지면 단순한 구조를 선택한다.
 
-## 5. 상태 관리: stale 값 주의
+## 6. React Compiler와 렌더링 비용
 
-- **금지**: `useMemo(() => new Date(), [])` 등 시간 기반 값의 빈 의존성 메모이제이션
-- **금지**: 모듈 레벨에서 `new Date()` 호출하여 상수로 사용 (예: `const defaultTo = new Date().toISOString()`)
-- **필수**: 날짜/시간 기반 값은 함수로 감싸서 호출 시점에 생성 (`function getDefaultTo() { return new Date().toISOString().slice(0, 10) }`)
-- **이유**: 자정 이후 stale 값으로 비교/표시 오류 발생
-- **원칙**: 비용이 미미한 연산은 메모이제이션하지 않음
+- 시간에 따라 바뀌는 값(`new Date()`, `Date.now()`)은 모듈 상수나 빈 의존성 메모이제이션으로 고정하지 않는다.
+- 값 계산 비용이 작다면 `useMemo`, `useCallback`을 습관적으로 쓰지 않는다.
+- 반대로 헤더 액션 등록, effect 의존성, memoized child props처럼 참조 안정성이 실제 동작에 영향을 주는 경우에는 `useCallback`과 구조분해를 신경 쓴다.
+- mutation 객체 전체를 의존성에 넣어 콜백이 매 렌더 재생성되는 패턴은 피한다.
 
-## 6. 매직넘버/매직스트링 금지
+## 7. 상수, 경로, 리소스
 
-- **필수**: 반복 사용되는 숫자/문자열은 상수(`const SWIPE_THRESHOLD = 50`)로 선언
-- **여러 파일에서 동일 값 사용 시**: 동일한 상수명 사용 (3곳 이상이면 공통 모듈 추출 고려)
-- **중복 함수/상수**: 2곳 이상에서 동일한 유틸 함수(formatDate, STATUS_MAP 등)가 사용되면 `lib/` 공통 모듈로 추출
+- 의미가 바로 드러나지 않는 도메인 값이나 여러 번 반복되는 값은 상수화한다.
+- 짧은 UI 문자열이나 한 번만 쓰는 단순 리터럴까지 기계적으로 상수화할 필요는 없다.
+- 전역 레이아웃 제어는 pathname 분기보다 store나 중앙 매핑을 우선 고려하되, 국소적인 라우트 체크는 직접 사용해도 된다.
+- `URL.createObjectURL`, 동적 스크립트 로드, 파일 업로드 입력처럼 브라우저 리소스를 다루는 코드는 cleanup과 실패 처리를 함께 둔다.
 
-## 7. pathname 하드코딩 최소화
+## 8. 예외보다 중요한 금지 항목
 
-- **조건부 UI 렌더링** (버튼 표시/숨김 등): pathname 분기 대신 Zustand store 플래그로 제어
-- **페이지 제목 매핑**: `getPageTitle()` 등 한 곳에서 관리 (허용하되, 조건이 5개 이상 늘어나면 store 기반 패턴으로 전환)
-
-## 8. React Compiler + useCallback 의존성
-
-- **금지**: mutation 객체 전체를 useCallback 의존성에 포함 (`[createMutation]`) — 매 렌더 새 참조로 콜백 재생성
-- **필수**: 구조분해하여 안정적 참조만 의존성에 포함
-  ```tsx
-  // ✅ 올바른 패턴
-  const { mutateAsync: createTodo, isPending: isCreating } = useCreateTodo();
-  const handleSubmit = useCallback(async () => {
-    if (isCreating) return;
-    await createTodo(data);
-  }, [isCreating, createTodo, ...]);
-
-  // ❌ 금지 패턴
-  const createMutation = useCreateTodo();
-  const handleSubmit = useCallback(async () => {
-    if (createMutation.isPending) return;
-    await createMutation.mutateAsync(data);
-  }, [createMutation]); // 매 렌더 재생성
-  ```
-- **useEffect 연쇄 방지**: useCallback이 매 렌더 재생성되면 이를 의존하는 useEffect도 매 렌더 실행됨. 헤더 버튼 연동(`setOnSave`) 등에서 특히 주의
-
-## 9. Zustand store 구독 최적화
-
-- **금지**: 이벤트 핸들러에서만 사용하는 store 값을 컴포넌트 레벨에서 전체 구독 (`const form = useStoreFormStore()`)
-- **필수**: 렌더링에 필요한 값만 개별 selector로 구독. 이벤트 핸들러에서만 필요한 값은 `useStore.getState()`로 읽기
-  ```tsx
-  // ✅ 렌더링에 필요한 값만 구독
-  const setField = useStoreFormStore((s) => s.setField);
-  // 이벤트 핸들러에서 최신 값 읽기
-  const handleSave = () => {
-    const form = useStoreFormStore.getState();
-    await save(form.storeName, form.ceoName);
-  };
-
-  // ❌ 전체 구독 (어떤 필드든 변경 시 리렌더링)
-  const form = useStoreFormStore();
-  ```
-
-## 10. non-null assertion(`!`) 금지
-
-- **금지**: `value!` non-null assertion 연산자 사용
-- **필수**: 명시적 null/undefined 가드 또는 early return으로 대체
-  ```ts
-  // ❌ 금지
-  return officeId!
-
-  // ✅ 대체
-  if (!officeId) throw new Error('officeId가 없습니다.')
-  return officeId
-  ```
-- **이유**: 런타임 null 역참조 크래시를 TypeScript 타입 검사가 막지 못함
-
-## 11. 복구 불가 실패의 명시적 처리
-
-- **기준 질문**: "이 catch가 조용히 삼켜지면, 사용자는 잘못된 상태로 계속 진행하는가?" → YES이면 silent swallow 금지
-- **`console.error`만으로 부족한 경우**: 해당 실패가 사용자 세션·데이터 정합성에 영향을 주면 반드시 Alert로 사용자에게 알리거나, 안전한 폴백 동작을 명시할 것
-- **예시**: 로그인 후 franchiseId 조회 실패 → 사용자에게 재시도 안내 + 인증 초기화
-- **이유**: `console.error`는 개발자만 보는 로그. 사용자에게 영향을 주는 실패는 UI에 반영해야 함
-- **에러 UI에 행동 경로 제공**: 에러 메시지만 표시하고 끝내지 않을 것. 사용자가 다음에 무엇을 할 수 있는지 안내 (뒤로가기 버튼, 재시도 버튼, 또는 자동 리다이렉트 등)
-
-## 12. 브라우저 리소스 생명주기 관리
-
-- **동적 스크립트 로드**: `script.onerror` 핸들러 필수. 실패 시 사용자에게 에러 메시지 표시. 프로토콜 상대경로(`//`) 대신 `https://` 명시
-  ```ts
-  script.src = "https://example.com/sdk.js";
-  script.onerror = () => {
-    console.error('[컴포넌트명] 외부 스크립트 로드 실패:', script.src);
-    // Alert 또는 UI 에러 상태로 처리
-  };
-  ```
-- **`URL.createObjectURL`**: `useMemo` 내부에서 생성 가능하나, 반드시 `useEffect` cleanup에서 `URL.revokeObjectURL`로 해제. 렌더 중 `useRef`에 직접 쓰기는 React Compiler `react-hooks/refs` 규칙 위반이므로 금지
-- **파일 입력 검증 필수**: `<input type="file">` onChange 핸들러에서 파일 크기(예: 10MB 초과 거부)·MIME 타입 검증 후 store에 추가. `accept` 속성은 브라우저 힌트일 뿐 강제가 아님
-
-## 13. Zustand 폼 스토어 배치 업데이트 및 초기값 안전성
-
-- **개별 setField 반복 금지**: 동일 useEffect 안에서 `setField`를 5회 이상 개별 호출하면 그만큼 리렌더링이 발생함. 스토어에 `setFields(partial)` 배치 액션을 제공하고 1회 호출로 통합
-  ```tsx
-  // ❌ 금지 (12회 호출 → 최대 12회 리렌더)
-  setField("storeName", ...);
-  setField("ceoName", ...);
-  // ... 10회 더
-
-  // ✅ 권장
-  setFields({ storeName: ..., ceoName: ..., ... });
-  ```
-- **폼 기본값의 "놀라움 없음" 원칙**: boolean 기본값이 실제 저장 동작을 유발하는 경우(예: `isOperating: true`) `false` 또는 명시적 null로 설정하고, 서버 데이터 로드 후에만 true가 되도록 제한
-- **서버 데이터 없이 저장 비활성화**: `useQuery`의 `data`가 undefined인 동안 저장 버튼을 disabled 처리하거나, 로딩/에러 UI를 먼저 표시
+- silent failure를 만드는 빈 `catch`
+- 런타임 크래시 위험이 큰 무분별한 non-null assertion
+- 서버 상태를 `useEffect + useState`로 임시 캐싱해 React Query와 이중 관리하는 패턴
+- 시간 기반 값을 stale하게 고정하는 패턴
 
 # Development Guidelines
 
 ## 새 기능 추가 순서
 
 1. `src/types/`에 타입 정의
-2. `src/lib/api/`에 API 함수 추가
+2. `src/lib/api/` 또는 기존 API 레이어에 함수 추가
 3. `src/hooks/queries/`에 React Query 훅 추가
-4. 컴포넌트 생성
-5. `src/app/(sub)/`에 라우트 추가
+4. 필요한 경우 store, 유틸, 상수 정리
+5. 컴포넌트 구현
+6. `src/app/(sub)/`에 라우트 연결
+
+## TanStack Query
+
+- 조회 데이터는 React Query 훅에서 관리하고, 컴포넌트는 결과를 소비하는 형태를 우선한다.
+- 쿼리 키는 기존 `query-keys` 패턴에 맞춰 도메인별로 일관되게 정의한다.
+- 필수 파라미터가 준비되기 전 요청은 `enabled`로 제어한다.
+- 로딩, 에러, 빈 상태를 컴포넌트에서 분리해 표현한다.
+- 캐시 무효화는 관련 도메인 키 범위를 기준으로 최소한만 수행한다.
+
+## Code Quality
+
+- 작업 마무리 전 `pnpm lint`를 우선 실행한다.
+- 타입 검사가 필요한 변경이면 `pnpm exec tsc --noEmit`로 한 번 더 확인한다.
+- TypeScript strict mode를 전제로 작성한다.
+- `any` 타입은 피하고, 가능한 범위에서 구체적인 타입이나 제네릭으로 대체한다.
+- `unknown`도 무조건 배제하기보다, 실제로 필요한 경우에는 좁히는 코드와 함께 명확하게 사용한다.
 
 ## React Compiler 규칙
 
 이 프로젝트는 `next.config.ts`에서 `reactCompiler: true`로 React Compiler를 활성화하고 있다.
+React Compiler 관련 ESLint 경고는 무시하지 말고, 가능한 한 코드 구조를 맞추는 방향으로 해결한다.
 
-- **`react-hooks/set-state-in-effect`**: useEffect 안에서 setState 호출 금지. 파생 값으로 직접 계산하거나 `key` prop으로 리마운트 제어
-- **`react-hooks/set-state-in-render`**: 렌더링 중 setState 호출 금지
-- `eslint-disable`로 무시하지 말 것. `pnpm lint`로 검출되며 규칙에 맞게 코드 수정
-
-## Code Quality
-
-- 커밋 전 `pnpm lint` 실행
-- TypeScript strict mode 준수
-- `any` 타입 사용 금지
-- `unknown` 타입 사용 금지 — 구체적인 타입 또는 제네릭으로 대체
+- **`react-hooks/set-state-in-effect`**: useEffect 안에서 setState가 필요해 보이면 먼저 파생 값 계산이나 `key` 기반 리마운트로 풀 수 있는지 확인한다.
+- **`react-hooks/set-state-in-render`**: 렌더링 중 setState 호출은 피한다.
+- **기타 규칙**: `purity`, `immutability`, `refs`, `globals`, `use-memo`, `static-components` 등은 `pnpm lint` 기준으로 맞춘다.
