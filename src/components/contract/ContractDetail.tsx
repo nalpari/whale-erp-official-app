@@ -616,8 +616,7 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
               </div>
             </div>
           </div>
-        </div>
-        {/* 계약이력 */}
+          {/* 계약이력 */}
         {employeeContracts && employeeContracts.length > 1 && (
           <div className="sub-cont-wrap">
             <div className="sub-cont-item-wrap">
@@ -625,41 +624,49 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                 <div className="sub-cont-tit">계약이력</div>
               </div>
               <div className="sub-item-bx">
-                <ul className="career-wrap">
-                  {employeeContracts
-                    .filter((c) => c.id !== id)
-                    .map((c) => {
-                      const h = c.employmentContractHeader
-                      const badge = h?.electronicContractStatus
-                        ? CONTRACT_STATUS_BADGE[h.electronicContractStatus]
-                        : null
-                      return (
-                        <li
-                          className="career-item"
-                          key={c.id}
-                          onClick={() => router.push(`/contract/${c.id}`)}
-                        >
-                          <div className="career-item-tit">
-                            {h?.contractClassificationName ?? '-'}
-                            {badge && (
-                              <span className={badge.className}>
-                                {badge.label}
-                              </span>
-                            )}
-                          </div>
-                          <div className="career-item-desc">
-                            <span>
-                              {formatDate(h?.contractStartDate)} ~ {formatDate(h?.contractEndDate)}
-                            </span>
-                          </div>
-                        </li>
-                      )
-                    })}
-                </ul>
+                {employeeContracts
+                  .filter((c) => c.id !== id)
+                  .map((c, i) => {
+                    const h = c.employmentContractHeader
+                    const badge = h?.electronicContractStatus
+                      ? CONTRACT_STATUS_BADGE[h.electronicContractStatus]
+                      : null
+                    return (
+                      <div
+                        className="employment-bx"
+                        key={c.id}
+                        onClick={() => router.push(`/contract/${c.id}`)}
+                      >
+                        <div className="employment-num">
+                          No.{i + 1}
+                          {badge && (
+                            <span className={badge.className}>{badge.label}</span>
+                          )}
+                        </div>
+                        <table className="info-table">
+                          <colgroup>
+                            <col style={{ width: '95px' }} />
+                            <col />
+                          </colgroup>
+                          <tbody>
+                            <tr>
+                              <th>계약분류</th>
+                              <td>{h?.contractClassificationName ?? '-'}</td>
+                            </tr>
+                            <tr>
+                              <th>계약기간</th>
+                              <td>{formatDate(h?.contractStartDate)} ~ {formatDate(h?.contractEndDate)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    )
+                  })}
               </div>
             </div>
           </div>
         )}
+        </div>
       </div>
       <div className="content-pagination">
         <button
