@@ -10,6 +10,19 @@ export interface AttendanceRecordGroup {
   status: CommuteDayDisplayStatus
 }
 
+export function hasAttendanceContract(record: AttendanceRecord): boolean {
+  return !!(record.contractStartTime && record.contractEndTime)
+}
+
+export function hasAttendanceWorkRecord(record: AttendanceRecord): boolean {
+  return !!(record.workStartTime || record.workEndTime)
+}
+
+export function shouldRenderAttendanceRecord(record: AttendanceRecord): boolean {
+  if (record.isHoliday) return true
+  return hasAttendanceContract(record) || hasAttendanceWorkRecord(record)
+}
+
 /** HH:mm:ss 문자열을 분 단위로 변환 */
 export function timeToMinutes(time: string): number {
   const [h, m, s] = time.split(':').map(Number)
@@ -67,7 +80,8 @@ export function getAttendanceDayStatus(
   record: AttendanceRecord,
 ): CommuteDayDisplayStatus {
   if (record.isHoliday && !record.workStartTime && !record.workEndTime) return '휴일'
-  if (record.workStartTime || record.workEndTime) return '근무'
+  if (hasAttendanceWorkRecord(record)) return '근무'
+  if (hasAttendanceContract(record)) return '결근'
   return '결근'
 }
 
@@ -98,7 +112,10 @@ export function groupAttendanceRecords(
   // 같은 날 레코드가 2개 이상인 경우 전체 레코드 기반으로 status 재계산
   for (const group of map.values()) {
     if (group.records.length > 1) {
-      const statuses = group.records.map((r) => getAttendanceDayStatus(r))
+      const statuses = group.records
+        .filter((record) => shouldRenderAttendanceRecord(record))
+        .map((record) => getAttendanceDayStatus(record))
+      if (statuses.length === 0) continue
       // 우선순위: 휴일 > 결근 > 근무 (row별 개별 표시가 기본이므로 그룹 상태는 참고용)
       if (statuses.includes('휴일')) group.status = '휴일'
       else if (statuses.includes('결근')) group.status = '결근'
@@ -155,6 +172,16 @@ export function getDisplayTimeRange(
 
   // 둘 다 없음
   return null
+}
+
+/** 표시용 시간 범위 기준 근무 분 계산 */
+export function getDisplayWorkMinutes(record: AttendanceRecord): number {
+  const timeRange = getDisplayTimeRange(record)
+  if (!timeRange || timeRange.inProgress) return 0
+
+  const startMin = timeToMinutes(`${timeRange.startTime}:00`)
+  const endMin = timeToMinutes(`${timeRange.endTime}:00`)
+  return Math.max(0, endMin - startMin)
 }
 
 /**

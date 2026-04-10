@@ -14,6 +14,10 @@ import {
   toInputDate,
   getAvatarSrc,
   getDisplayTimeRange,
+  getDisplayWorkMinutes,
+  hasAttendanceContract,
+  hasAttendanceWorkRecord,
+  shouldRenderAttendanceRecord,
 } from "@/lib/commute-utils";
 import type { AttendanceRecord, CommuteDayDisplayStatus, ContractWorkHour } from "@/types/commute";
 import type { AttendanceRecordGroup } from "@/lib/commute-utils";
@@ -121,25 +125,28 @@ function RecordRow({ record }: { record: AttendanceRecord }) {
   const status = getAttendanceDayStatus(record);
   const badge = STATUS_BADGE[status];
   const timeRange = getDisplayTimeRange(record);
+  const totalMin = getDisplayWorkMinutes(record);
 
-  // 진행 중이 아니고 출퇴근 시간이 모두 있을 때만 근무시간 계산
-  const totalMin = timeRange && !timeRange.inProgress
-    ? Math.floor(calcWorkMinutes(
-        record.workStartTime ?? '00:00:00',
-        record.workEndTime ?? '23:59:00',
-      ))
-    : 0;
+  if (status === "결근") {
+    return (
+      <div className="commute-list-data-item">
+        <div className="commute-list-data-work">
+          <span className={badge.className}>{badge.label}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="commute-list-data-item">
       <div className="commute-list-data-time">
-        {timeRange ? `${timeRange.startTime}~${timeRange.endTime}` : '-'}
+        {timeRange ? `${timeRange.startTime} - ${timeRange.endTime}` : '-'}
       </div>
       <div className="commute-list-data-work">
-        <span className={badge.className}>{badge.label}</span>
         {totalMin > 0 && (
-          <span className="time">{Math.floor(totalMin / 60)}시간 {totalMin % 60}분</span>
+          <span className="time">{formatMinutes(totalMin)}</span>
         )}
+        <span className={badge.className}>{badge.label}</span>
       </div>
     </div>
   );
@@ -147,7 +154,9 @@ function RecordRow({ record }: { record: AttendanceRecord }) {
 
 function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
   const dateLabel = `${group.date.slice(5).replace("-", ".")} ${group.day.slice(0, 1)}`;
-  const hasWorkTime = group.records.some((r) => r.workStartTime !== null);
+  const visibleRecords = group.records.filter((record) => shouldRenderAttendanceRecord(record));
+  const hasWorkTime = visibleRecords.some((record) => hasAttendanceWorkRecord(record));
+  const hasContract = visibleRecords.some((record) => hasAttendanceContract(record));
 
   // 휴일이고 근무 기록이 없으면 → 휴일 헤더만
   if (group.status === "휴일" && !hasWorkTime) {
@@ -164,7 +173,7 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
   }
 
   // 계약 없고 출근 기록도 없음 → 날짜만 표시
-  if (!group.hasContract && !hasWorkTime) {
+  if (!hasContract && !hasWorkTime) {
     return (
       <div className="commute-list-item">
         <div className="commute-list-tit">{dateLabel}</div>
@@ -182,12 +191,9 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
           </span>
         )}
         <span>{dateLabel}</span>
-        {group.records.length > 1 && (
-          <span className="time">총 {formatMinutes(group.totalMinutes)}</span>
-        )}
       </div>
       <div className="commute-list-data">
-        {group.records.map((record, index) => (
+        {visibleRecords.map((record, index) => (
           <RecordRow
             key={record.recordId ?? `${record.date}-empty-${index}`}
             record={record}
