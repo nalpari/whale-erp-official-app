@@ -164,11 +164,10 @@ export function getOperatingHourValidation(hour: OperatingHourRequest): Operatin
 
   const hasBreak = !!(hour.breakStartTime && hour.breakEndTime)
   const hasOperatingTime = !!(hour.openTime && hour.closeTime)
-  const hasBreakOutsideOperatingError = hasBreak && (
-    !hasOperatingTime
-    || hour.breakStartTime < hour.openTime
-    || hour.breakEndTime > hour.closeTime
-  )
+  const hasBreakOutsideOperatingError = hasBreak && hasOperatingTime
+    && hour.breakStartTime != null && hour.openTime != null
+    && hour.breakEndTime != null && hour.closeTime != null
+    && (hour.breakStartTime < hour.openTime || hour.breakEndTime > hour.closeTime)
 
   return {
     hasOperatingTimeRangeError,
