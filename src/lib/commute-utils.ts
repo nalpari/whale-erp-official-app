@@ -128,6 +128,16 @@ export function groupAttendanceRecords(
 const MIDNIGHT_START = '00:00'
 const DAY_END = '23:59'
 
+/**
+ * record.date (YYYY-MM-DD) 문자열이 오늘보다 과거인지 판정한다.
+ * - 문자열 비교라 timezone/DST 이슈 없음
+ * - 잘못된 포맷(NaN 유발 가능)은 false 반환 (안전 기본값: "오늘")
+ */
+function isRecordDatePast(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false
+  return dateStr < toInputDate(new Date())
+}
+
 export interface DisplayTimeRange {
   startTime: string   // 'HH:mm' 형식
   endTime: string     // 'HH:mm' 형식 또는 '진행 중'
@@ -153,13 +163,7 @@ export function getDisplayTimeRange(
 
   // 출근만 있고 퇴근 없음 → 과거면 자정 경계, 오늘이면 진행 중
   if (workStartTime && !workEndTime) {
-    const [year, month, day] = record.date.split('-').map(Number)
-    const recordDate = new Date(year, month - 1, day)
-    const now = new Date()
-    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const isPast = recordDate < todayMidnight
-
-    if (isPast) {
+    if (isRecordDatePast(record.date)) {
       return { startTime: formatTime(workStartTime), endTime: DAY_END, inProgress: false }
     }
     return { startTime: formatTime(workStartTime), endTime: '진행 중', inProgress: true }
@@ -174,14 +178,32 @@ export function getDisplayTimeRange(
   return null
 }
 
-/** 표시용 시간 범위 기준 근무 분 계산 */
+/**
+ * 레코드 기반 근무 분 계산 (표시 규칙과 일치).
+ * - 출근·퇴근 모두 있음 → 정상 계산 (calcWorkMinutes)
+ * - 출근만 있고 퇴근 없음 (오늘) → 0 (진행 중, 집계 제외)
+ * - 출근만 있고 퇴근 없음 (과거) → 출근 ~ 24:00 (다음날 자정까지로 간주)
+ * - 퇴근만 있고 출근 없음 → 00:00 ~ 퇴근 (자정 넘김 퇴근일, 분리 집계)
+ */
 export function getDisplayWorkMinutes(record: AttendanceRecord): number {
-  const timeRange = getDisplayTimeRange(record)
-  if (!timeRange || timeRange.inProgress) return 0
+  const { workStartTime, workEndTime } = record
 
-  const startMin = timeToMinutes(`${timeRange.startTime}:00`)
-  const endMin = timeToMinutes(`${timeRange.endTime}:00`)
-  return Math.max(0, endMin - startMin)
+  if (workStartTime && workEndTime) {
+    return Math.floor(calcWorkMinutes(workStartTime, workEndTime))
+  }
+
+  if (workStartTime && !workEndTime) {
+    if (!isRecordDatePast(record.date)) return 0
+    // 과거 미퇴근: 다음날 자정(24:00)까지 근무한 것으로 간주 (1분 손실 방지)
+    return Math.max(0, 24 * 60 - Math.floor(timeToMinutes(workStartTime)))
+  }
+
+  if (!workStartTime && workEndTime) {
+    // 자정 넘김 퇴근일: 00:00 ~ 퇴근 (분리 집계)
+    return Math.floor(timeToMinutes(workEndTime))
+  }
+
+  return 0
 }
 
 /**

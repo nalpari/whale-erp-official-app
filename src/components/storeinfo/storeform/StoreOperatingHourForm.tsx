@@ -111,7 +111,7 @@ export default function StoreOperatingHourForm({ submitted = false }: { submitte
               </div>
             </div>
             <TimeError show={submitted && weekdayValidation.hasOperatingTimePairError} message="영업 시작시간과 종료시간을 모두 입력해주세요." />
-            <TimeError show={submitted && weekdayValidation.hasOperatingTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && weekdayValidation.hasOperatingTimeRangeError} message="잘못된 입력값입니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
@@ -132,7 +132,7 @@ export default function StoreOperatingHourForm({ submitted = false }: { submitte
               </div>
             </div>
             <TimeError show={submitted && weekdayValidation.hasBreakTimePairError} message="휴게 시작시간과 종료시간을 모두 입력해주세요." />
-            <TimeError show={submitted && weekdayValidation.hasBreakTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && weekdayValidation.hasBreakTimeRangeError} message="잘못된 입력값입니다." />
             <TimeError show={submitted && weekdayValidation.hasBreakWithoutOperatingTimeError} message="휴게시간을 설정하려면 영업시간을 먼저 입력해주세요." />
             <TimeError show={submitted && weekdayValidation.hasBreakOutsideOperatingError} message="휴게시간은 영업시간 내에서만 설정할 수 있습니다." />
           </div>
@@ -174,7 +174,7 @@ export default function StoreOperatingHourForm({ submitted = false }: { submitte
               </div>
             </div>
             <TimeError show={submitted && saturdayValidation.hasOperatingTimePairError} message="영업 시작시간과 종료시간을 모두 입력해주세요." />
-            <TimeError show={submitted && saturdayValidation.hasOperatingTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && saturdayValidation.hasOperatingTimeRangeError} message="잘못된 입력값입니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
@@ -195,7 +195,7 @@ export default function StoreOperatingHourForm({ submitted = false }: { submitte
               </div>
             </div>
             <TimeError show={submitted && saturdayValidation.hasBreakTimePairError} message="휴게 시작시간과 종료시간을 모두 입력해주세요." />
-            <TimeError show={submitted && saturdayValidation.hasBreakTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && saturdayValidation.hasBreakTimeRangeError} message="잘못된 입력값입니다." />
             <TimeError show={submitted && saturdayValidation.hasBreakWithoutOperatingTimeError} message="휴게시간을 설정하려면 영업시간을 먼저 입력해주세요." />
             <TimeError show={submitted && saturdayValidation.hasBreakOutsideOperatingError} message="휴게시간은 영업시간 내에서만 설정할 수 있습니다." />
           </div>
@@ -222,7 +222,7 @@ export default function StoreOperatingHourForm({ submitted = false }: { submitte
               </div>
             </div>
             <TimeError show={submitted && sundayValidation.hasOperatingTimePairError} message="영업 시작시간과 종료시간을 모두 입력해주세요." />
-            <TimeError show={submitted && sundayValidation.hasOperatingTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && sundayValidation.hasOperatingTimeRangeError} message="잘못된 입력값입니다." />
           </div>
           <div className="data-filed">
             <div className="filed-tit sub">브레이크타임</div>
@@ -243,7 +243,7 @@ export default function StoreOperatingHourForm({ submitted = false }: { submitte
               </div>
             </div>
             <TimeError show={submitted && sundayValidation.hasBreakTimePairError} message="휴게 시작시간과 종료시간을 모두 입력해주세요." />
-            <TimeError show={submitted && sundayValidation.hasBreakTimeRangeError} message="종료시간은 시작시간보다 이후여야 합니다." />
+            <TimeError show={submitted && sundayValidation.hasBreakTimeRangeError} message="잘못된 입력값입니다." />
             <TimeError show={submitted && sundayValidation.hasBreakWithoutOperatingTimeError} message="휴게시간을 설정하려면 영업시간을 먼저 입력해주세요." />
             <TimeError show={submitted && sundayValidation.hasBreakOutsideOperatingError} message="휴게시간은 영업시간 내에서만 설정할 수 있습니다." />
           </div>

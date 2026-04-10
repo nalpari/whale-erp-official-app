@@ -48,23 +48,24 @@ export function getToday(): string {
 
 // ── 에러 → 스텝 매핑 ──
 
-/** API 에러 details 필드명 → 점포 폼 step 번호 */
+/**
+ * API 에러 details 필드명 → 점포 폼 step 번호.
+ * 백엔드가 실제 내려주는 키만 포함 (officeId/franchiseId/storeOwner/storeAddressDetail 미사용).
+ */
 const STORE_FIELD_STEP: Record<string, number> = {
   // Step 1: 기본 정보
-  storeOwner: 1, organizationId: 1, storeName: 1, operationStatus: 1,
+  organizationId: 1, storeName: 1, operationStatus: 1,
   // Step 2: 연락처
-  ceoName: 2, businessNumber: 2, storeAddress: 2, storeAddressDetail: 2, ceoPhone: 2, storePhone: 2,
+  ceoName: 2, businessNumber: 2, storeAddress: 2, ceoPhone: 2, storePhone: 2,
 }
 
 const STORE_FIELD_ERROR_MESSAGE: Record<string, string> = {
-  storeOwner: '점포 소유 구분을 확인해주세요.',
   organizationId: '본사 또는 가맹점을 선택해주세요.',
   storeName: '점포명을 입력해주세요.',
   operationStatus: '운영 여부를 확인해주세요.',
   ceoName: '대표자명을 입력해주세요.',
   businessNumber: '사업자등록번호를 확인해주세요.',
   storeAddress: '점포주소를 입력해주세요.',
-  storeAddressDetail: '상세주소를 확인해주세요.',
   ceoPhone: '대표자 연락처를 확인해주세요.',
   storePhone: '점포 전화번호를 확인해주세요.',
 }
@@ -152,23 +153,60 @@ export interface OperatingHourValidationResult {
   isValid: boolean
 }
 
-/** HH:mm 또는 HH:mm:ss 문자열을 분 단위로 변환 */
+/** HH:mm 또는 HH:mm:ss 문자열을 분 단위로 변환 (잘못된 값은 0) */
 function toMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number)
-  return (h ?? 0) * 60 + (m ?? 0)
+  if (Number.isNaN(h) || Number.isNaN(m)) return 0
+  return h * 60 + m
 }
 
-function isEndBeforeOrEqualStart(start?: string | null, end?: string | null): boolean {
+/**
+ * 시간 범위가 0분이면 오류 (영업시간/휴게시간 공통).
+ * - end === start → 0분 범위 (오류, 00:00 ~ 00:00 포함)
+ * - end < start → 자정 넘김 (허용, 예: 18:00 ~ 02:00)
+ * - end > start → 정상
+ */
+function hasTimeRangeError(
+  start: string | null | undefined,
+  end: string | null | undefined,
+): boolean {
   if (!start || !end) return false
-  return toMinutes(end) <= toMinutes(start)
+  return toMinutes(start) === toMinutes(end)
+}
+
+/**
+ * 휴게시간이 영업시간 내에 포함되는지 검증 (자정 넘김 고려).
+ * 영업시간이 자정을 넘기면 휴게시간도 동일한 기준으로 정규화해서 비교한다.
+ */
+function isBreakOutsideOperating(
+  openTime: string,
+  closeTime: string,
+  breakStartTime: string,
+  breakEndTime: string,
+): boolean {
+  const open = toMinutes(openTime)
+  let close = toMinutes(closeTime)
+  let bStart = toMinutes(breakStartTime)
+  let bEnd = toMinutes(breakEndTime)
+
+  // 영업시간 자정 넘김 정규화 (예: 18:00~02:00 → 1080~1560)
+  if (close <= open) close += 24 * 60
+
+  // 휴게시간이 영업 시작(벽시계) 이전이면 다음 날로 간주
+  if (bStart < open) bStart += 24 * 60
+  if (bEnd < open) bEnd += 24 * 60
+  // 정규화 후에도 bEnd < bStart면 휴게 자체가 자정 넘김이므로 보정
+  if (bEnd < bStart) bEnd += 24 * 60
+
+  return bStart < open || bEnd > close
 }
 
 /** 영업시간/휴게시간 검증 */
 export function getOperatingHourValidation(hour: OperatingHourRequest): OperatingHourValidationResult {
   const hasOperatingTimePairError = !!(hour.openTime || hour.closeTime) && !(hour.openTime && hour.closeTime)
-  const hasOperatingTimeRangeError = isEndBeforeOrEqualStart(hour.openTime, hour.closeTime)
+  const hasOperatingTimeRangeError = hasTimeRangeError(hour.openTime, hour.closeTime)
   const hasBreakTimePairError = !!(hour.breakStartTime || hour.breakEndTime) && !(hour.breakStartTime && hour.breakEndTime)
-  const hasBreakTimeRangeError = isEndBeforeOrEqualStart(hour.breakStartTime, hour.breakEndTime)
+  const hasBreakTimeRangeError = hasTimeRangeError(hour.breakStartTime, hour.breakEndTime)
 
   const hasBreak = !!(hour.breakStartTime && hour.breakEndTime)
   const hasOperatingTime = !!(hour.openTime && hour.closeTime)
@@ -176,7 +214,7 @@ export function getOperatingHourValidation(hour: OperatingHourRequest): Operatin
   const hasBreakOutsideOperatingError = hasBreak && hasOperatingTime
     && hour.breakStartTime != null && hour.openTime != null
     && hour.breakEndTime != null && hour.closeTime != null
-    && (toMinutes(hour.breakStartTime) < toMinutes(hour.openTime) || toMinutes(hour.breakEndTime) > toMinutes(hour.closeTime))
+    && isBreakOutsideOperating(hour.openTime, hour.closeTime, hour.breakStartTime, hour.breakEndTime)
   const hasWeekdaySelectionError = hour.dayType === 'WEEKDAY'
     && hasOperatingTime
     && (hour.selectWeekDayList?.length ?? 0) === 0
