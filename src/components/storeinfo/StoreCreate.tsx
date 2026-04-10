@@ -5,8 +5,8 @@ import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
-import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
-import { buildOperatingHoursRequest, getOrganizationId } from "@/lib/store-utils";
+import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
+import { buildOperatingHoursRequest, formatStoreErrorDetails, getFirstInvalidStoreField, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreOperatingHours, validateStoreStep, type StoreFocusableField } from "@/lib/store-utils";
 import StoreBasicInfoForm from "./storeform/StoreBasicInfoForm";
 import StoreContactForm from "./storeform/StoreContactForm";
 import StorePhotoForm from "./storeform/StorePhotoForm";
@@ -16,6 +16,8 @@ export default function StoreCreate() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [focusField, setFocusField] = useState<StoreFocusableField | null>(null);
+  const [focusKey, setFocusKey] = useState(0);
   const openAlert = usePopupControler((state) => state.openAlert);
   // TODO: 공통 로딩 화면으로 교체 (등록 pending)
   const { mutateAsync: createStore, isPending: isCreating } = useCreateStore();
@@ -59,29 +61,29 @@ export default function StoreCreate() {
   // Step별 필수값 검증
   const validateStep = (s: number): boolean => {
     const state = useStoreFormStore.getState();
-    switch (s) {
-      case 1:
-        if (state.storeOwner === "FRANCHISE" && !state.franchiseId) return false;
-        return !!state.officeId && !!state.storeName;
-      case 2:
-        return !!state.ceoName && !!state.businessNumber && !!state.storeAddress && !!state.ceoPhone;
-      default:
-        return true;
-    }
+    return validateStoreStep(s, state);
+  };
+
+  const requestFocus = (field: StoreFocusableField | null) => {
+    setFocusField(field);
+    setFocusKey((k) => k + 1);
   };
 
   const handleNext = () => {
     if (!validateStep(step)) {
       setSubmitted(true);
+      requestFocus(getFirstInvalidStoreField(useStoreFormStore.getState()));
       return;
     }
     setSubmitted(false);
+    setFocusField(null);
     window.scrollTo({ top: 0 });
     setStep(step + 1);
   };
 
   const handlePrev = () => {
     setSubmitted(false);
+    setFocusField(null);
     window.scrollTo({ top: 0 });
     setStep(step - 1);
   };
@@ -89,13 +91,18 @@ export default function StoreCreate() {
   const handleSave = async () => {
     if (isCreating) return;
     const form = useStoreFormStore.getState();
-
-    if (!form.officeId || !form.storeName) {
-      openAlert({ message: "필수 입력 항목을 확인해주세요." });
+    const invalidStep = getFirstInvalidStoreStep(form);
+    if (invalidStep !== null) {
+      setSubmitted(true);
+      setStep(invalidStep);
+      requestFocus(getFirstInvalidStoreField(form));
+      window.scrollTo({ top: 0 });
       return;
     }
-    if (form.storeOwner === "FRANCHISE" && !form.franchiseId) {
-      openAlert({ message: "가맹점을 선택해주세요." });
+    if (!validateStoreOperatingHours(form.operating)) {
+      setSubmitted(true);
+      setStep(4);
+      window.scrollTo({ top: 0 });
       return;
     }
 
@@ -124,8 +131,21 @@ export default function StoreCreate() {
         onConfirm: () => router.push("/storeinfo"),
       });
     } catch (err) {
-      if (isInterceptorHandled(err)) return
+      if (isInterceptorHandled(err)) return;
       console.error('[StoreCreate] 점포 등록 실패:', err);
+
+      const details = getErrorDetails(err);
+      if (details) {
+        const targetStep = getStoreErrorStep(details);
+        if (targetStep !== null) {
+          setSubmitted(true);
+          setStep(targetStep);
+          window.scrollTo({ top: 0 });
+        }
+        openAlert({ message: formatStoreErrorDetails(details) });
+        return;
+      }
+
       openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
     }
   };
@@ -134,10 +154,10 @@ export default function StoreCreate() {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreBasicInfoForm submitted={submitted} />}
-          {step === 2 && <StoreContactForm submitted={submitted} />}
+          {step === 1 && <StoreBasicInfoForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
+          {step === 2 && <StoreContactForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
           {step === 3 && <StorePhotoForm />}
-          {step === 4 && <StoreOperatingHourForm />}
+          {step === 4 && <StoreOperatingHourForm submitted={submitted} />}
         </div>
       </div>
       <div className="content-pagination">

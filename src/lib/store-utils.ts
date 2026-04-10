@@ -25,11 +25,221 @@ export const WEEKDAY_LABEL: Record<string, string> = {
 export const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] as const
 export const ALL_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const
 
+export type StoreOwnerType = 'HEAD_OFFICE' | 'FRANCHISE'
+
+export interface StoreFormValidationState {
+  storeOwner: string
+  officeId: number | null
+  franchiseId: number | null
+  storeName: string
+  ceoName: string
+  businessNumber: string
+  storeAddress: string
+  ceoPhone: string
+}
+
+export type StoreFocusableField = Exclude<keyof StoreFormValidationState, 'storeOwner'>
 
 /** 오늘 날짜를 YYYY-MM-DD 로컬 타임존 문자열로 반환 */
 export function getToday(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// ── 에러 → 스텝 매핑 ──
+
+/**
+ * API 에러 details 필드명 → 점포 폼 step 번호.
+ * 백엔드가 실제 내려주는 키만 포함 (officeId/franchiseId/storeOwner/storeAddressDetail 미사용).
+ */
+const STORE_FIELD_STEP: Record<string, number> = {
+  // Step 1: 기본 정보
+  organizationId: 1, storeName: 1, operationStatus: 1,
+  // Step 2: 연락처
+  ceoName: 2, businessNumber: 2, storeAddress: 2, ceoPhone: 2, storePhone: 2,
+}
+
+const STORE_FIELD_ERROR_MESSAGE: Record<string, string> = {
+  organizationId: '본사 또는 가맹점을 선택해주세요.',
+  storeName: '점포명을 입력해주세요.',
+  operationStatus: '운영 여부를 확인해주세요.',
+  ceoName: '대표자명을 입력해주세요.',
+  businessNumber: '사업자등록번호를 확인해주세요.',
+  storeAddress: '점포주소를 입력해주세요.',
+  ceoPhone: '대표자 연락처를 확인해주세요.',
+  storePhone: '점포 전화번호를 확인해주세요.',
+}
+
+/** 에러 details에서 이동해야 할 가장 앞 스텝 번호 반환 */
+export function getStoreErrorStep(details: Record<string, string>): number | null {
+  let min: number | null = null
+  for (const field of Object.keys(details)) {
+    const step = STORE_FIELD_STEP[field]
+    if (step !== undefined && (min === null || step < min)) {
+      min = step
+    }
+  }
+  return min
+}
+
+/** 에러 details를 사용자용 메시지로 매핑해 줄바꿈으로 반환 */
+export function formatStoreErrorDetails(details: Record<string, string>): string {
+  const messages = Object.keys(details).map((field) => (
+    STORE_FIELD_ERROR_MESSAGE[field] ?? '입력값을 확인해주세요.'
+  ))
+  return Array.from(new Set(messages)).join('\n')
+}
+
+// ── 패턴 검증 ──
+
+/** 사업자등록번호 형식 검증 (XXX-XX-XXXXX) */
+export function isValidBusinessNumber(value: string): boolean {
+  return /^\d{3}-\d{2}-\d{5}$/.test(value)
+}
+
+/** 전화번호 형식 검증 (02-XXX(X)-XXXX 또는 0XX-XXX(X)-XXXX) */
+export function isValidPhoneNumber(value: string): boolean {
+  return /^0\d{1,2}-\d{3,4}-\d{4}$/.test(value)
+}
+
+/** 점포 폼 Step 유효성 검증 (getFirstInvalidStoreField와 동일한 우선순위) */
+export function validateStoreStep(step: number, state: StoreFormValidationState): boolean {
+  switch (step) {
+    case 1:
+      if (!state.officeId) return false
+      if (state.storeOwner === 'FRANCHISE' && !state.franchiseId) return false
+      return !!state.storeName
+    case 2:
+      if (!state.ceoName || !state.businessNumber || !state.storeAddress || !state.ceoPhone) return false
+      if (!isValidBusinessNumber(state.businessNumber)) return false
+      if (!isValidPhoneNumber(state.ceoPhone)) return false
+      return true
+    default:
+      return true
+  }
+}
+
+/** 여러 step 중 가장 먼저 실패하는 step 반환 */
+export function getFirstInvalidStoreStep(
+  state: StoreFormValidationState,
+  steps: number[] = [1, 2],
+): number | null {
+  for (const step of steps) {
+    if (!validateStoreStep(step, state)) return step
+  }
+  return null
+}
+
+/** 점포 폼에서 가장 먼저 포커스해야 할 필드 반환 */
+export function getFirstInvalidStoreField(state: StoreFormValidationState): StoreFocusableField | null {
+  if (!state.officeId) return 'officeId'
+  if (state.storeOwner === 'FRANCHISE' && !state.franchiseId) return 'franchiseId'
+  if (!state.storeName) return 'storeName'
+  if (!state.ceoName) return 'ceoName'
+  if (!state.businessNumber || !isValidBusinessNumber(state.businessNumber)) return 'businessNumber'
+  if (!state.storeAddress) return 'storeAddress'
+  if (!state.ceoPhone || !isValidPhoneNumber(state.ceoPhone)) return 'ceoPhone'
+  return null
+}
+
+export interface OperatingHourValidationResult {
+  hasOperatingTimePairError: boolean
+  hasOperatingTimeRangeError: boolean
+  hasBreakTimePairError: boolean
+  hasBreakTimeRangeError: boolean
+  hasBreakWithoutOperatingTimeError: boolean
+  hasBreakOutsideOperatingError: boolean
+  hasWeekdaySelectionError: boolean
+  isValid: boolean
+}
+
+/** HH:mm 또는 HH:mm:ss 문자열을 분 단위로 변환 (잘못된 값은 0) */
+function toMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return 0
+  return h * 60 + m
+}
+
+/**
+ * 시간 범위가 0분이면 오류 (영업시간/휴게시간 공통).
+ * - end === start → 0분 범위 (오류, 00:00 ~ 00:00 포함)
+ * - end < start → 자정 넘김 (허용, 예: 18:00 ~ 02:00)
+ * - end > start → 정상
+ */
+function hasTimeRangeError(
+  start: string | null | undefined,
+  end: string | null | undefined,
+): boolean {
+  if (!start || !end) return false
+  return toMinutes(start) === toMinutes(end)
+}
+
+/**
+ * 휴게시간이 영업시간 내에 포함되는지 검증 (자정 넘김 고려).
+ * 영업시간이 자정을 넘기면 휴게시간도 동일한 기준으로 정규화해서 비교한다.
+ */
+function isBreakOutsideOperating(
+  openTime: string,
+  closeTime: string,
+  breakStartTime: string,
+  breakEndTime: string,
+): boolean {
+  const open = toMinutes(openTime)
+  let close = toMinutes(closeTime)
+  let bStart = toMinutes(breakStartTime)
+  let bEnd = toMinutes(breakEndTime)
+
+  // 영업시간 자정 넘김 정규화 (예: 18:00~02:00 → 1080~1560)
+  if (close <= open) close += 24 * 60
+
+  // 휴게시간이 영업 시작(벽시계) 이전이면 다음 날로 간주
+  if (bStart < open) bStart += 24 * 60
+  if (bEnd < open) bEnd += 24 * 60
+  // 정규화 후에도 bEnd < bStart면 휴게 자체가 자정 넘김이므로 보정
+  if (bEnd < bStart) bEnd += 24 * 60
+
+  return bStart < open || bEnd > close
+}
+
+/** 영업시간/휴게시간 검증 */
+export function getOperatingHourValidation(hour: OperatingHourRequest): OperatingHourValidationResult {
+  const hasOperatingTimePairError = !!(hour.openTime || hour.closeTime) && !(hour.openTime && hour.closeTime)
+  const hasOperatingTimeRangeError = hasTimeRangeError(hour.openTime, hour.closeTime)
+  const hasBreakTimePairError = !!(hour.breakStartTime || hour.breakEndTime) && !(hour.breakStartTime && hour.breakEndTime)
+  const hasBreakTimeRangeError = hasTimeRangeError(hour.breakStartTime, hour.breakEndTime)
+
+  const hasBreak = !!(hour.breakStartTime && hour.breakEndTime)
+  const hasOperatingTime = !!(hour.openTime && hour.closeTime)
+  const hasBreakWithoutOperatingTimeError = hasBreak && !hasOperatingTime
+  const hasBreakOutsideOperatingError = hasBreak && hasOperatingTime
+    && hour.breakStartTime != null && hour.openTime != null
+    && hour.breakEndTime != null && hour.closeTime != null
+    && isBreakOutsideOperating(hour.openTime, hour.closeTime, hour.breakStartTime, hour.breakEndTime)
+  const hasWeekdaySelectionError = hour.dayType === 'WEEKDAY'
+    && hasOperatingTime
+    && (hour.selectWeekDayList?.length ?? 0) === 0
+
+  return {
+    hasOperatingTimePairError,
+    hasOperatingTimeRangeError,
+    hasBreakTimePairError,
+    hasBreakTimeRangeError,
+    hasBreakWithoutOperatingTimeError,
+    hasBreakOutsideOperatingError,
+    hasWeekdaySelectionError,
+    isValid: !hasOperatingTimePairError
+      && !hasOperatingTimeRangeError
+      && !hasBreakTimePairError
+      && !hasBreakTimeRangeError
+      && !hasBreakWithoutOperatingTimeError
+      && !hasBreakOutsideOperatingError
+      && !hasWeekdaySelectionError,
+  }
+}
+
+/** 점포 영업시간 전체 유효성 검증 */
+export function validateStoreOperatingHours(operating: OperatingHourRequest[]): boolean {
+  return operating.every((hour) => getOperatingHourValidation(hour).isValid)
 }
 
 // ── 공통 유틸 함수 ──
@@ -52,7 +262,7 @@ export function getFileNameAndExt(fileName: string): { name: string; ext: string
 
 /** storeOwner 기반으로 organizationId를 결정하는 공통 로직 */
 export function getOrganizationId(
-  storeOwner: string,
+  storeOwner: StoreOwnerType | (string & {}),
   officeId: number | null,
   franchiseId?: number | null,
 ): number {

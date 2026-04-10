@@ -1,6 +1,8 @@
 "use client";
+import { useEffect, useRef } from "react";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
+import { isValidBusinessNumber, isValidPhoneNumber, type StoreFocusableField } from "@/lib/store-utils";
 
 function formatBusinessNumber(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -25,7 +27,15 @@ function formatPhoneNumber(value: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
 }
 
-export default function StoreContactForm({ submitted = false }: { submitted?: boolean }) {
+export default function StoreContactForm({
+  submitted = false,
+  focusField = null,
+  focusKey = 0,
+}: {
+  submitted?: boolean
+  focusField?: StoreFocusableField | null
+  focusKey?: number
+}) {
   const openAddressSearch = usePopupControler(
     (state) => state.openAddressSearch
   );
@@ -36,6 +46,18 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
   const ceoPhone = useStoreFormStore((s) => s.ceoPhone);
   const storePhone = useStoreFormStore((s) => s.storePhone);
   const setField = useStoreFormStore((s) => s.setField);
+  const ceoNameInputRef = useRef<HTMLInputElement>(null);
+  const businessNumberInputRef = useRef<HTMLInputElement>(null);
+  const addressButtonRef = useRef<HTMLButtonElement>(null);
+  const ceoPhoneInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!focusField) return;
+    if (focusField === "ceoName") ceoNameInputRef.current?.focus();
+    if (focusField === "businessNumber") businessNumberInputRef.current?.focus();
+    if (focusField === "storeAddress") addressButtonRef.current?.focus();
+    if (focusField === "ceoPhone") ceoPhoneInputRef.current?.focus();
+  }, [focusField, focusKey]);
 
   return (
     <div className="sub-cont-wrap">
@@ -47,6 +69,7 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             </div>
             <div className="block">
               <input
+                ref={ceoNameInputRef}
                 type="text"
                 className="input-frame"
                 value={ceoName}
@@ -66,6 +89,7 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             </div>
             <div className="block">
               <input
+                ref={businessNumberInputRef}
                 type="text"
                 className="input-frame"
                 value={businessNumber}
@@ -78,6 +102,9 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             {submitted && !businessNumber && (
               <div className="warning mt10">* 필수 입력 항목입니다.</div>
             )}
+            {submitted && businessNumber && !isValidBusinessNumber(businessNumber) && (
+              <div className="warning mt10">* 사업자등록번호 형식이 올바르지 않습니다.</div>
+            )}
           </div>
         </div>
         <div className="sub-item-bx">
@@ -88,6 +115,7 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             <div className="block">
               <div className="block mb8">
                 <button
+                  ref={addressButtonRef}
                   className="btn-form block grey"
                   onClick={() => openAddressSearch((addr) => setField("storeAddress", addr))}
                 >
@@ -125,6 +153,7 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             </div>
             <div className="block">
               <input
+                ref={ceoPhoneInputRef}
                 type="text"
                 className="input-frame"
                 value={ceoPhone}
@@ -136,6 +165,9 @@ export default function StoreContactForm({ submitted = false }: { submitted?: bo
             </div>
             {submitted && !ceoPhone && (
               <div className="warning mt10">* 필수 입력 항목입니다.</div>
+            )}
+            {submitted && ceoPhone && !isValidPhoneNumber(ceoPhone) && (
+              <div className="warning mt10">* 대표자 전화번호 형식이 올바르지 않습니다.</div>
             )}
             <div className="s-txt mt10">※ 숫자만 입력 가능</div>
           </div>

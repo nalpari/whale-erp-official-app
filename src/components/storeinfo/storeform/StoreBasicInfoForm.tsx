@@ -1,10 +1,18 @@
 "use client";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { useBpTree } from "@/hooks/queries/use-bp-queries";
-import { OPERATION_STATUS, getToday } from "@/lib/store-utils";
+import { OPERATION_STATUS, getToday, type StoreFocusableField } from "@/lib/store-utils";
 
-export default function StoreBasicInfoForm({ submitted = false }: { submitted?: boolean }) {
+export default function StoreBasicInfoForm({
+  submitted = false,
+  focusField = null,
+  focusKey = 0,
+}: {
+  submitted?: boolean
+  focusField?: StoreFocusableField | null
+  focusKey?: number
+}) {
   const storeOwner = useStoreFormStore((s) => s.storeOwner);
   const officeId = useStoreFormStore((s) => s.officeId);
   const franchiseId = useStoreFormStore((s) => s.franchiseId);
@@ -14,6 +22,9 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
   const setField = useStoreFormStore((s) => s.setField);
 
   const { data: bpTree = [] } = useBpTree();
+  const officeSelectRef = useRef<HTMLSelectElement>(null);
+  const franchiseSelectRef = useRef<HTMLSelectElement>(null);
+  const storeNameInputRef = useRef<HTMLInputElement>(null);
 
   // 선택된 본사의 가맹점 목록
   const franchises = useMemo(() => {
@@ -21,6 +32,13 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
     const office = bpTree.find((o) => o.id === officeId);
     return office?.franchises ?? [];
   }, [bpTree, officeId]);
+
+  useEffect(() => {
+    if (!focusField) return;
+    if (focusField === "officeId") officeSelectRef.current?.focus();
+    if (focusField === "franchiseId") franchiseSelectRef.current?.focus();
+    if (focusField === "storeName") storeNameInputRef.current?.focus();
+  }, [focusField, focusKey]);
 
   return (
     <div className="sub-cont-wrap">
@@ -57,6 +75,7 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
             <div>
               <div className="block mb8">
                 <select
+                  ref={officeSelectRef}
                   className="select-form"
                   value={officeId ?? ""}
                   onChange={(e) => {
@@ -74,6 +93,7 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
               </div>
               <div className="block">
                 <select
+                  ref={franchiseSelectRef}
                   className="select-form"
                   value={franchiseId ?? ""}
                   onChange={(e) => setField("franchiseId", e.target.value ? Number(e.target.value) : null)}
@@ -91,6 +111,9 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
             {submitted && !officeId && (
               <div className="warning mt10">* 필수 입력 항목입니다.</div>
             )}
+            {submitted && storeOwner === "FRANCHISE" && officeId && !franchiseId && (
+              <div className="warning mt10">* 가맹점을 선택해주세요.</div>
+            )}
           </div>
         </div>
         <div className="sub-item-bx">
@@ -100,6 +123,7 @@ export default function StoreBasicInfoForm({ submitted = false }: { submitted?: 
             </div>
             <div className="block">
               <input
+                ref={storeNameInputRef}
                 type="text"
                 className="input-frame"
                 value={storeName}

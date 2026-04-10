@@ -10,6 +10,19 @@ export interface AttendanceRecordGroup {
   status: CommuteDayDisplayStatus
 }
 
+export function hasAttendanceContract(record: AttendanceRecord): boolean {
+  return !!(record.contractStartTime && record.contractEndTime)
+}
+
+export function hasAttendanceWorkRecord(record: AttendanceRecord): boolean {
+  return !!(record.workStartTime || record.workEndTime)
+}
+
+export function shouldRenderAttendanceRecord(record: AttendanceRecord): boolean {
+  if (record.isHoliday) return true
+  return hasAttendanceContract(record) || hasAttendanceWorkRecord(record)
+}
+
 /** HH:mm:ss 문자열을 분 단위로 변환 */
 export function timeToMinutes(time: string): number {
   const [h, m, s] = time.split(':').map(Number)
@@ -57,35 +70,19 @@ export function getAvatarSrc(iconType: number): string {
 
 /**
  * 출퇴근 기록 단건에 대한 일별 표시 상태 계산
- * 화면정의서 Note #7: 지연 = 계약 출근 시각 기준 30분 초과 출근
- * 화면정의서 Note #10: 출근기록 있으면 계약 없어도 근무로 표시
+ *
+ * 1. 휴일이고 실제 근무 기록(출근·퇴근 모두)이 없으면 → '휴일'
+ * 2. workStartTime 또는 workEndTime이 하나라도 있으면 → '근무'
+ *    (자정 넘김 퇴근일: workEndTime만 있는 경우도 '근무')
+ * 3. 그 외 → '결근'
  */
 export function getAttendanceDayStatus(
   record: AttendanceRecord,
-  now: Date = new Date(),
 ): CommuteDayDisplayStatus {
-  if (record.isHoliday) return '휴일'
-
-  // "YYYY-MM-DD" 문자열을 UTC가 아닌 로컬 자정으로 파싱 (new Date("YYYY-MM-DD")는 UTC midnight)
-  const [year, month, day] = record.date.split('-').map(Number)
-  const recordDate = new Date(year, month - 1, day)
-  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const isPast = recordDate < todayMidnight
-
-  // 출근 기록 없음
-  if (record.recordId === null) {
-    if (isPast) return '결근'
-    return '미출근'
-  }
-
-  // 출근 기록 있음 — 지연 판단: 계약 출근 시각 기준 30분 초과 시 지연 (화면정의서 Note #7)
-  if (record.workStartTime && record.contractStartTime) {
-    const contractStartMin = timeToMinutes(record.contractStartTime)
-    const workStartMin = timeToMinutes(record.workStartTime)
-    if (workStartMin > contractStartMin + 30) return '지연'
-  }
-
-  return '근무'
+  if (record.isHoliday && !record.workStartTime && !record.workEndTime) return '휴일'
+  if (hasAttendanceWorkRecord(record)) return '근무'
+  if (hasAttendanceContract(record)) return '결근'
+  return '결근'
 }
 
 /**
@@ -93,7 +90,6 @@ export function getAttendanceDayStatus(
  */
 export function groupAttendanceRecords(
   records: AttendanceRecord[],
-  now: Date = new Date(),
 ): AttendanceRecordGroup[] {
   const map = new Map<string, AttendanceRecordGroup>()
   for (const record of records) {
@@ -109,25 +105,105 @@ export function groupAttendanceRecords(
         hasContract: !(record.contractStartTime === null && record.contractEndTime === null),
         records: [record],
         totalMinutes: calcWorkMinutes(record.workStartTime, record.workEndTime),
-        status: getAttendanceDayStatus(record, now),
+        status: getAttendanceDayStatus(record),
       })
     }
   }
   // 같은 날 레코드가 2개 이상인 경우 전체 레코드 기반으로 status 재계산
-  // (최초 그룹 생성 시 첫 번째 레코드만 사용하던 버그 수정)
   for (const group of map.values()) {
     if (group.records.length > 1) {
-      const statuses = group.records.map((r) => getAttendanceDayStatus(r, now))
-      // 우선순위: 휴일 > 지연 > 결근 > 미출근 > 근무
-      // 더 심각한 상태를 우선 표시하여 복수 계약 직원의 결근이 근무에 가려지지 않도록 함
+      const statuses = group.records
+        .filter((record) => shouldRenderAttendanceRecord(record))
+        .map((record) => getAttendanceDayStatus(record))
+      if (statuses.length === 0) continue
+      // 우선순위: 휴일 > 결근 > 근무 (row별 개별 표시가 기본이므로 그룹 상태는 참고용)
       if (statuses.includes('휴일')) group.status = '휴일'
-      else if (statuses.includes('지연')) group.status = '지연'
       else if (statuses.includes('결근')) group.status = '결근'
-      else if (statuses.includes('미출근')) group.status = '미출근'
       else group.status = '근무'
     }
   }
   return Array.from(map.values())
+}
+
+const MIDNIGHT_START = '00:00'
+const DAY_END = '23:59'
+
+/**
+ * record.date (YYYY-MM-DD) 문자열이 오늘보다 과거인지 판정한다.
+ * - 문자열 비교라 timezone/DST 이슈 없음
+ * - 잘못된 포맷(NaN 유발 가능)은 false 반환 (안전 기본값: "오늘")
+ */
+function isRecordDatePast(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false
+  return dateStr < toInputDate(new Date())
+}
+
+export interface DisplayTimeRange {
+  startTime: string   // 'HH:mm' 형식
+  endTime: string     // 'HH:mm' 형식 또는 '진행 중'
+  inProgress: boolean // 오늘 출근 후 아직 퇴근하지 않은 상태
+}
+
+/**
+ * 레코드의 표시용 시간 범위를 계산한다.
+ * - 출근·퇴근 모두 있음 → 정상 표시
+ * - 출근만 있고 퇴근 없음 (과거) → 'HH:mm ~ 23:59' (자정 넘김 또는 미퇴근)
+ * - 출근만 있고 퇴근 없음 (오늘) → 'HH:mm ~ 진행 중'
+ * - 퇴근만 있고 출근 없음 → '00:00 ~ HH:mm' (자정 넘김 퇴근일)
+ */
+export function getDisplayTimeRange(
+  record: AttendanceRecord,
+): DisplayTimeRange | null {
+  const { workStartTime, workEndTime } = record
+
+  // 둘 다 있음 → 정상 표시
+  if (workStartTime && workEndTime) {
+    return { startTime: formatTime(workStartTime), endTime: formatTime(workEndTime), inProgress: false }
+  }
+
+  // 출근만 있고 퇴근 없음 → 과거면 자정 경계, 오늘이면 진행 중
+  if (workStartTime && !workEndTime) {
+    if (isRecordDatePast(record.date)) {
+      return { startTime: formatTime(workStartTime), endTime: DAY_END, inProgress: false }
+    }
+    return { startTime: formatTime(workStartTime), endTime: '진행 중', inProgress: true }
+  }
+
+  // 퇴근만 있고 출근 없음 → 자정 넘김 퇴근일
+  if (!workStartTime && workEndTime) {
+    return { startTime: MIDNIGHT_START, endTime: formatTime(workEndTime), inProgress: false }
+  }
+
+  // 둘 다 없음
+  return null
+}
+
+/**
+ * 레코드 기반 근무 분 계산 (표시 규칙과 일치).
+ * - 출근·퇴근 모두 있음 → 정상 계산 (calcWorkMinutes)
+ * - 출근만 있고 퇴근 없음 (오늘) → 0 (진행 중, 집계 제외)
+ * - 출근만 있고 퇴근 없음 (과거) → 출근 ~ 24:00 (다음날 자정까지로 간주)
+ * - 퇴근만 있고 출근 없음 → 00:00 ~ 퇴근 (자정 넘김 퇴근일, 분리 집계)
+ */
+export function getDisplayWorkMinutes(record: AttendanceRecord): number {
+  const { workStartTime, workEndTime } = record
+
+  if (workStartTime && workEndTime) {
+    return Math.floor(calcWorkMinutes(workStartTime, workEndTime))
+  }
+
+  if (workStartTime && !workEndTime) {
+    if (!isRecordDatePast(record.date)) return 0
+    // 과거 미퇴근: 다음날 자정(24:00)까지 근무한 것으로 간주 (1분 손실 방지)
+    return Math.max(0, 24 * 60 - Math.floor(timeToMinutes(workStartTime)))
+  }
+
+  if (!workStartTime && workEndTime) {
+    // 자정 넘김 퇴근일: 00:00 ~ 퇴근 (분리 집계)
+    return Math.floor(timeToMinutes(workEndTime))
+  }
+
+  return 0
 }
 
 /**

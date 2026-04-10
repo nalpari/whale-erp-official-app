@@ -19,6 +19,23 @@ export function getErrorMessage(error: unknown, fallback = '알 수 없는 오�
   return fallback
 }
 
+/** 서버 에러 응답의 details 객체 추출 (필드별 검증 오류 메시지) */
+export function getErrorDetails(error: unknown): Record<string, string> | null {
+  if (axios.isAxiosError(error)) {
+    const details = error.response?.data?.details
+    if (details && typeof details === 'object' && !Array.isArray(details)) {
+      const entries = Object.entries(details as Record<string, unknown>)
+      if (entries.length === 0) return null
+      const result: Record<string, string> = {}
+      for (const [key, value] of entries) {
+        result[key] = typeof value === 'string' ? value : String(value)
+      }
+      return result
+    }
+  }
+  return null
+}
+
 const handledErrors = new WeakSet<object>()
 
 /** 인터셉터에서 이미 alert 처리된 에러인지 확인 */
@@ -109,7 +126,7 @@ api.interceptors.response.use(
     // currentPath 헤더가 미구현 상태라 AuthorityCheckFilter.kt가 400을 반환하는 동안만 유지
     if (
       error.response?.status === 400 &&
-      error.response?.data?.message?.includes('Required request header')
+      error.response?.data?.message?.includes("Required request header 'currentPath'")
     ) {
       usePopupControler.getState().openAlert({ message: '접근 권한이 없습니다.' })
       handledErrors.add(error)

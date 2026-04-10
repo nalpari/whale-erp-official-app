@@ -5,14 +5,17 @@ import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
-import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
-import { getOrganizationId } from "@/lib/store-utils";
+import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
+import { formatStoreErrorDetails, getFirstInvalidStoreField, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, type StoreFocusableField, validateStoreStep } from "@/lib/store-utils";
 import StoreBasicInfoForm from "../storeform/StoreBasicInfoForm";
 import StoreContactForm from "../storeform/StoreContactForm";
 
 export default function StoreEditInfo({ id }: { id: number }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
+  const [focusField, setFocusField] = useState<StoreFocusableField | null>(null);
+  const [focusKey, setFocusKey] = useState(0);
   const openAlert = usePopupControler((state) => state.openAlert);
   // TODO: 공통 로딩 화면으로 교체 (수정 pending)
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
@@ -87,15 +90,38 @@ export default function StoreEditInfo({ id }: { id: number }) {
     );
   }
 
-  const handleNext = () => { window.scrollTo({ top: 0 }); setStep(step + 1); };
-  const handlePrev = () => { window.scrollTo({ top: 0 }); setStep(step - 1); };
+  const validateStep = (s: number): boolean => {
+    const state = useStoreFormStore.getState();
+    return validateStoreStep(s, state);
+  };
+
+  const requestFocus = (field: StoreFocusableField | null) => {
+    setFocusField(field);
+    setFocusKey((k) => k + 1);
+  };
+
+  const handleNext = () => {
+    if (!validateStep(step)) {
+      setSubmitted(true);
+      requestFocus(getFirstInvalidStoreField(useStoreFormStore.getState()));
+      return;
+    }
+    setSubmitted(false);
+    setFocusField(null);
+    window.scrollTo({ top: 0 });
+    setStep(step + 1);
+  };
+  const handlePrev = () => { setSubmitted(false); setFocusField(null); window.scrollTo({ top: 0 }); setStep(step - 1); };
 
   const handleSave = async () => {
     if (isUpdating) return;
     const form = useStoreFormStore.getState();
-
-    if (!form.officeId || !form.storeName) {
-      openAlert({ message: "필수 입력 항목을 확인해주세요." });
+    const invalidStep = getFirstInvalidStoreStep(form);
+    if (invalidStep !== null) {
+      setSubmitted(true);
+      setStep(invalidStep);
+      requestFocus(getFirstInvalidStoreField(form));
+      window.scrollTo({ top: 0 });
       return;
     }
 
@@ -130,8 +156,22 @@ export default function StoreEditInfo({ id }: { id: number }) {
         onConfirm: () => router.push(`/storeinfo/${id}`),
       });
     } catch (err) {
-      if (isInterceptorHandled(err)) return
+      if (isInterceptorHandled(err)) return;
       console.error('[StoreEditInfo] 점포정보 저장 실패:', err);
+
+      const details = getErrorDetails(err);
+      if (details) {
+        const targetStep = getStoreErrorStep(details);
+        if (targetStep !== null) {
+          setSubmitted(true);
+          setStep(targetStep);
+          setFocusField(null);
+          window.scrollTo({ top: 0 });
+        }
+        openAlert({ message: formatStoreErrorDetails(details) });
+        return;
+      }
+
       openAlert({ message: getErrorMessage(err, "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.") });
     }
   };
@@ -140,8 +180,8 @@ export default function StoreEditInfo({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreBasicInfoForm />}
-          {step === 2 && <StoreContactForm />}
+          {step === 1 && <StoreBasicInfoForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
+          {step === 2 && <StoreContactForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
         </div>
       </div>
       <div className="content-pagination">

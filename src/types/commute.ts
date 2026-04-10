@@ -1,5 +1,5 @@
-/** 화면정의서 Description #7, #10 기준 일별 표시 상태 */
-export type CommuteDayDisplayStatus = '근무' | '지연' | '미출근' | '결근' | '휴일'
+/** 일별 표시 상태: 근무 / 결근 / 휴일 */
+export type CommuteDayDisplayStatus = '근무' | '결근' | '휴일'
 
 // ─── 목록 ────────────────────────────────────────────────────────────────────
 

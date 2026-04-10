@@ -1,16 +1,17 @@
 "use client";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStoreFormStore } from "@/store/useStoreFormStore";
 import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useStoreDetail, useUpdateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage, isInterceptorHandled } from "@/lib/api";
-import { buildOperatingHoursRequest, toFormOperating, getOrganizationId } from "@/lib/store-utils";
+import { buildOperatingHoursRequest, toFormOperating, getOrganizationId, validateStoreOperatingHours } from "@/lib/store-utils";
 import StoreOperatingHourForm from "../storeform/StoreOperatingHourForm";
 
 export default function StoreEditTime({ id }: { id: number }) {
   const router = useRouter();
+  const [submitted, setSubmitted] = useState(false);
   const openAlert = usePopupControler((state) => state.openAlert);
   // TODO: 공통 로딩 화면으로 교체 (수정 pending)
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
@@ -70,6 +71,11 @@ export default function StoreEditTime({ id }: { id: number }) {
   const handleSave = async () => {
     if (isUpdating) return;
     const form = useStoreFormStore.getState();
+    if (!validateStoreOperatingHours(form.operating)) {
+      setSubmitted(true);
+      window.scrollTo({ top: 0 });
+      return;
+    }
 
     try {
       const orgId = getOrganizationId(data.storeInfo.storeOwner, data.storeInfo.officeId, data.storeInfo.franchiseId);
@@ -105,7 +111,7 @@ export default function StoreEditTime({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          <StoreOperatingHourForm />
+          <StoreOperatingHourForm submitted={submitted} />
         </div>
       </div>
       <div className="content-pagination">

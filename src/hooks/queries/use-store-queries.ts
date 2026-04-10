@@ -62,14 +62,14 @@ export const useStoreInfiniteList = (params: Omit<StoreSearchParams, 'page'>, en
 }
 
 // 점포 상세 조회
-export const useStoreDetail = (id?: number) => {
+export const useStoreDetail = (id?: number, enabled = true) => {
   return useQuery({
     queryKey: storeKeys.detail(id),
     queryFn: () => {
       if (!id) throw new Error('id가 없습니다.')
       return getStoreDetail(id)
     },
-    enabled: !!id,
+    enabled: !!id && enabled,
   })
 }
 
@@ -110,8 +110,15 @@ export const useDeleteStore = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => deleteStore(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: storeKeys.all })
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey: storeKeys.detail(id) })
+    },
+    onSuccess: (_data, id) => {
+      queryClient.removeQueries({ queryKey: storeKeys.detail(id), exact: true })
+      queryClient.invalidateQueries({ queryKey: storeKeys.headOffices() })
+      queryClient.invalidateQueries({ queryKey: storeKeys.headOfficeTree() })
+      queryClient.invalidateQueries({ queryKey: [...storeKeys.all, 'options'] })
+      queryClient.invalidateQueries({ queryKey: [...storeKeys.all, 'list'] })
     },
   })
 }
