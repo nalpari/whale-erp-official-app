@@ -108,16 +108,21 @@ export function groupAttendanceRecords(
   return Array.from(map.values())
 }
 
+const MIDNIGHT_START = '00:00'
+const DAY_END = '23:59'
+
 export interface DisplayTimeRange {
-  startTime: string  // 'HH:mm' 형식
-  endTime: string    // 'HH:mm' 형식
+  startTime: string   // 'HH:mm' 형식
+  endTime: string     // 'HH:mm' 형식 또는 '진행 중'
+  inProgress: boolean // 오늘 출근 후 아직 퇴근하지 않은 상태
 }
 
 /**
  * 레코드의 표시용 시간 범위를 계산한다.
- * 자정 넘김 시 서버가 날짜를 분할하여 보내주는 경우를 처리:
- * - workStartTime만 있고 workEndTime이 없음 → 'HH:mm ~ 23:59'
- * - workStartTime이 없고 workEndTime만 있음 → '00:00 ~ HH:mm'
+ * - 출근·퇴근 모두 있음 → 정상 표시
+ * - 출근만 있고 퇴근 없음 (과거) → 'HH:mm ~ 23:59' (자정 넘김 또는 미퇴근)
+ * - 출근만 있고 퇴근 없음 (오늘) → 'HH:mm ~ 진행 중'
+ * - 퇴근만 있고 출근 없음 → '00:00 ~ HH:mm' (자정 넘김 퇴근일)
  */
 export function getDisplayTimeRange(
   record: AttendanceRecord,
@@ -126,26 +131,26 @@ export function getDisplayTimeRange(
 
   // 둘 다 있음 → 정상 표시
   if (workStartTime && workEndTime) {
-    return {
-      startTime: formatTime(workStartTime),
-      endTime: formatTime(workEndTime),
-    }
+    return { startTime: formatTime(workStartTime), endTime: formatTime(workEndTime), inProgress: false }
   }
 
-  // 출근만 있고 퇴근 없음 → 자정 넘김 출근일 또는 진행 중
+  // 출근만 있고 퇴근 없음 → 과거면 자정 경계, 오늘이면 진행 중
   if (workStartTime && !workEndTime) {
-    return {
-      startTime: formatTime(workStartTime),
-      endTime: '23:59',
+    const [year, month, day] = record.date.split('-').map(Number)
+    const recordDate = new Date(year, month - 1, day)
+    const now = new Date()
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const isPast = recordDate < todayMidnight
+
+    if (isPast) {
+      return { startTime: formatTime(workStartTime), endTime: DAY_END, inProgress: false }
     }
+    return { startTime: formatTime(workStartTime), endTime: '진행 중', inProgress: true }
   }
 
   // 퇴근만 있고 출근 없음 → 자정 넘김 퇴근일
   if (!workStartTime && workEndTime) {
-    return {
-      startTime: '00:00',
-      endTime: formatTime(workEndTime),
-    }
+    return { startTime: MIDNIGHT_START, endTime: formatTime(workEndTime), inProgress: false }
   }
 
   // 둘 다 없음

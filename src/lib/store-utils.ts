@@ -25,6 +25,8 @@ export const WEEKDAY_LABEL: Record<string, string> = {
 export const WEEKDAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] as const
 export const ALL_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const
 
+export type StoreOwnerType = 'HEAD_OFFICE' | 'FRANCHISE'
+
 export interface StoreFormValidationState {
   storeOwner: string
   officeId: number | null
@@ -36,14 +38,7 @@ export interface StoreFormValidationState {
   ceoPhone: string
 }
 
-export type StoreFocusableField =
-  | 'officeId'
-  | 'franchiseId'
-  | 'storeName'
-  | 'ceoName'
-  | 'businessNumber'
-  | 'storeAddress'
-  | 'ceoPhone'
+export type StoreFocusableField = Exclude<keyof StoreFormValidationState, 'storeOwner'>
 
 /** 오늘 날짜를 YYYY-MM-DD 로컬 타임존 문자열로 반환 */
 export function getToday(): string {
@@ -106,12 +101,13 @@ export function isValidPhoneNumber(value: string): boolean {
   return /^0\d{1,2}-\d{3,4}-\d{4}$/.test(value)
 }
 
-/** 점포 폼 Step 유효성 검증 */
+/** 점포 폼 Step 유효성 검증 (getFirstInvalidStoreField와 동일한 우선순위) */
 export function validateStoreStep(step: number, state: StoreFormValidationState): boolean {
   switch (step) {
     case 1:
+      if (!state.officeId) return false
       if (state.storeOwner === 'FRANCHISE' && !state.franchiseId) return false
-      return !!state.officeId && !!state.storeName
+      return !!state.storeName
     case 2:
       if (!state.ceoName || !state.businessNumber || !state.storeAddress || !state.ceoPhone) return false
       if (!isValidBusinessNumber(state.businessNumber)) return false
@@ -156,17 +152,23 @@ export interface OperatingHourValidationResult {
   isValid: boolean
 }
 
-function isEndBeforeStart(start?: string | null, end?: string | null): boolean {
+/** HH:mm 또는 HH:mm:ss 문자열을 분 단위로 변환 */
+function toMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return (h ?? 0) * 60 + (m ?? 0)
+}
+
+function isEndBeforeOrEqualStart(start?: string | null, end?: string | null): boolean {
   if (!start || !end) return false
-  return end <= start
+  return toMinutes(end) <= toMinutes(start)
 }
 
 /** 영업시간/휴게시간 검증 */
 export function getOperatingHourValidation(hour: OperatingHourRequest): OperatingHourValidationResult {
   const hasOperatingTimePairError = !!(hour.openTime || hour.closeTime) && !(hour.openTime && hour.closeTime)
-  const hasOperatingTimeRangeError = isEndBeforeStart(hour.openTime, hour.closeTime)
+  const hasOperatingTimeRangeError = isEndBeforeOrEqualStart(hour.openTime, hour.closeTime)
   const hasBreakTimePairError = !!(hour.breakStartTime || hour.breakEndTime) && !(hour.breakStartTime && hour.breakEndTime)
-  const hasBreakTimeRangeError = isEndBeforeStart(hour.breakStartTime, hour.breakEndTime)
+  const hasBreakTimeRangeError = isEndBeforeOrEqualStart(hour.breakStartTime, hour.breakEndTime)
 
   const hasBreak = !!(hour.breakStartTime && hour.breakEndTime)
   const hasOperatingTime = !!(hour.openTime && hour.closeTime)
@@ -174,7 +176,7 @@ export function getOperatingHourValidation(hour: OperatingHourRequest): Operatin
   const hasBreakOutsideOperatingError = hasBreak && hasOperatingTime
     && hour.breakStartTime != null && hour.openTime != null
     && hour.breakEndTime != null && hour.closeTime != null
-    && (hour.breakStartTime < hour.openTime || hour.breakEndTime > hour.closeTime)
+    && (toMinutes(hour.breakStartTime) < toMinutes(hour.openTime) || toMinutes(hour.breakEndTime) > toMinutes(hour.closeTime))
   const hasWeekdaySelectionError = hour.dayType === 'WEEKDAY'
     && hasOperatingTime
     && (hour.selectWeekDayList?.length ?? 0) === 0
@@ -222,7 +224,7 @@ export function getFileNameAndExt(fileName: string): { name: string; ext: string
 
 /** storeOwner 기반으로 organizationId를 결정하는 공통 로직 */
 export function getOrganizationId(
-  storeOwner: string,
+  storeOwner: StoreOwnerType | (string & {}),
   officeId: number | null,
   franchiseId?: number | null,
 ): number {

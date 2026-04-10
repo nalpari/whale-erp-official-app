@@ -14,7 +14,6 @@ import {
   toInputDate,
   getAvatarSrc,
   getDisplayTimeRange,
-  timeToMinutes,
 } from "@/lib/commute-utils";
 import type { AttendanceRecord, CommuteDayDisplayStatus, ContractWorkHour } from "@/types/commute";
 import type { AttendanceRecordGroup } from "@/lib/commute-utils";
@@ -123,15 +122,13 @@ function RecordRow({ record }: { record: AttendanceRecord }) {
   const badge = STATUS_BADGE[status];
   const timeRange = getDisplayTimeRange(record);
 
-  // 시간 범위가 있으면 근무시간 계산 (자정 넘김 보정 포함)
-  const workMin = timeRange
-    ? (() => {
-        const startMin = timeToMinutes(record.workStartTime ?? '00:00:00');
-        const endMin = timeToMinutes(record.workEndTime ?? '23:59:00');
-        return Math.max(0, (endMin >= startMin ? endMin : endMin + 1440) - startMin);
-      })()
+  // 진행 중이 아니고 출퇴근 시간이 모두 있을 때만 근무시간 계산
+  const totalMin = timeRange && !timeRange.inProgress
+    ? Math.floor(calcWorkMinutes(
+        record.workStartTime ?? '00:00:00',
+        record.workEndTime ?? '23:59:00',
+      ))
     : 0;
-  const totalMin = Math.floor(workMin);
 
   return (
     <div className="commute-list-data-item">
@@ -140,7 +137,7 @@ function RecordRow({ record }: { record: AttendanceRecord }) {
       </div>
       <div className="commute-list-data-work">
         <span className={badge.className}>{badge.label}</span>
-        {timeRange && totalMin > 0 && (
+        {totalMin > 0 && (
           <span className="time">{Math.floor(totalMin / 60)}시간 {totalMin % 60}분</span>
         )}
       </div>

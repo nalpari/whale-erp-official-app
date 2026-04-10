@@ -6,7 +6,7 @@ import { usePopupControler } from "@/store/usePopupControler";
 import { useHeaderStore } from "@/store/useHeaderStore";
 import { useCreateStore } from "@/hooks/queries/use-store-queries";
 import { getErrorMessage, getErrorDetails, isInterceptorHandled } from "@/lib/api";
-import { buildOperatingHoursRequest, formatStoreErrorDetails, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreOperatingHours, validateStoreStep } from "@/lib/store-utils";
+import { buildOperatingHoursRequest, formatStoreErrorDetails, getFirstInvalidStoreField, getFirstInvalidStoreStep, getOrganizationId, getStoreErrorStep, validateStoreOperatingHours, validateStoreStep, type StoreFocusableField } from "@/lib/store-utils";
 import StoreBasicInfoForm from "./storeform/StoreBasicInfoForm";
 import StoreContactForm from "./storeform/StoreContactForm";
 import StorePhotoForm from "./storeform/StorePhotoForm";
@@ -16,6 +16,8 @@ export default function StoreCreate() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [focusField, setFocusField] = useState<StoreFocusableField | null>(null);
+  const [focusKey, setFocusKey] = useState(0);
   const openAlert = usePopupControler((state) => state.openAlert);
   // TODO: 공통 로딩 화면으로 교체 (등록 pending)
   const { mutateAsync: createStore, isPending: isCreating } = useCreateStore();
@@ -62,18 +64,26 @@ export default function StoreCreate() {
     return validateStoreStep(s, state);
   };
 
+  const requestFocus = (field: StoreFocusableField | null) => {
+    setFocusField(field);
+    setFocusKey((k) => k + 1);
+  };
+
   const handleNext = () => {
     if (!validateStep(step)) {
       setSubmitted(true);
+      requestFocus(getFirstInvalidStoreField(useStoreFormStore.getState()));
       return;
     }
     setSubmitted(false);
+    setFocusField(null);
     window.scrollTo({ top: 0 });
     setStep(step + 1);
   };
 
   const handlePrev = () => {
     setSubmitted(false);
+    setFocusField(null);
     window.scrollTo({ top: 0 });
     setStep(step - 1);
   };
@@ -85,8 +95,8 @@ export default function StoreCreate() {
     if (invalidStep !== null) {
       setSubmitted(true);
       setStep(invalidStep);
+      requestFocus(getFirstInvalidStoreField(form));
       window.scrollTo({ top: 0 });
-      openAlert({ message: "필수 입력 항목과 입력값 형식을 확인해주세요." });
       return;
     }
     if (!validateStoreOperatingHours(form.operating)) {
@@ -144,8 +154,8 @@ export default function StoreCreate() {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreBasicInfoForm submitted={submitted} />}
-          {step === 2 && <StoreContactForm submitted={submitted} />}
+          {step === 1 && <StoreBasicInfoForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
+          {step === 2 && <StoreContactForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
           {step === 3 && <StorePhotoForm />}
           {step === 4 && <StoreOperatingHourForm submitted={submitted} />}
         </div>

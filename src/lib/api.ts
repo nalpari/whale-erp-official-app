@@ -126,7 +126,7 @@ api.interceptors.response.use(
     // currentPath 헤더가 미구현 상태라 AuthorityCheckFilter.kt가 400을 반환하는 동안만 유지
     if (
       error.response?.status === 400 &&
-      error.response?.data?.message?.includes('Required request header')
+      error.response?.data?.message?.includes("Required request header 'currentPath'")
     ) {
       usePopupControler.getState().openAlert({ message: '접근 권한이 없습니다.' })
       handledErrors.add(error)

@@ -7,9 +7,11 @@ import { OPERATION_STATUS, getToday, type StoreFocusableField } from "@/lib/stor
 export default function StoreBasicInfoForm({
   submitted = false,
   focusField = null,
+  focusKey = 0,
 }: {
   submitted?: boolean
   focusField?: StoreFocusableField | null
+  focusKey?: number
 }) {
   const storeOwner = useStoreFormStore((s) => s.storeOwner);
   const officeId = useStoreFormStore((s) => s.officeId);
@@ -36,7 +38,7 @@ export default function StoreBasicInfoForm({
     if (focusField === "officeId") officeSelectRef.current?.focus();
     if (focusField === "franchiseId") franchiseSelectRef.current?.focus();
     if (focusField === "storeName") storeNameInputRef.current?.focus();
-  }, [focusField]);
+  }, [focusField, focusKey]);
 
   return (
     <div className="sub-cont-wrap">

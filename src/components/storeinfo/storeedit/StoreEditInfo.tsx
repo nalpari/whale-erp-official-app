@@ -15,6 +15,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [focusField, setFocusField] = useState<StoreFocusableField | null>(null);
+  const [focusKey, setFocusKey] = useState(0);
   const openAlert = usePopupControler((state) => state.openAlert);
   // TODO: 공통 로딩 화면으로 교체 (수정 pending)
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
@@ -94,10 +95,15 @@ export default function StoreEditInfo({ id }: { id: number }) {
     return validateStoreStep(s, state);
   };
 
+  const requestFocus = (field: StoreFocusableField | null) => {
+    setFocusField(field);
+    setFocusKey((k) => k + 1);
+  };
+
   const handleNext = () => {
     if (!validateStep(step)) {
       setSubmitted(true);
-      setFocusField(getFirstInvalidStoreField(useStoreFormStore.getState()));
+      requestFocus(getFirstInvalidStoreField(useStoreFormStore.getState()));
       return;
     }
     setSubmitted(false);
@@ -114,7 +120,7 @@ export default function StoreEditInfo({ id }: { id: number }) {
     if (invalidStep !== null) {
       setSubmitted(true);
       setStep(invalidStep);
-      setFocusField(getFirstInvalidStoreField(form));
+      requestFocus(getFirstInvalidStoreField(form));
       window.scrollTo({ top: 0 });
       return;
     }
@@ -174,8 +180,8 @@ export default function StoreEditInfo({ id }: { id: number }) {
     <>
       <div className="container sub">
         <div className="sub-content-body">
-          {step === 1 && <StoreBasicInfoForm submitted={submitted} focusField={focusField} />}
-          {step === 2 && <StoreContactForm submitted={submitted} focusField={focusField} />}
+          {step === 1 && <StoreBasicInfoForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
+          {step === 2 && <StoreContactForm submitted={submitted} focusField={focusField} focusKey={focusKey} />}
         </div>
       </div>
       <div className="content-pagination">

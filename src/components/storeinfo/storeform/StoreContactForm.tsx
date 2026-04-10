@@ -30,9 +30,11 @@ function formatPhoneNumber(value: string): string {
 export default function StoreContactForm({
   submitted = false,
   focusField = null,
+  focusKey = 0,
 }: {
   submitted?: boolean
   focusField?: StoreFocusableField | null
+  focusKey?: number
 }) {
   const openAddressSearch = usePopupControler(
     (state) => state.openAddressSearch
@@ -55,7 +57,7 @@ export default function StoreContactForm({
     if (focusField === "businessNumber") businessNumberInputRef.current?.focus();
     if (focusField === "storeAddress") addressButtonRef.current?.focus();
     if (focusField === "ceoPhone") ceoPhoneInputRef.current?.focus();
-  }, [focusField]);
+  }, [focusField, focusKey]);
 
   return (
     <div className="sub-cont-wrap">
