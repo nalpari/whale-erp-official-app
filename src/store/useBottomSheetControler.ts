@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { WorkerEditItem, WorkerSheetEmployee, ScheduleContractType } from '@/types/schedule'
+import type { ContractBonus } from '@/types/contract'
 
 // 근무자 교체/삭제 바텀시트에서 대상 근무자 정보와 날짜를 표시하기 위한 컨텍스트
 interface WorkerSheetContext {
@@ -55,6 +56,11 @@ type BottomSheetControlerState = {
   setPartStaffPaySheet: (isOpen: boolean) => void
   bonusPaySheet: boolean
   setBonusPaySheet: (isOpen: boolean) => void
+  bonusPayData: ContractBonus[]
+  bonusPayHeadOfficeId: number | null
+  bonusPayFranchiseId: number | null
+  bonusPayOnChange: ((bonuses: ContractBonus[]) => void) | null
+  openBonusPaySheet: (bonuses: ContractBonus[], headOfficeId: number | null, franchiseId: number | null, onChange: (bonuses: ContractBonus[]) => void) => void
   contractSearchSheet: boolean
   setContractSearchSheet: (isOpen: boolean) => void
   fullTimerSearchSheet: boolean
@@ -172,6 +178,16 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
       bonusPaySheet: false,
       setBonusPaySheet: (isOpen: boolean) =>
         set({ bonusPaySheet: isOpen }, false, 'bottomSheet/setBonusPay'),
+      bonusPayData: [],
+      bonusPayHeadOfficeId: null,
+      bonusPayFranchiseId: null,
+      bonusPayOnChange: null,
+      openBonusPaySheet: (bonuses, headOfficeId, franchiseId, onChange) =>
+        set(
+          { bonusPaySheet: true, bonusPayData: bonuses, bonusPayHeadOfficeId: headOfficeId, bonusPayFranchiseId: franchiseId, bonusPayOnChange: onChange },
+          false,
+          'bottomSheet/openBonusPay',
+        ),
       contractSearchSheet: false,
       setContractSearchSheet: (isOpen: boolean) =>
         set(

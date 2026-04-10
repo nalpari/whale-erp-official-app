@@ -32,6 +32,9 @@ export default function EmploymentContract({
   const openContractOption = useBottomSheetControler(
     (state) => state.openContractOption,
   );
+  const openBonusPaySheet = useBottomSheetControler(
+    (state) => state.openBonusPaySheet,
+  );
   const openAlert = usePopupControler((s) => s.openAlert);
 
   const salary = initialData?.salaryInfo;
@@ -315,6 +318,7 @@ export default function EmploymentContract({
         childcareIncluded,
         weekdayHourlyWage,
         overtimeHourlyWage,
+        nightHourlyWage,
         holidayHourlyWage,
         bonuses,
       });
@@ -338,6 +342,7 @@ export default function EmploymentContract({
     setChildcareIncluded(false);
     setWeekdayHourlyWage(0);
     setOvertimeHourlyWage(0);
+    setNightHourlyWage(0);
     setHolidayHourlyWage(0);
   };
 
@@ -466,12 +471,10 @@ export default function EmploymentContract({
                 <PartTimeTable
                   weekdayHourlyWage={weekdayHourlyWage}
                   overtimeHourlyWage={overtimeHourlyWage}
-                  nightHourlyWage={nightHourlyWage}
                   holidayHourlyWage={holidayHourlyWage}
                   minimumWage={minimumWage}
                   onWeekdayWageChange={setWeekdayHourlyWage}
                   onOvertimeWageChange={setOvertimeHourlyWage}
-                  onNightWageChange={setNightHourlyWage}
                   onHolidayWageChange={setHolidayHourlyWage}
                 />
               )}
@@ -495,6 +498,45 @@ export default function EmploymentContract({
                   </div>
                 </div>
               )}
+
+              {/* 상여금 섹션 (공통) */}
+              <div className="sub-item-bx">
+                <div className="pay-table-header">
+                  <div className="pay-table-tit">상여금</div>
+                  <div className="auto-right">
+                    <button
+                      className="contract-arr"
+                      onClick={() => openBonusPaySheet(
+                        bonuses,
+                        initialData?.headOfficeOrganizationId ?? null,
+                        initialData?.franchiseOrganizationId ?? null,
+                        (newBonuses) => setBonuses(newBonuses),
+                      )}
+                    ></button>
+                  </div>
+                </div>
+                <table className="pay-table">
+                  <colgroup>
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tbody>
+                    {bonuses.length > 0 ? (
+                      bonuses.map((b, i) => (
+                        <tr key={b.bonusCode ?? i}>
+                          <td className="tit">{b.bonusType}</td>
+                          <td className="al-r">{formatAmount(b.amount ?? 0)}원</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="tit">-</td>
+                        <td className="al-r">0원</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
               {/* 하단 버튼 */}
               <div className="flex g8">
@@ -909,24 +951,20 @@ function NonComprehensiveTable({
 interface PartTimeTableProps {
   weekdayHourlyWage: number;
   overtimeHourlyWage: number;
-  nightHourlyWage: number;
   holidayHourlyWage: number;
   minimumWage: number;
   onWeekdayWageChange: (val: number) => void;
   onOvertimeWageChange: (val: number) => void;
-  onNightWageChange: (val: number) => void;
   onHolidayWageChange: (val: number) => void;
 }
 
 function PartTimeTable({
   weekdayHourlyWage,
   overtimeHourlyWage,
-  nightHourlyWage,
   holidayHourlyWage,
   minimumWage,
   onWeekdayWageChange,
   onOvertimeWageChange,
-  onNightWageChange,
   onHolidayWageChange,
 }: PartTimeTableProps) {
   const handleNum =
@@ -981,23 +1019,6 @@ function PartTimeTable({
                   value={overtimeHourlyWage || ""}
                   placeholder={String(minimumWage || 0)}
                   onChange={handleNum(onOvertimeWageChange)}
-                />
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td className="tit">
-              야간근무시급 <span className="imp">*</span>
-            </td>
-            <td>
-              <div className="block">
-                <input
-                  type="number"
-                  className="employ-input"
-                  min="0"
-                  value={nightHourlyWage || ""}
-                  placeholder={String(minimumWage || 0)}
-                  onChange={handleNum(onNightWageChange)}
                 />
               </div>
             </td>

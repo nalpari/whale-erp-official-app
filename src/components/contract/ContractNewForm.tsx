@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import {
   useCreateContractHeader,
   useCreateContractWorkHours,
-  useCreateContractSalaryInfo,
 } from '@/hooks/queries/use-contract-queries'
 import { useEmployeeListByType } from '@/hooks/queries/use-employee-queries'
 import { useCommonCodeHierarchy } from '@/hooks/queries/use-common-code-queries'
@@ -16,7 +15,6 @@ import { DEFAULT_CONTRACT_TYPE, CONTRACT_COMPREHENSIVE, DEFAULT_SALARY_CYCLE } f
 import type {
   ContractHeaderCreateRequest,
   ContractWorkHour,
-  ContractSalaryInfoCreateRequest,
   ContractClassificationType,
   ContractType,
   SalaryCycle,
@@ -24,7 +22,7 @@ import type {
   DayType,
 } from '@/types/contract'
 
-const STEPS = ['계약정보', '근무시간', '급여정보'] as const
+const STEPS = ['계약정보', '근무시간'] as const
 
 const JOB_OPTIONS = ['메뉴조리', '홀서빙', '고객응대', '업무보조', '매장청소'] as const
 
@@ -64,7 +62,7 @@ export default function ContractNewForm() {
   // Mutations
   const createHeader = useCreateContractHeader()
   const createWorkHours = useCreateContractWorkHours()
-  const createSalaryInfo = useCreateContractSalaryInfo()
+
 
   // Step 1: 계약정보
   const [employeeInfoId, setEmployeeInfoId] = useState<number | undefined>()
@@ -88,14 +86,7 @@ export default function ContractNewForm() {
   // Step 2: 근무시간
   const [workHours, setWorkHours] = useState<ContractWorkHour[]>(DEFAULT_WORK_HOURS)
 
-  // Step 3: 급여정보
-  const [annualAmount, setAnnualAmount] = useState(0)
-  const [monthlyTotalAmount, setMonthlyTotalAmount] = useState(0)
-  const [timelyAmount, setTimelyAmount] = useState(0)
-  const [monthlyTime, setMonthlyTime] = useState(209)
-  const [monthlyBaseAmount, setMonthlyBaseAmount] = useState(0)
-
-  const isPending = createHeader.isPending || createWorkHours.isPending || createSalaryInfo.isPending
+  const isPending = createHeader.isPending || createWorkHours.isPending
 
   const toggleJob = (job: string) => {
     setJobDescriptions((prev) =>
@@ -165,32 +156,10 @@ export default function ContractNewForm() {
         contractId,
         workHours: cleanedWorkHours,
       })
-      setStep(2)
+      // Step 3(급여정보)는 EmploymentContract 페이지로 이동하여 처리
+      router.push(`/contract/${contractId}/employ`)
     } catch (error) {
       openAlert({ message: getErrorMessage(error, '근무시간 저장에 실패했습니다.'), confirmText: '확인' })
-    }
-  }
-
-  // Step 3 저장
-  const handleStep3 = async () => {
-    if (!contractId) return
-    try {
-      const request: ContractSalaryInfoCreateRequest = {
-        contractId,
-        annualAmount,
-        monthlyTotalAmount,
-        timelyAmount,
-        monthlyTime,
-        monthlyBaseAmount,
-      }
-      await createSalaryInfo.mutateAsync(request)
-      openAlert({
-        message: '계약이 등록되었습니다.',
-        confirmText: '확인',
-        onConfirm: () => router.push('/contract'),
-      })
-    } catch (error) {
-      openAlert({ message: getErrorMessage(error, '급여정보 저장에 실패했습니다.'), confirmText: '확인' })
     }
   }
 
@@ -420,54 +389,6 @@ export default function ContractNewForm() {
                 </>
               )}
 
-              {/* Step 3: 급여정보 */}
-              {step === 2 && (
-                <>
-                  <div className="sub-item-bx">
-                    <div className="data-filed">
-                      <div className="filed-tit">통상시급 <span className="imp">*</span></div>
-                      <div className="block">
-                        <input type="number" className="input-frame" min="0" value={timelyAmount || ''} onChange={(e) => setTimelyAmount(Math.max(0, Number(e.target.value) || 0))} placeholder="통상시급 입력" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="sub-item-bx">
-                    <div className="data-filed">
-                      <div className="filed-tit">월 통상근로시간</div>
-                      <div className="block">
-                        <input type="number" className="input-frame" min="0" value={monthlyTime || ''} onChange={(e) => setMonthlyTime(Math.max(0, Number(e.target.value) || 0))} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="sub-item-bx">
-                    <div className="data-filed">
-                      <div className="filed-tit">월 기본급</div>
-                      <div className="block">
-                        <input type="number" className="input-frame" min="0" value={monthlyBaseAmount || ''} onChange={(e) => setMonthlyBaseAmount(Math.max(0, Number(e.target.value) || 0))} />
-                      </div>
-                      <div className="s-txt mt10">
-                        자동 계산: {(timelyAmount * monthlyTime).toLocaleString('ko-KR')}원
-                      </div>
-                    </div>
-                  </div>
-                  <div className="sub-item-bx">
-                    <div className="data-filed">
-                      <div className="filed-tit">월급여 총액</div>
-                      <div className="block">
-                        <input type="number" className="input-frame" min="0" value={monthlyTotalAmount || ''} onChange={(e) => setMonthlyTotalAmount(Math.max(0, Number(e.target.value) || 0))} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="sub-item-bx">
-                    <div className="data-filed">
-                      <div className="filed-tit">연봉 총액</div>
-                      <div className="block">
-                        <input type="number" className="input-frame" min="0" value={annualAmount || ''} onChange={(e) => setAnnualAmount(Math.max(0, Number(e.target.value) || 0))} />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>
@@ -483,14 +404,6 @@ export default function ContractNewForm() {
             <button className="btn-form block sky" onClick={() => setStep(0)}>이전</button>
             <button className="btn-form block blue" onClick={handleStep2} disabled={isPending}>
               {isPending ? '저장 중...' : '다음: 급여정보'}
-            </button>
-          </div>
-        )}
-        {step === 2 && (
-          <div className="flex g8">
-            <button className="btn-form block sky" onClick={() => setStep(1)}>이전</button>
-            <button className="btn-form block blue" onClick={handleStep3} disabled={isPending}>
-              {isPending ? '저장 중...' : '등록 완료'}
             </button>
           </div>
         )}

@@ -13,11 +13,13 @@ const CONTRACT_LABEL: Record<string, string> = {
 
 export default function InviteForm03() {
   const router = useRouter()
-  const setBonusPaySheet = useBottomSheetControler(
-    (state) => state.setBonusPaySheet,
+  const openBonusPaySheet = useBottomSheetControler(
+    (state) => state.openBonusPaySheet,
   )
+  const stepOne = useStaffInviteStore((s) => s.stepOne)
   const stepTwo = useStaffInviteStore((s) => s.stepTwo)
   const sal = useStaffInviteStore((s) => s.stepThreeSalary)
+  const setStepThreeSalary = useStaffInviteStore((s) => s.setStepThreeSalary)
   const contractType = stepTwo.contractClassification
   const contractLabel = CONTRACT_LABEL[contractType] ?? '포괄연봉제'
   const isPartTime = contractType === 'CNTCFWK_003'
@@ -227,7 +229,12 @@ export default function InviteForm03() {
             <div className="auto-right">
               <button
                 className="contract-arr"
-                onClick={() => setBonusPaySheet(true)}
+                onClick={() => openBonusPaySheet(
+                  sal.bonuses,
+                  stepOne.headOfficeOrganizationId,
+                  stepOne.franchiseOrganizationId,
+                  (newBonuses) => setStepThreeSalary({ bonuses: newBonuses }),
+                )}
               ></button>
             </div>
           </div>
@@ -241,7 +248,7 @@ export default function InviteForm03() {
                 sal.bonuses.map((b, i) => (
                   <tr key={i}>
                     <td className="tit">{b.bonusType}</td>
-                    <td className="al-r">{formatAmount(b.amount)}원</td>
+                    <td className="al-r">{formatAmount(b.amount ?? 0)}원</td>
                   </tr>
                 ))
               ) : (

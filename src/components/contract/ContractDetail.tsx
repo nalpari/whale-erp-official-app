@@ -503,10 +503,6 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                             <td className="al-r">{formatAmount(salary.overtimeDayAllowanceAmount ?? 0)}원</td>
                           </tr>
                           <tr>
-                            <td className="tit">야간근무시급</td>
-                            <td className="al-r">{formatAmount(salary.nightDayAllowanceAmount ?? 0)}원</td>
-                          </tr>
-                          <tr>
                             <td className="tit">휴일근무시급</td>
                             <td className="al-r">{formatAmount(salary.holidayAllowanceTimeAmount ?? 0)}원</td>
                           </tr>
