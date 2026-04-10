@@ -57,7 +57,7 @@ export function getAvatarSrc(iconType: number): string {
 
 /**
  * 출퇴근 기록 단건에 대한 일별 표시 상태 계산
- * 화면정의서 Note #7: 지연 = 계약 출근 시각 기준 30분 초과 출근
+ * 화면정의서 Note #7: 지연 = 계약 출근 시각 기준 1분 초과 출근
  * 화면정의서 Note #10: 출근기록 있으면 계약 없어도 근무로 표시
  */
 export function getAttendanceDayStatus(
@@ -73,18 +73,15 @@ export function getAttendanceDayStatus(
   const isPast = recordDate < todayMidnight
   const isToday = recordDate.getTime() === todayMidnight.getTime()
 
-  // 출퇴근 모두 완료 → 근무
-  if (record.workStartTime && record.workEndTime) return '근무'
-
   const hasContract = !!(record.contractStartTime && record.contractEndTime)
 
-  // 계약 있고 출근 기록 없음 → 과거: 결근, 오늘: 계약 출근 + 30분 초과 시 지연, 미래/그 이전은 미출근
+  // 계약 있고 출근 기록 없음 → 과거: 결근, 오늘: 계약 출근 + 1분 초과 시 지연, 미래/그 이전은 미출근
   if (hasContract && !record.workStartTime) {
     if (isPast) return '결근'
     if (isToday && record.contractStartTime) {
       const nowMinutes = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60)
       const contractStartMin = timeToMinutes(record.contractStartTime)
-      if (nowMinutes > contractStartMin + 30) return '지연'
+      if (nowMinutes >= contractStartMin + 1) return '지연'
     }
     return '미출근'
   }
@@ -95,11 +92,11 @@ export function getAttendanceDayStatus(
     return '미출근'
   }
 
-  // 출근 기록 있음 (퇴근 전) — 지연 판단: 계약 출근 시각 기준 30분 초과 시 지연 (화면정의서 Note #7)
+  // 출근 기록 있음 — 지연 판단: 계약 출근 시각 기준 1분 초과 시 지연
   if (record.workStartTime && record.contractStartTime) {
     const contractStartMin = timeToMinutes(record.contractStartTime)
     const workStartMin = timeToMinutes(record.workStartTime)
-    if (workStartMin > contractStartMin + 30) return '지연'
+    if (workStartMin >= contractStartMin + 1) return '지연'
   }
 
   return '근무'

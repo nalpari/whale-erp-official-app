@@ -146,6 +146,10 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
   const badge = STATUS_BADGE[group.status];
   const dateLabel = `${group.date.slice(5).replace("-", ".")} ${group.day.slice(0, 1)}`;
   const hasWorkTime = group.records.some((r) => r.workStartTime !== null);
+  const allRecordsAbsent = group.records.every((record) => {
+    const status = getAttendanceDayStatus(record);
+    return status === "결근" || status === "미출근";
+  });
 
   if (group.status === "휴일" && !hasWorkTime) {
     return (
@@ -167,7 +171,7 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
     );
   }
 
-  if (group.status === "결근" || group.status === "미출근") {
+  if ((group.status === "결근" || group.status === "미출근") && allRecordsAbsent) {
     return (
       <div className="commute-list-item">
         <div className="commute-list-tit">{dateLabel}</div>

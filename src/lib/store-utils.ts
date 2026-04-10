@@ -146,9 +146,13 @@ export function getFirstInvalidStoreField(state: StoreFormValidationState): Stor
 }
 
 export interface OperatingHourValidationResult {
+  hasOperatingTimePairError: boolean
   hasOperatingTimeRangeError: boolean
+  hasBreakTimePairError: boolean
   hasBreakTimeRangeError: boolean
+  hasBreakWithoutOperatingTimeError: boolean
   hasBreakOutsideOperatingError: boolean
+  hasWeekdaySelectionError: boolean
   isValid: boolean
 }
 
@@ -159,21 +163,37 @@ function isEndBeforeStart(start?: string | null, end?: string | null): boolean {
 
 /** 영업시간/휴게시간 검증 */
 export function getOperatingHourValidation(hour: OperatingHourRequest): OperatingHourValidationResult {
+  const hasOperatingTimePairError = !!(hour.openTime || hour.closeTime) && !(hour.openTime && hour.closeTime)
   const hasOperatingTimeRangeError = isEndBeforeStart(hour.openTime, hour.closeTime)
+  const hasBreakTimePairError = !!(hour.breakStartTime || hour.breakEndTime) && !(hour.breakStartTime && hour.breakEndTime)
   const hasBreakTimeRangeError = isEndBeforeStart(hour.breakStartTime, hour.breakEndTime)
 
   const hasBreak = !!(hour.breakStartTime && hour.breakEndTime)
   const hasOperatingTime = !!(hour.openTime && hour.closeTime)
+  const hasBreakWithoutOperatingTimeError = hasBreak && !hasOperatingTime
   const hasBreakOutsideOperatingError = hasBreak && hasOperatingTime
     && hour.breakStartTime != null && hour.openTime != null
     && hour.breakEndTime != null && hour.closeTime != null
     && (hour.breakStartTime < hour.openTime || hour.breakEndTime > hour.closeTime)
+  const hasWeekdaySelectionError = hour.dayType === 'WEEKDAY'
+    && hasOperatingTime
+    && (hour.selectWeekDayList?.length ?? 0) === 0
 
   return {
+    hasOperatingTimePairError,
     hasOperatingTimeRangeError,
+    hasBreakTimePairError,
     hasBreakTimeRangeError,
+    hasBreakWithoutOperatingTimeError,
     hasBreakOutsideOperatingError,
-    isValid: !hasOperatingTimeRangeError && !hasBreakTimeRangeError && !hasBreakOutsideOperatingError,
+    hasWeekdaySelectionError,
+    isValid: !hasOperatingTimePairError
+      && !hasOperatingTimeRangeError
+      && !hasBreakTimePairError
+      && !hasBreakTimeRangeError
+      && !hasBreakWithoutOperatingTimeError
+      && !hasBreakOutsideOperatingError
+      && !hasWeekdaySelectionError,
   }
 }
 

@@ -109,6 +109,9 @@ export default function StoreBasicInfoForm({
             {submitted && !officeId && (
               <div className="warning mt10">* 필수 입력 항목입니다.</div>
             )}
+            {submitted && storeOwner === "FRANCHISE" && officeId && !franchiseId && (
+              <div className="warning mt10">* 가맹점을 선택해주세요.</div>
+            )}
           </div>
         </div>
         <div className="sub-item-bx">
