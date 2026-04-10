@@ -13,6 +13,8 @@ import {
   formatTime,
   toInputDate,
   getAvatarSrc,
+  getDisplayTimeRange,
+  timeToMinutes,
 } from "@/lib/commute-utils";
 import type { AttendanceRecord, CommuteDayDisplayStatus, ContractWorkHour } from "@/types/commute";
 import type { AttendanceRecordGroup } from "@/lib/commute-utils";
@@ -112,8 +114,6 @@ function ContractWorkHourRow({ item }: { item: ContractWorkHour }) {
 
 const STATUS_BADGE: Record<CommuteDayDisplayStatus, { label: string; className: string }> = {
   근무: { label: "근무", className: "badge d-green" },
-  지연: { label: "지연", className: "badge l-org" },
-  미출근: { label: "미출근", className: "badge grey" },
   결근: { label: "결근", className: "badge d-red" },
   휴일: { label: "휴일", className: "badge grey" },
 };
@@ -121,20 +121,26 @@ const STATUS_BADGE: Record<CommuteDayDisplayStatus, { label: string; className: 
 function RecordRow({ record }: { record: AttendanceRecord }) {
   const status = getAttendanceDayStatus(record);
   const badge = STATUS_BADGE[status];
-  const workMin = calcWorkMinutes(record.workStartTime, record.workEndTime);
-  const timeRange = record.workStartTime
-    ? `${formatTime(record.workStartTime)}~${formatTime(record.workEndTime) || "진행 중"}`
-    : "-";
+  const timeRange = getDisplayTimeRange(record);
 
-  const hasFullRecord = record.workStartTime && record.workEndTime;
+  // 시간 범위가 있으면 근무시간 계산 (자정 넘김 보정 포함)
+  const workMin = timeRange
+    ? (() => {
+        const startMin = timeToMinutes(record.workStartTime ?? '00:00:00');
+        const endMin = timeToMinutes(record.workEndTime ?? '23:59:00');
+        return Math.max(0, (endMin >= startMin ? endMin : endMin + 1440) - startMin);
+      })()
+    : 0;
   const totalMin = Math.floor(workMin);
 
   return (
     <div className="commute-list-data-item">
-      <div className="commute-list-data-time">{timeRange}</div>
+      <div className="commute-list-data-time">
+        {timeRange ? `${timeRange.startTime}~${timeRange.endTime}` : '-'}
+      </div>
       <div className="commute-list-data-work">
         <span className={badge.className}>{badge.label}</span>
-        {hasFullRecord && (
+        {timeRange && totalMin > 0 && (
           <span className="time">{Math.floor(totalMin / 60)}시간 {totalMin % 60}분</span>
         )}
       </div>
@@ -143,27 +149,25 @@ function RecordRow({ record }: { record: AttendanceRecord }) {
 }
 
 function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
-  const badge = STATUS_BADGE[group.status];
   const dateLabel = `${group.date.slice(5).replace("-", ".")} ${group.day.slice(0, 1)}`;
   const hasWorkTime = group.records.some((r) => r.workStartTime !== null);
-  const allRecordsAbsent = group.records.every((record) => {
-    const status = getAttendanceDayStatus(record);
-    return status === "결근" || status === "미출근";
-  });
 
+  // 휴일이고 근무 기록이 없으면 → 휴일 헤더만
   if (group.status === "휴일" && !hasWorkTime) {
     return (
       <div className="commute-list-item rest">
         <div className="commute-list-tit">
-          <span className={badge.className}>{badge.label}</span>
+          <span className={STATUS_BADGE["휴일"].className}>
+            {STATUS_BADGE["휴일"].label}
+          </span>
           <span>{dateLabel}</span>
         </div>
       </div>
     );
   }
 
-  // 계약 없고 출근기록도 없을 때만 날짜만 표시 (화면정의서 Note #10: 출근기록 있으면 계약 없어도 근무 표시)
-  if (!group.hasContract && !group.records.some((r) => r.workStartTime !== null)) {
+  // 계약 없고 출근 기록도 없음 → 날짜만 표시
+  if (!group.hasContract && !hasWorkTime) {
     return (
       <div className="commute-list-item">
         <div className="commute-list-tit">{dateLabel}</div>
@@ -171,21 +175,7 @@ function AttendanceGroupRow({ group }: { group: AttendanceRecordGroup }) {
     );
   }
 
-  if ((group.status === "결근" || group.status === "미출근") && allRecordsAbsent) {
-    return (
-      <div className="commute-list-item">
-        <div className="commute-list-tit">{dateLabel}</div>
-        <div className="commute-list-data">
-          <div className="commute-list-data-item">
-            <div className="commute-list-data-work">
-              <span className={badge.className}>{badge.label}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // 기본: 날짜 헤더 + 모든 레코드를 row 단위로 렌더링
   return (
     <div className={`commute-list-item${group.isHoliday ? " rest" : ""}`}>
       <div className="commute-list-tit">

@@ -57,49 +57,18 @@ export function getAvatarSrc(iconType: number): string {
 
 /**
  * 출퇴근 기록 단건에 대한 일별 표시 상태 계산
- * 화면정의서 Note #7: 지연 = 계약 출근 시각 기준 1분 초과 출근
- * 화면정의서 Note #10: 출근기록 있으면 계약 없어도 근무로 표시
+ *
+ * 1. 휴일이고 실제 근무 기록(출근·퇴근 모두)이 없으면 → '휴일'
+ * 2. workStartTime 또는 workEndTime이 하나라도 있으면 → '근무'
+ *    (자정 넘김 퇴근일: workEndTime만 있는 경우도 '근무')
+ * 3. 그 외 → '결근'
  */
 export function getAttendanceDayStatus(
   record: AttendanceRecord,
-  now: Date = new Date(),
 ): CommuteDayDisplayStatus {
-  if (record.isHoliday) return '휴일'
-
-  // "YYYY-MM-DD" 문자열을 UTC가 아닌 로컬 자정으로 파싱 (new Date("YYYY-MM-DD")는 UTC midnight)
-  const [year, month, day] = record.date.split('-').map(Number)
-  const recordDate = new Date(year, month - 1, day)
-  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const isPast = recordDate < todayMidnight
-  const isToday = recordDate.getTime() === todayMidnight.getTime()
-
-  const hasContract = !!(record.contractStartTime && record.contractEndTime)
-
-  // 계약 있고 출근 기록 없음 → 과거: 결근, 오늘: 계약 출근 + 1분 초과 시 지연, 미래/그 이전은 미출근
-  if (hasContract && !record.workStartTime) {
-    if (isPast) return '결근'
-    if (isToday && record.contractStartTime) {
-      const nowMinutes = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60)
-      const contractStartMin = timeToMinutes(record.contractStartTime)
-      if (nowMinutes >= contractStartMin + 1) return '지연'
-    }
-    return '미출근'
-  }
-
-  // 출근 기록 없음 (계약 없는 경우 포함)
-  if (record.recordId === null) {
-    if (isPast) return '결근'
-    return '미출근'
-  }
-
-  // 출근 기록 있음 — 지연 판단: 계약 출근 시각 기준 1분 초과 시 지연
-  if (record.workStartTime && record.contractStartTime) {
-    const contractStartMin = timeToMinutes(record.contractStartTime)
-    const workStartMin = timeToMinutes(record.workStartTime)
-    if (workStartMin >= contractStartMin + 1) return '지연'
-  }
-
-  return '근무'
+  if (record.isHoliday && !record.workStartTime && !record.workEndTime) return '휴일'
+  if (record.workStartTime || record.workEndTime) return '근무'
+  return '결근'
 }
 
 /**
@@ -107,7 +76,6 @@ export function getAttendanceDayStatus(
  */
 export function groupAttendanceRecords(
   records: AttendanceRecord[],
-  now: Date = new Date(),
 ): AttendanceRecordGroup[] {
   const map = new Map<string, AttendanceRecordGroup>()
   for (const record of records) {
@@ -123,25 +91,65 @@ export function groupAttendanceRecords(
         hasContract: !(record.contractStartTime === null && record.contractEndTime === null),
         records: [record],
         totalMinutes: calcWorkMinutes(record.workStartTime, record.workEndTime),
-        status: getAttendanceDayStatus(record, now),
+        status: getAttendanceDayStatus(record),
       })
     }
   }
   // 같은 날 레코드가 2개 이상인 경우 전체 레코드 기반으로 status 재계산
-  // (최초 그룹 생성 시 첫 번째 레코드만 사용하던 버그 수정)
   for (const group of map.values()) {
     if (group.records.length > 1) {
-      const statuses = group.records.map((r) => getAttendanceDayStatus(r, now))
-      // 우선순위: 휴일 > 지연 > 결근 > 미출근 > 근무
-      // 더 심각한 상태를 우선 표시하여 복수 계약 직원의 결근이 근무에 가려지지 않도록 함
+      const statuses = group.records.map((r) => getAttendanceDayStatus(r))
+      // 우선순위: 휴일 > 결근 > 근무 (row별 개별 표시가 기본이므로 그룹 상태는 참고용)
       if (statuses.includes('휴일')) group.status = '휴일'
-      else if (statuses.includes('지연')) group.status = '지연'
       else if (statuses.includes('결근')) group.status = '결근'
-      else if (statuses.includes('미출근')) group.status = '미출근'
       else group.status = '근무'
     }
   }
   return Array.from(map.values())
+}
+
+export interface DisplayTimeRange {
+  startTime: string  // 'HH:mm' 형식
+  endTime: string    // 'HH:mm' 형식
+}
+
+/**
+ * 레코드의 표시용 시간 범위를 계산한다.
+ * 자정 넘김 시 서버가 날짜를 분할하여 보내주는 경우를 처리:
+ * - workStartTime만 있고 workEndTime이 없음 → 'HH:mm ~ 23:59'
+ * - workStartTime이 없고 workEndTime만 있음 → '00:00 ~ HH:mm'
+ */
+export function getDisplayTimeRange(
+  record: AttendanceRecord,
+): DisplayTimeRange | null {
+  const { workStartTime, workEndTime } = record
+
+  // 둘 다 있음 → 정상 표시
+  if (workStartTime && workEndTime) {
+    return {
+      startTime: formatTime(workStartTime),
+      endTime: formatTime(workEndTime),
+    }
+  }
+
+  // 출근만 있고 퇴근 없음 → 자정 넘김 출근일 또는 진행 중
+  if (workStartTime && !workEndTime) {
+    return {
+      startTime: formatTime(workStartTime),
+      endTime: '23:59',
+    }
+  }
+
+  // 퇴근만 있고 출근 없음 → 자정 넘김 퇴근일
+  if (!workStartTime && workEndTime) {
+    return {
+      startTime: '00:00',
+      endTime: formatTime(workEndTime),
+    }
+  }
+
+  // 둘 다 없음
+  return null
 }
 
 /**
