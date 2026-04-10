@@ -137,6 +137,10 @@ export interface ContractDetail {
   storeName?: string
   workStatus?: string
   workStatusName?: string
+  contractSendDate?: string
+  contractViewDate?: string
+  signedDate?: string
+  rejectedDate?: string
   employmentContractHeader?: {
     id: number
     contractType: ContractType

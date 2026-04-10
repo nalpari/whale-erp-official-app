@@ -55,6 +55,7 @@ export interface StepThreeSalaryData {
   // 추가근무시급 (비포괄연봉제 / 파트타임)
   weekdayHourlyWage: number
   overtimeHourlyWage: number
+  nightHourlyWage: number
   holidayHourlyWage: number
   // 상여금
   bonuses: ContractBonus[]
@@ -142,6 +143,7 @@ function createDefaultStepThreeSalary(): StepThreeSalaryData {
     childcareIncluded: false,
     weekdayHourlyWage: 0,
     overtimeHourlyWage: 0,
+    nightHourlyWage: 0,
     holidayHourlyWage: 0,
     bonuses: [],
   }

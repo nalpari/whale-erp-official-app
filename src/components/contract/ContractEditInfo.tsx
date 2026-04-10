@@ -170,6 +170,10 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
       return;
     }
 
+    if (hasContractPeriod && !contractStartDate) {
+      openAlert({ message: "계약 시작일을 입력해주세요.", confirmText: "확인" });
+      return;
+    }
     if (hasContractPeriod && contractEndDate && contractStartDate && contractEndDate < contractStartDate) {
       openAlert({ message: "계약 종료일이 시작일보다 이전입니다.", confirmText: "확인" });
       return;

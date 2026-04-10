@@ -470,6 +470,10 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                             <td className="al-r">{formatAmount(salary.overtimeDayAllowanceAmount ?? 0)}원</td>
                           </tr>
                           <tr>
+                            <td className="tit">야간근무시급</td>
+                            <td className="al-r">{formatAmount(salary.nightDayAllowanceAmount ?? 0)}원</td>
+                          </tr>
+                          <tr>
                             <td className="tit">휴일근무시급</td>
                             <td className="al-r">{formatAmount(salary.holidayAllowanceTimeAmount ?? 0)}원</td>
                           </tr>
@@ -497,6 +501,10 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                           <tr>
                             <td className="tit">연장근무시급</td>
                             <td className="al-r">{formatAmount(salary.overtimeDayAllowanceAmount ?? 0)}원</td>
+                          </tr>
+                          <tr>
+                            <td className="tit">야간근무시급</td>
+                            <td className="al-r">{formatAmount(salary.nightDayAllowanceAmount ?? 0)}원</td>
                           </tr>
                           <tr>
                             <td className="tit">휴일근무시급</td>
@@ -586,41 +594,6 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
               </div>
             </div>
           </div>
-          <div className="sub-cont-wrap">
-            <div className="sub-cont-item-wrap">
-              <div className="sub-cont-tit-wrap">
-                <div className="sub-cont-tit">등록 및 수정 이력</div>
-              </div>
-              <div className="sub-item-bx">
-                <table className="info-table">
-                  <colgroup>
-                    <col style={{ width: '95px' }} />
-                    <col />
-                  </colgroup>
-                  <tbody>
-                    <tr>
-                      <th>등록자/등록일</th>
-                      <td>
-                        <div className="data-list">
-                          <span>{initialData?.createdByName ?? '-'}</span>
-                          <span>{formatDate(initialData?.createdAt)}</span>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>수정자/수정일</th>
-                      <td>
-                        <div className="data-list">
-                          <span>{initialData?.updatedByName ?? '-'}</span>
-                          <span>{formatDate(initialData?.updatedAt)}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
           {/* 계약이력 */}
         {employeeContracts && employeeContracts.length > 1 && (
           <div className="sub-cont-wrap">
@@ -662,6 +635,30 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                               <th>계약기간</th>
                               <td>{formatDate(h?.contractStartDate)} ~ {formatDate(h?.contractEndDate)}</td>
                             </tr>
+                            {c.contractSendDate && (
+                              <tr>
+                                <th>계약서 전송일시</th>
+                                <td>{formatDate(c.contractSendDate)}</td>
+                              </tr>
+                            )}
+                            {c.contractViewDate && (
+                              <tr>
+                                <th>계약서 열람일시</th>
+                                <td>{formatDate(c.contractViewDate)}</td>
+                              </tr>
+                            )}
+                            {c.signedDate && (
+                              <tr>
+                                <th>전자서명 일시</th>
+                                <td>{formatDate(c.signedDate)}</td>
+                              </tr>
+                            )}
+                            {c.member && (
+                              <tr>
+                                <th>서명자 정보</th>
+                                <td>{c.member.name}({c.member.loginId})</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -671,6 +668,41 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
             </div>
           </div>
         )}
+          <div className="sub-cont-wrap">
+            <div className="sub-cont-item-wrap">
+              <div className="sub-cont-tit-wrap">
+                <div className="sub-cont-tit">등록 및 수정 이력</div>
+              </div>
+              <div className="sub-item-bx">
+                <table className="info-table">
+                  <colgroup>
+                    <col style={{ width: '95px' }} />
+                    <col />
+                  </colgroup>
+                  <tbody>
+                    <tr>
+                      <th>등록자/등록일</th>
+                      <td>
+                        <div className="data-list">
+                          <span>{initialData?.createdByName ?? '-'}</span>
+                          <span>{formatDate(initialData?.createdAt)}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>수정자/수정일</th>
+                      <td>
+                        <div className="data-list">
+                          <span>{initialData?.updatedByName ?? '-'}</span>
+                          <span>{formatDate(initialData?.updatedAt)}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div className="content-pagination">

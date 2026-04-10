@@ -52,7 +52,7 @@ export default function ContractOptionSheet() {
     <Sheet
       isOpen={contractOptionSheet}
       onClose={handleClose}
-      onOpenEnd={syncFromStore}
+      onOpenStart={syncFromStore}
       detent="content"
       disableScrollLocking={true}
     >

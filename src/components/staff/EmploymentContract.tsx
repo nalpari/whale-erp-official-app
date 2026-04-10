@@ -15,13 +15,11 @@ import { getErrorMessage } from "@/lib/api";
 import ContractOptionSheet from "@/components/bottomsheet/ContractOptionSheet";
 import TaxExemptTable from "@/components/staff/employment/TaxExemptTable";
 import { OVERTIME_RATE, NIGHT_RATE, HOLIDAY_RATE, ADD_HOLIDAY_RATE, formatAmount } from "@/lib/constants";
+import { CONTRACT_COMPREHENSIVE, CONTRACT_NON_COMPREHENSIVE, CONTRACT_PART_TIME } from "@/types/contract";
 import type { ContractDetail, ContractBonus } from "@/types/contract";
 import type { ContractClassificationType } from "@/types/employee";
 
 // 계약분류 코드 상수
-const CONTRACT_COMPREHENSIVE = "CNTCFWK_001" as const; // 포괄연봉제
-const CONTRACT_NON_COMPREHENSIVE = "CNTCFWK_002" as const; // 비포괄연봉제
-const CONTRACT_PART_TIME = "CNTCFWK_003" as const; // 파트타임
 
 interface EmploymentContractProps {
   initialData?: ContractDetail;
@@ -141,16 +139,19 @@ export default function EmploymentContract({
     salary?.overtimeDayAllowanceAmount ??
       (isContractPath ? 0 : inviteSalary.overtimeHourlyWage),
   );
+  const [nightHourlyWage, setNightHourlyWage] = useState<number>(
+    salary?.nightDayAllowanceAmount ??
+      (isContractPath ? 0 : inviteSalary.nightHourlyWage ?? 0),
+  );
   const [holidayHourlyWage, setHolidayHourlyWage] = useState<number>(
     salary?.holidayAllowanceTimeAmount ??
       (isContractPath ? 0 : inviteSalary.holidayHourlyWage),
   );
 
   // 시급 활성값: 계약분류에 따라 fallback 다르게 적용
-  // 비포괄: 통상시급 기반 (평일=통상시급, 연장/휴일=통상시급*배율)
-  // 파트타임: 최저시급
   const activeWeekdayWage = weekdayHourlyWage || (isNonComprehensive ? activeTimelyAmount : minimumWage);
   const activeOvertimeWage = overtimeHourlyWage || (isNonComprehensive ? Math.round(activeTimelyAmount * OVERTIME_RATE) : minimumWage);
+  const activeNightWage = nightHourlyWage || (isNonComprehensive ? Math.round(activeTimelyAmount * NIGHT_RATE) : minimumWage);
   const activeHolidayWage = holidayHourlyWage || (isNonComprehensive ? Math.round(activeTimelyAmount * HOLIDAY_RATE) : minimumWage);
 
   // 상여금 상태
@@ -253,6 +254,7 @@ export default function EmploymentContract({
     ...(!isComprehensive && {
       weekDayAllowanceAmount: activeWeekdayWage,
       overtimeDayAllowanceAmount: activeOvertimeWage,
+      nightDayAllowanceAmount: activeNightWage,
       holidayAllowanceTimeAmount: activeHolidayWage,
     }),
     // 상여금
@@ -433,10 +435,12 @@ export default function EmploymentContract({
                   onMonthlyTimeChange={setMonthlyTime}
                   weekdayHourlyWage={weekdayHourlyWage}
                   overtimeHourlyWage={overtimeHourlyWage}
+                  nightHourlyWage={nightHourlyWage}
                   holidayHourlyWage={holidayHourlyWage}
                   minimumWage={minimumWage}
                   onWeekdayWageChange={setWeekdayHourlyWage}
                   onOvertimeWageChange={setOvertimeHourlyWage}
+                  onNightWageChange={setNightHourlyWage}
                   onHolidayWageChange={setHolidayHourlyWage}
                 />
               )}
@@ -462,10 +466,12 @@ export default function EmploymentContract({
                 <PartTimeTable
                   weekdayHourlyWage={weekdayHourlyWage}
                   overtimeHourlyWage={overtimeHourlyWage}
+                  nightHourlyWage={nightHourlyWage}
                   holidayHourlyWage={holidayHourlyWage}
                   minimumWage={minimumWage}
                   onWeekdayWageChange={setWeekdayHourlyWage}
                   onOvertimeWageChange={setOvertimeHourlyWage}
+                  onNightWageChange={setNightHourlyWage}
                   onHolidayWageChange={setHolidayHourlyWage}
                 />
               )}
@@ -726,10 +732,12 @@ interface NonComprehensiveTableProps {
   onMonthlyTimeChange: (val: number) => void;
   weekdayHourlyWage: number;
   overtimeHourlyWage: number;
+  nightHourlyWage: number;
   holidayHourlyWage: number;
   minimumWage: number;
   onWeekdayWageChange: (val: number) => void;
   onOvertimeWageChange: (val: number) => void;
+  onNightWageChange: (val: number) => void;
   onHolidayWageChange: (val: number) => void;
 }
 
@@ -740,10 +748,12 @@ function NonComprehensiveTable({
   onMonthlyTimeChange,
   weekdayHourlyWage,
   overtimeHourlyWage,
+  nightHourlyWage,
   holidayHourlyWage,
   minimumWage,
   onWeekdayWageChange,
   onOvertimeWageChange,
+  onNightWageChange,
   onHolidayWageChange,
 }: NonComprehensiveTableProps) {
   const handleNum =
@@ -859,6 +869,21 @@ function NonComprehensiveTable({
               </td>
             </tr>
             <tr>
+              <td className="tit">야간근무시급</td>
+              <td>
+                <div className="block">
+                  <input
+                    type="number"
+                    className="employ-input"
+                    min="0"
+                    value={nightHourlyWage || ""}
+                    placeholder={String(minimumWage || 0)}
+                    onChange={handleNum(onNightWageChange)}
+                  />
+                </div>
+              </td>
+            </tr>
+            <tr>
               <td className="tit">휴일근무시급</td>
               <td>
                 <div className="block">
@@ -884,20 +909,24 @@ function NonComprehensiveTable({
 interface PartTimeTableProps {
   weekdayHourlyWage: number;
   overtimeHourlyWage: number;
+  nightHourlyWage: number;
   holidayHourlyWage: number;
   minimumWage: number;
   onWeekdayWageChange: (val: number) => void;
   onOvertimeWageChange: (val: number) => void;
+  onNightWageChange: (val: number) => void;
   onHolidayWageChange: (val: number) => void;
 }
 
 function PartTimeTable({
   weekdayHourlyWage,
   overtimeHourlyWage,
+  nightHourlyWage,
   holidayHourlyWage,
   minimumWage,
   onWeekdayWageChange,
   onOvertimeWageChange,
+  onNightWageChange,
   onHolidayWageChange,
 }: PartTimeTableProps) {
   const handleNum =
@@ -952,6 +981,23 @@ function PartTimeTable({
                   value={overtimeHourlyWage || ""}
                   placeholder={String(minimumWage || 0)}
                   onChange={handleNum(onOvertimeWageChange)}
+                />
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td className="tit">
+              야간근무시급 <span className="imp">*</span>
+            </td>
+            <td>
+              <div className="block">
+                <input
+                  type="number"
+                  className="employ-input"
+                  min="0"
+                  value={nightHourlyWage || ""}
+                  placeholder={String(minimumWage || 0)}
+                  onChange={handleNum(onNightWageChange)}
                 />
               </div>
             </td>

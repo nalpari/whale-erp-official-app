@@ -208,7 +208,7 @@ export default function ContractNewForm() {
               <div className="sub-cont-tit-wrap">
                 <div className="sub-cont-tit">
                   {STEPS.map((label, i) => (
-                    <span key={label} style={{ color: step === i ? '#1a73e8' : '#999', marginRight: 12 }}>
+                    <span key={label} className={`mr-3 ${step === i ? 'text-blue-600' : 'text-gray-400'}`}>
                       {i + 1}. {label}
                     </span>
                   ))}
@@ -274,7 +274,7 @@ export default function ContractNewForm() {
                   <div className="sub-item-bx">
                     <div className="data-filed">
                       <div className="filed-tit">업무내용</div>
-                      <div className="flex g8" style={{ flexWrap: 'wrap' }}>
+                      <div className="flex g8 flex-wrap">
                         {JOB_OPTIONS.map((job) => (
                           <button key={job} className={`radio-btn block${jobDescriptions.includes(job) ? ' act' : ''}`} onClick={() => toggleJob(job)}>
                             {job}
@@ -300,7 +300,7 @@ export default function ContractNewForm() {
                   <div className="sub-item-bx">
                     <div className="data-filed">
                       <div className="filed-tit">4대보험</div>
-                      <div className="flex g8" style={{ flexWrap: 'wrap' }}>
+                      <div className="flex g8 flex-wrap">
                         <button className={`radio-btn block${insuranceHI && insuranceNP ? ' act' : ''}`} onClick={() => { const next = !(insuranceHI && insuranceNP); setInsuranceHI(next); setInsuranceNP(next) }}>건강보험/국민연금</button>
                         <button className={`radio-btn block${insuranceEI && insuranceWC ? ' act' : ''}`} onClick={() => { const next = !(insuranceEI && insuranceWC); setInsuranceEI(next); setInsuranceWC(next) }}>고용보험/산재보험</button>
                       </div>
