@@ -109,6 +109,7 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
       confirmText: '전송',
       cancelText: '취소',
       onConfirm: async () => {
+        if (sendEmailMutation.isPending) return
         try {
           await sendEmailMutation.mutateAsync(id)
           openAlert({ message: '이메일이 전송되었습니다.', confirmText: '확인' })

@@ -44,6 +44,9 @@ export default function ContractOptionSheet() {
   };
 
   const handleConfirm = () => {
+    if (timelyAmount > 0 && minimumWage > 0 && timelyAmount < minimumWage) {
+      return
+    }
     storeOnChange?.({ year, timelyAmount, weeklyHours });
     setContractOptionSheet(false);
   };

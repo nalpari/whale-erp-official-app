@@ -134,7 +134,9 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
       openAlert({ message: '이전 계약 정보가 없습니다.', confirmText: '확인' })
       return
     }
-    const prev = prevContracts.find((c) => c.id !== initialData?.id)
+    const prev = [...prevContracts]
+      .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
+      .find((c) => c.id !== initialData?.id)
     if (!prev?.employmentContractHeader) {
       openAlert({ message: '이전 계약 정보를 불러올 수 없습니다.', confirmText: '확인' })
       return

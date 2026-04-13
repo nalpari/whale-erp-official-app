@@ -133,19 +133,42 @@ export const downloadContractDocx = async (contractId: number): Promise<void> =>
   const response = await api.get<Blob>(`${BASE_URL}/${contractId}/download-docx`, {
     responseType: 'blob',
   })
+
+  // 서버 에러 응답이 blob으로 온 경우 (JSON 에러를 파일로 저장 방지)
+  const contentType = response.headers['content-type'] ?? ''
+  if (contentType.includes('application/json')) {
+    const text = await response.data.text()
+    try {
+      const err = JSON.parse(text)
+      throw new Error(err.message ?? '계약서 다운로드에 실패했습니다.')
+    } catch (e) {
+      if (e instanceof Error) throw e
+      throw new Error('계약서 다운로드에 실패했습니다.')
+    }
+  }
+
   const disposition = response.headers['content-disposition'] ?? ''
   const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)/)
-  const filename = filenameMatch
-    ? decodeURIComponent(filenameMatch[1])
-    : `근로계약서_${contractId}.docx`
+  let filename = `근로계약서_${contractId}.docx`
+  if (filenameMatch) {
+    try {
+      filename = decodeURIComponent(filenameMatch[1]).replace(/[/\\:*?"<>|]/g, '_')
+    } catch {
+      // decodeURIComponent 실패 시 기본 파일명 사용
+    }
+  }
+
   const url = URL.createObjectURL(response.data)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 100)
+  try {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 }
 
 // 최저임금 조회

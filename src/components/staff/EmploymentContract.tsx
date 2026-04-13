@@ -271,6 +271,12 @@ export default function EmploymentContract({
 
   // 저장 핸들러
   const handleSave = async () => {
+    // 최저임금 가드 (포괄/비포괄만 — 파트타임은 시급 테이블에서 별도 관리)
+    if (!isPartTime && timelyAmount > 0 && minimumWage > 0 && timelyAmount < minimumWage) {
+      openAlert({ message: `통상시급이 최저시급(${minimumWage.toLocaleString()}원) 미만입니다.`, confirmText: '확인' })
+      return
+    }
+
     if (isContractPath) {
       // 계약 수정 경로: API 호출
       const contractId = initialData?.id;

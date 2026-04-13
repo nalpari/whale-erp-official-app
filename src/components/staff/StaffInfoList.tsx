@@ -9,6 +9,7 @@ import { useEmployeeList } from '@/hooks/queries/use-employee-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import { isHealthCheckExpired } from '@/lib/constants'
+import { getErrorMessage } from '@/lib/api'
 import { getContractsByEmployee } from '@/lib/api/contract'
 import type { EmployeeListItem } from '@/types/employee'
 
@@ -88,7 +89,7 @@ export default function StaffInfoList() {
                 router.push('/contract')
               }
             } catch (err) {
-              console.error('[StaffInfoList] 계약 조회 실패:', err)
+              console.error('[StaffInfoList] 계약 조회 실패:', getErrorMessage(err))
               router.push('/contract')
             }
           }}

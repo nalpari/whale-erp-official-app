@@ -123,7 +123,7 @@ export default function ContractEditTime({ initialData }: Props) {
 
     // isWork=false인 항목은 시간값 초기화
     const cleanedWorkHours = workHours.map((wh) =>
-      wh.isWork ? wh : { ...wh, workStartTime: undefined, workEndTime: undefined, breakStartTime: undefined, breakEndTime: undefined, isBreak: false },
+      wh.isWork ? wh : { ...wh, workStartTime: undefined, workEndTime: undefined, breakStartTime: undefined, breakEndTime: undefined, isBreak: false, firstSaturdayWorkDay: undefined, firstSundayWorkDay: undefined, everySaturdayWork: false, everySundayWork: false },
     );
     try {
       await updateWorkHours.mutateAsync({
