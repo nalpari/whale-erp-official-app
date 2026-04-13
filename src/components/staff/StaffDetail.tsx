@@ -10,8 +10,9 @@ import {
   useDeleteEmployee,
   useWithdrawEmployeeMember,
 } from '@/hooks/queries/use-employee-queries'
+import { useContractsByEmployee } from '@/hooks/queries/use-contract-queries'
 import { usePopupControler } from '@/store/usePopupControler'
-import { isHealthCheckExpired } from '@/lib/constants'
+import { isHealthCheckExpired, CONTRACT_STATUS_BADGE } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/api'
 import { downloadFile } from '@/lib/api/file'
 
@@ -26,6 +27,11 @@ export default function StaffDetail() {
   const { data: careers } = useEmployeeCareers(memberId)
   const { data: certificates } = useEmployeeCertificates(memberId)
   const { data: documents } = useMemberDocuments(memberId)
+  const { data: employeeContracts } = useContractsByEmployee(employeeId ?? 0, !!employeeId)
+  const latestContract = employeeContracts?.[0]
+  const latestContractBadge = latestContract?.employmentContractHeader?.electronicContractStatus
+    ? CONTRACT_STATUS_BADGE[latestContract.employmentContractHeader.electronicContractStatus]
+    : null
   const sendEmailMutation = useSendRegistrationEmail()
   const deleteMutation = useDeleteEmployee()
   const withdrawMutation = useWithdrawEmployeeMember()
@@ -142,12 +148,20 @@ export default function StaffDetail() {
   return (
     <div className="container sub">
       {/* 근로계약서 */}
-      <div className="sub-tit-wrap" onClick={() => router.push('/contract')}>
+      <div className="sub-tit-wrap" onClick={() => {
+        if (latestContract) {
+          router.push(`/contract/${latestContract.id}`)
+        } else {
+          router.push('/contract')
+        }
+      }}>
         <div className="sub-tit">
           <span className="sub-s-txt">근로계약서</span>
         </div>
         <div className="auto-right flex g8">
-          {/* TODO: 근로계약관리 PR에서 상태배지 + 갱신알림 아이콘 연동 */}
+          {latestContractBadge && (
+            <span className={latestContractBadge.className}>{latestContractBadge.label}</span>
+          )}
           <button className="contract-arr"></button>
         </div>
       </div>

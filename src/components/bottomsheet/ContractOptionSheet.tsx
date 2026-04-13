@@ -1,38 +1,23 @@
 "use client";
 import { useState } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+import { usePopupControler } from "@/store/usePopupControler";
 import { useMinimumWage } from "@/hooks/queries/use-contract-queries";
 import { Sheet } from "react-modal-sheet";
 
-interface ContractOptionSheetProps {
-  year?: number;
-  timelyAmount?: number;
-  weeklyHours?: number;
-  onChange?: (values: {
-    year: number;
-    timelyAmount: number;
-    weeklyHours: number;
-  }) => void;
-}
+export default function ContractOptionSheet() {
+  const contractOptionSheet = useBottomSheetControler((s) => s.contractOptionSheet);
+  const setContractOptionSheet = useBottomSheetControler((s) => s.setContractOptionSheet);
+  const storeYear = useBottomSheetControler((s) => s.contractOptionYear);
+  const storeTimelyAmount = useBottomSheetControler((s) => s.contractOptionTimelyAmount);
+  const storeWeeklyHours = useBottomSheetControler((s) => s.contractOptionWeeklyHours);
+  const storeOnChange = useBottomSheetControler((s) => s.contractOptionOnChange);
 
-export default function ContractOptionSheet({
-  year: initialYear,
-  timelyAmount: initialTimelyAmount = 0,
-  weeklyHours: initialWeeklyHours = 40,
-  onChange,
-}: ContractOptionSheetProps) {
   const defaultYear = new Date().getFullYear();
-  const effectiveInitialYear = initialYear ?? defaultYear;
-  const contractOptionSheet = useBottomSheetControler(
-    (state) => state.contractOptionSheet
-  );
-  const setContractOptionSheet = useBottomSheetControler(
-    (state) => state.setContractOptionSheet
-  );
 
-  const [year, setYear] = useState(effectiveInitialYear);
-  const [timelyAmount, setTimelyAmount] = useState(initialTimelyAmount);
-  const [weeklyHours, setWeeklyHours] = useState(initialWeeklyHours);
+  const [year, setYear] = useState(defaultYear);
+  const [timelyAmount, setTimelyAmount] = useState(0);
+  const [weeklyHours, setWeeklyHours] = useState(40);
 
   const { data: minimumWageData, isLoading: isMinWageLoading } = useMinimumWage(year);
   const minimumWage = minimumWageData?.minimumWage ?? 0;
@@ -42,11 +27,11 @@ export default function ContractOptionSheet({
       ? `${minimumWage.toLocaleString('ko-KR')}원`
       : '-';
 
-  // 바텀시트 열릴 때 prop 동기화 (최저시급 fallback은 부모에서 activeTimelyAmount로 처리)
-  const syncFromProps = () => {
-    setYear(effectiveInitialYear);
-    setWeeklyHours(initialWeeklyHours);
-    setTimelyAmount(initialTimelyAmount);
+  // 바텀시트 열릴 때 스토어 값으로 동기화
+  const syncFromStore = () => {
+    setYear(storeYear);
+    setTimelyAmount(storeTimelyAmount);
+    setWeeklyHours(storeWeeklyHours);
   };
 
   const handleClose = () => {
@@ -59,8 +44,17 @@ export default function ContractOptionSheet({
     setWeeklyHours(40);
   };
 
+  const openAlert = usePopupControler((s) => s.openAlert);
+
   const handleConfirm = () => {
-    onChange?.({ year, timelyAmount, weeklyHours });
+    if (timelyAmount > 0 && minimumWage > 0 && timelyAmount < minimumWage) {
+      openAlert({
+        message: `통상시급이 최저시급(${minimumWage.toLocaleString()}원) 미만입니다.`,
+        confirmText: '확인',
+      })
+      return
+    }
+    storeOnChange?.({ year, timelyAmount, weeklyHours });
     setContractOptionSheet(false);
   };
 
@@ -68,7 +62,7 @@ export default function ContractOptionSheet({
     <Sheet
       isOpen={contractOptionSheet}
       onClose={handleClose}
-      onOpenEnd={syncFromProps}
+      onOpenStart={syncFromStore}
       detent="content"
       disableScrollLocking={true}
     >
@@ -109,9 +103,11 @@ export default function ContractOptionSheet({
                   <div className="block">
                     <input
                       type="number"
+                      inputMode="numeric"
                       className="input-frame al-r"
                       min="0"
-                      value={timelyAmount}
+                      value={timelyAmount || ''}
+                      placeholder="0"
                       onChange={(e) => setTimelyAmount(Math.max(0, Number(e.target.value)))}
                     />
                   </div>
@@ -129,6 +125,7 @@ export default function ContractOptionSheet({
                   <div className="block">
                     <input
                       type="number"
+                      inputMode="numeric"
                       className="input-frame"
                       value={weeklyHours}
                       onChange={(e) => setWeeklyHours(Number(e.target.value))}

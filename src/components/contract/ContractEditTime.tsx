@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+import { usePopupControler } from "@/store/usePopupControler";
 import { useUpdateContractWorkHours } from "@/hooks/queries/use-contract-queries";
+import { getErrorMessage } from "@/lib/api";
+import "../bottomsheet/css/date-input-fix.scss";
 import type { ContractDetail, ContractWorkHour } from "@/types/contract";
 
 interface WorkDayState {
@@ -35,8 +38,9 @@ interface Props {
 
 export default function ContractEditTime({ initialData }: Props) {
   const router = useRouter();
-  const setTimeSelectSheet = useBottomSheetControler(
-    (state) => state.setTimeSelectSheet
+  const openAlert = usePopupControler((s) => s.openAlert);
+  const openTimePicker = useBottomSheetControler(
+    (state) => state.openTimePicker
   );
   const updateWorkHours = useUpdateContractWorkHours();
 
@@ -61,7 +65,7 @@ export default function ContractEditTime({ initialData }: Props) {
     isBreak: saturdayRaw?.isBreak ?? false,
     breakStartTime: saturdayRaw?.breakStartTime ?? "",
     breakEndTime: saturdayRaw?.breakEndTime ?? "",
-    everySaturdayWork: saturdayRaw?.everySaturdayWork ?? true,
+    everySaturdayWork: saturdayRaw?.everySaturdayWork ?? false,
     firstSaturdayWorkDay: saturdayRaw?.firstSaturdayWorkDay ?? "",
   });
 
@@ -72,7 +76,7 @@ export default function ContractEditTime({ initialData }: Props) {
     isBreak: sundayRaw?.isBreak ?? false,
     breakStartTime: sundayRaw?.breakStartTime ?? "",
     breakEndTime: sundayRaw?.breakEndTime ?? "",
-    everySundayWork: sundayRaw?.everySundayWork ?? true,
+    everySundayWork: sundayRaw?.everySundayWork ?? false,
     firstSundayWorkDay: sundayRaw?.firstSundayWorkDay ?? "",
   });
 
@@ -117,18 +121,25 @@ export default function ContractEditTime({ initialData }: Props) {
       },
     ];
 
+    // isWork=false인 항목은 시간값 초기화
+    const cleanedWorkHours = workHours.map((wh) =>
+      wh.isWork ? wh : { ...wh, workStartTime: undefined, workEndTime: undefined, breakStartTime: undefined, breakEndTime: undefined, isBreak: false, firstSaturdayWorkDay: undefined, firstSundayWorkDay: undefined, everySaturdayWork: false, everySundayWork: false },
+    );
     try {
       await updateWorkHours.mutateAsync({
         contractId: initialData.id,
         data: {
           contractId: initialData.id,
-          workHours,
+          workHours: cleanedWorkHours,
         },
       });
-      alert("근무시간이 저장되었습니다.");
-      router.back();
-    } catch {
-      alert("저장에 실패했습니다.");
+      openAlert({
+        message: "근무시간이 저장되었습니다.",
+        confirmText: "확인",
+        onConfirm: () => router.back(),
+      });
+    } catch (error) {
+      openAlert({ message: getErrorMessage(error, "저장에 실패했습니다."), confirmText: "확인" });
     }
   };
 
@@ -162,25 +173,30 @@ export default function ContractEditTime({ initialData }: Props) {
                       미근무
                     </button>
                   </div>
-                  <div>
-                    <div className="block mb8">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {weekday.workStartTime || "시작시간"}
-                      </button>
-                    </div>
-                    <div className="block">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {weekday.workEndTime || "종료시간"}
-                      </button>
-                    </div>
-                  </div>
+                  {weekday.isWork && (
+                    <>
+                      <div>
+                        <div className="block mb8">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('평일 근무 시작', weekday.workStartTime, (v) => setWeekday((p) => ({ ...p, workStartTime: v ?? "" })))}
+                          >
+                            {weekday.workStartTime || "시작시간"}
+                          </button>
+                        </div>
+                        <div className="block">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('평일 근무 종료', weekday.workEndTime, (v) => setWeekday((p) => ({ ...p, workEndTime: v ?? "" })))}
+                          >
+                            {weekday.workEndTime || "종료시간"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
+                {weekday.isWork && (
                 <div className="data-filed">
                   <div className="filed-tit sub">휴게시간</div>
                   <div className="flex g8 mb8">
@@ -201,7 +217,7 @@ export default function ContractEditTime({ initialData }: Props) {
                     <div className="block mb8">
                       <button
                         className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
+                        onClick={() => openTimePicker('평일 휴게 시작', weekday.breakStartTime, (v) => setWeekday((p) => ({ ...p, breakStartTime: v ?? "" })))}
                       >
                         {weekday.breakStartTime || "시작시간"}
                       </button>
@@ -209,13 +225,14 @@ export default function ContractEditTime({ initialData }: Props) {
                     <div className="block">
                       <button
                         className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
+                        onClick={() => openTimePicker('평일 휴게 종료', weekday.breakEndTime, (v) => setWeekday((p) => ({ ...p, breakEndTime: v ?? "" })))}
                       >
                         {weekday.breakEndTime || "종료시간"}
                       </button>
                     </div>
                   </div>
                 </div>
+                )}
               </div>
 
               {/* 토요일 */}
@@ -236,92 +253,100 @@ export default function ContractEditTime({ initialData }: Props) {
                       미근무
                     </button>
                   </div>
-                  <div>
-                    <div className="block mb8">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {saturday.workStartTime || "시작시간"}
-                      </button>
-                    </div>
-                    <div className="block">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {saturday.workEndTime || "종료시간"}
-                      </button>
-                    </div>
-                  </div>
+                  {saturday.isWork && (
+                    <>
+                      <div>
+                        <div className="block mb8">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('토요일 근무 시작', saturday.workStartTime, (v) => setSaturday((p) => ({ ...p, workStartTime: v ?? "" })))}
+                          >
+                            {saturday.workStartTime || "시작시간"}
+                          </button>
+                        </div>
+                        <div className="block">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('토요일 근무 종료', saturday.workEndTime, (v) => setSaturday((p) => ({ ...p, workEndTime: v ?? "" })))}
+                          >
+                            {saturday.workEndTime || "종료시간"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div className="data-filed">
-                  <div className="filed-tit sub">휴게시간</div>
-                  <div className="flex g8 mb8">
-                    <button
-                      className={`radio-btn block blue${saturday.isBreak ? " act" : ""}`}
-                      onClick={() => setSaturday((p) => ({ ...p, isBreak: true }))}
-                    >
-                      있음
-                    </button>
-                    <button
-                      className={`radio-btn block blue${!saturday.isBreak ? " act" : ""}`}
-                      onClick={() => setSaturday((p) => ({ ...p, isBreak: false }))}
-                    >
-                      없음
-                    </button>
-                  </div>
-                  <div>
-                    <div className="block mb8">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {saturday.breakStartTime || "시작시간"}
-                      </button>
+                {saturday.isWork && (
+                  <>
+                    <div className="data-filed">
+                      <div className="filed-tit sub">휴게시간</div>
+                      <div className="flex g8 mb8">
+                        <button
+                          className={`radio-btn block blue${saturday.isBreak ? " act" : ""}`}
+                          onClick={() => setSaturday((p) => ({ ...p, isBreak: true }))}
+                        >
+                          있음
+                        </button>
+                        <button
+                          className={`radio-btn block blue${!saturday.isBreak ? " act" : ""}`}
+                          onClick={() => setSaturday((p) => ({ ...p, isBreak: false }))}
+                        >
+                          없음
+                        </button>
+                      </div>
+                      <div>
+                        <div className="block mb8">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('토요일 휴게 시작', saturday.breakStartTime, (v) => setSaturday((p) => ({ ...p, breakStartTime: v ?? "" })))}
+                          >
+                            {saturday.breakStartTime || "시작시간"}
+                          </button>
+                        </div>
+                        <div className="block">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('토요일 휴게 종료', saturday.breakEndTime, (v) => setSaturday((p) => ({ ...p, breakEndTime: v ?? "" })))}
+                          >
+                            {saturday.breakEndTime || "종료시간"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="block">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {saturday.breakEndTime || "종료시간"}
-                      </button>
+                    <div className="data-filed">
+                      <div className="filed-tit sub">격주근무 여부</div>
+                      <div className="flex g8">
+                        <button
+                          className={`radio-btn block blue${saturday.everySaturdayWork ? " act" : ""}`}
+                          onClick={() => setSaturday((p) => ({ ...p, everySaturdayWork: true }))}
+                        >
+                          매주 근무
+                        </button>
+                        <button
+                          className={`radio-btn block blue${!saturday.everySaturdayWork ? " act" : ""}`}
+                          onClick={() => setSaturday((p) => ({ ...p, everySaturdayWork: false }))}
+                        >
+                          격주 근무
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="data-filed">
-                  <div className="filed-tit sub">격주근무 여부</div>
-                  <div className="flex g8">
-                    <button
-                      className={`radio-btn block blue${saturday.everySaturdayWork ? " act" : ""}`}
-                      onClick={() => setSaturday((p) => ({ ...p, everySaturdayWork: true }))}
-                    >
-                      매주 근무
-                    </button>
-                    <button
-                      className={`radio-btn block blue${!saturday.everySaturdayWork ? " act" : ""}`}
-                      onClick={() => setSaturday((p) => ({ ...p, everySaturdayWork: false }))}
-                    >
-                      격주 근무
-                    </button>
-                  </div>
-                </div>
-                <div className="data-filed">
-                  <div className="filed-tit sub">격주근무 시작일</div>
-                  <div className="block">
-                    <div className="date-picker-custom">
-                      <input
-                        type="text"
-                        className="date-picker-input"
-                        value={saturday.firstSaturdayWorkDay}
-                        onChange={(e) =>
-                          setSaturday((p) => ({ ...p, firstSaturdayWorkDay: e.target.value }))
-                        }
-                      />
+                    <div className="data-filed">
+                      <div className="filed-tit sub">격주근무 시작일</div>
+                      <div className="block">
+                        <div className="date-picker-custom">
+                          <input
+                            type="date"
+                            className="date-picker-input"
+                            value={saturday.firstSaturdayWorkDay}
+                            onChange={(e) =>
+                              setSaturday((p) => ({ ...p, firstSaturdayWorkDay: e.target.value }))
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
               {/* 일요일 */}
@@ -342,92 +367,100 @@ export default function ContractEditTime({ initialData }: Props) {
                       미근무
                     </button>
                   </div>
-                  <div>
-                    <div className="block mb8">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {sunday.workStartTime || "시작시간"}
-                      </button>
-                    </div>
-                    <div className="block">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {sunday.workEndTime || "종료시간"}
-                      </button>
-                    </div>
-                  </div>
+                  {sunday.isWork && (
+                    <>
+                      <div>
+                        <div className="block mb8">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('일요일 근무 시작', sunday.workStartTime, (v) => setSunday((p) => ({ ...p, workStartTime: v ?? "" })))}
+                          >
+                            {sunday.workStartTime || "시작시간"}
+                          </button>
+                        </div>
+                        <div className="block">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('일요일 근무 종료', sunday.workEndTime, (v) => setSunday((p) => ({ ...p, workEndTime: v ?? "" })))}
+                          >
+                            {sunday.workEndTime || "종료시간"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div className="data-filed">
-                  <div className="filed-tit sub">브레이크타임</div>
-                  <div className="flex g8 mb8">
-                    <button
-                      className={`radio-btn block blue${sunday.isBreak ? " act" : ""}`}
-                      onClick={() => setSunday((p) => ({ ...p, isBreak: true }))}
-                    >
-                      있음
-                    </button>
-                    <button
-                      className={`radio-btn block blue${!sunday.isBreak ? " act" : ""}`}
-                      onClick={() => setSunday((p) => ({ ...p, isBreak: false }))}
-                    >
-                      없음
-                    </button>
-                  </div>
-                  <div>
-                    <div className="block mb8">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {sunday.breakStartTime || "시작시간"}
-                      </button>
+                {sunday.isWork && (
+                  <>
+                    <div className="data-filed">
+                      <div className="filed-tit sub">휴게시간</div>
+                      <div className="flex g8 mb8">
+                        <button
+                          className={`radio-btn block blue${sunday.isBreak ? " act" : ""}`}
+                          onClick={() => setSunday((p) => ({ ...p, isBreak: true }))}
+                        >
+                          있음
+                        </button>
+                        <button
+                          className={`radio-btn block blue${!sunday.isBreak ? " act" : ""}`}
+                          onClick={() => setSunday((p) => ({ ...p, isBreak: false }))}
+                        >
+                          없음
+                        </button>
+                      </div>
+                      <div>
+                        <div className="block mb8">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('일요일 휴게 시작', sunday.breakStartTime, (v) => setSunday((p) => ({ ...p, breakStartTime: v ?? "" })))}
+                          >
+                            {sunday.breakStartTime || "시작시간"}
+                          </button>
+                        </div>
+                        <div className="block">
+                          <button
+                            className="select-form al-l"
+                            onClick={() => openTimePicker('일요일 휴게 종료', sunday.breakEndTime, (v) => setSunday((p) => ({ ...p, breakEndTime: v ?? "" })))}
+                          >
+                            {sunday.breakEndTime || "종료시간"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="block">
-                      <button
-                        className="select-form al-l"
-                        onClick={() => setTimeSelectSheet(true)}
-                      >
-                        {sunday.breakEndTime || "종료시간"}
-                      </button>
+                    <div className="data-filed">
+                      <div className="filed-tit sub">격주근무 여부</div>
+                      <div className="flex g8">
+                        <button
+                          className={`radio-btn block blue${sunday.everySundayWork ? " act" : ""}`}
+                          onClick={() => setSunday((p) => ({ ...p, everySundayWork: true }))}
+                        >
+                          매주 근무
+                        </button>
+                        <button
+                          className={`radio-btn block blue${!sunday.everySundayWork ? " act" : ""}`}
+                          onClick={() => setSunday((p) => ({ ...p, everySundayWork: false }))}
+                        >
+                          격주 근무
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="data-filed">
-                  <div className="filed-tit sub">격주근무 여부</div>
-                  <div className="flex g8">
-                    <button
-                      className={`radio-btn block blue${sunday.everySundayWork ? " act" : ""}`}
-                      onClick={() => setSunday((p) => ({ ...p, everySundayWork: true }))}
-                    >
-                      매주 근무
-                    </button>
-                    <button
-                      className={`radio-btn block blue${!sunday.everySundayWork ? " act" : ""}`}
-                      onClick={() => setSunday((p) => ({ ...p, everySundayWork: false }))}
-                    >
-                      격주 근무
-                    </button>
-                  </div>
-                </div>
-                <div className="data-filed">
-                  <div className="filed-tit sub">격주근무 시작일</div>
-                  <div className="block">
-                    <div className="date-picker-custom">
-                      <input
-                        type="text"
-                        className="date-picker-input"
-                        value={sunday.firstSundayWorkDay}
-                        onChange={(e) =>
-                          setSunday((p) => ({ ...p, firstSundayWorkDay: e.target.value }))
-                        }
-                      />
+                    <div className="data-filed">
+                      <div className="filed-tit sub">격주근무 시작일</div>
+                      <div className="block">
+                        <div className="date-picker-custom">
+                          <input
+                            type="date"
+                            className="date-picker-input"
+                            value={sunday.firstSundayWorkDay}
+                            onChange={(e) =>
+                              setSunday((p) => ({ ...p, firstSundayWorkDay: e.target.value }))
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

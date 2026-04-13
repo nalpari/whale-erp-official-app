@@ -8,7 +8,9 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useStoreStore } from '@/store/useStoreStore'
 import { useContractList } from '@/hooks/queries/use-contract-queries'
 import { useMounted } from '@/hooks/use-mounted'
-import type { ContractListItem, ElectronicContractStatus } from '@/types/contract'
+import { CONTRACT_STATUS_BADGE } from '@/lib/constants'
+import { NO_END_DATE } from '@/types/contract'
+import type { ContractListItem } from '@/types/contract'
 
 const AVATAR_IMAGES = [
   '/assets/images/layout/avatar01.svg',
@@ -21,12 +23,6 @@ const formatDate = (date?: string) => {
   return date.replace(/-/g, '.')
 }
 
-const CONTRACT_STATUS_BADGE: Record<ElectronicContractStatus, { label: string; className: string }> = {
-  WRITING: { label: '작성중', className: 'badge blue' },
-  PROGRESS: { label: '진행중', className: 'badge green' },
-  COMPLETE: { label: '완료', className: 'badge org' },
-  REFUSAL: { label: '거부', className: 'badge red' },
-}
 
 function getWorkDaysSummary(workHours?: ContractListItem['workHours']) {
   if (!workHours || workHours.length === 0) return '-'
@@ -51,7 +47,7 @@ export default function ContractList() {
   const setContractSearchSheet = useBottomSheetControler(
     (state) => state.setContractSearchSheet,
   )
-  const { searchParams, hasSearched } = useContractSearchStore()
+  const searchParams = useContractSearchStore((s) => s.searchParams)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
   const selectedStore = useStoreStore((state) => state.selectedStore)
@@ -65,7 +61,7 @@ export default function ContractList() {
     ...(headOfficeId != null && { headOfficeId }),
     storeId: mounted ? selectedStore?.id : undefined,
   }
-  const canSearch = mounted && hasSearched && !!effectiveHeadOfficeId
+  const canSearch = mounted && !!effectiveHeadOfficeId
   const { data, isLoading } = useContractList(params, canSearch)
 
   const contractList = data?.content ?? []
@@ -82,7 +78,7 @@ export default function ContractList() {
             검색결과 <span>{canSearch ? `${totalElements}건` : '0건'}</span>
           </div>
           <button
-            className="search-btn "
+            className="search-btn"
             onClick={() => setContractSearchSheet(true)}
           >
             <i className="icon-search"></i>
@@ -92,7 +88,6 @@ export default function ContractList() {
 
         <ContractListContent
           mounted={mounted}
-          hasSearched={hasSearched}
           headOfficeId={effectiveHeadOfficeId}
           isLoading={isLoading}
           contractList={contractList}
@@ -115,23 +110,24 @@ function EmptyMessage({ text }: { text: string }) {
 
 function ContractListContent({
   mounted,
-  hasSearched,
   headOfficeId,
   isLoading,
   contractList,
   onItemClick,
 }: {
   mounted: boolean
-  hasSearched: boolean
   headOfficeId: number | null
   isLoading: boolean
   contractList: ContractListItem[]
   onItemClick: (id: number) => void
 }) {
-  if (!mounted || !hasSearched) return <EmptyMessage text="검색 조건을 설정해주세요." />
+  if (!mounted) return null
   if (!headOfficeId) return <EmptyMessage text="상단에서 점포를 먼저 선택해주세요." />
   if (isLoading) return <EmptyMessage text="불러오는 중..." />
   if (contractList.length === 0) return <EmptyMessage text="검색 결과가 없습니다." />
+
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   return (
     <div className="staff-list-wrap">
@@ -145,6 +141,9 @@ function ContractListContent({
         const contractDate = header?.contractDate
           ? `${formatDate(header.contractDate)} (${header.contractTypeName ?? ''})`
           : '-'
+        const isExpired = header?.contractEndDate
+          ? header.contractEndDate < today
+          : false
 
         return (
           <button
@@ -155,6 +154,7 @@ function ContractListContent({
             <div className="staff-item-header">
               <div className="head-staff-info">
                 <div className="staff-icon">
+                  {isExpired && <i className="contract-tip"></i>}
                   <Image
                     src={AVATAR_IMAGES[index % AVATAR_IMAGES.length]}
                     alt="staff-icon"
@@ -169,11 +169,17 @@ function ContractListContent({
                       <i className={statusInfo.className}>{statusInfo.label}</i>
                     )}
                   </div>
-                  <div className="staff-job">{item.workStatusName ?? item.workStatus ?? ''}</div>
+                  <div className="staff-job">
+                    {[
+                      item.headOfficeOrganizationName ? '본사직원' : item.storeName ? '점포직원' : '',
+                      header?.contractClassificationName,
+                      item.workStatusName,
+                    ].filter(Boolean).join('/')}
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="sub-item-bx ">
+            <div className="sub-item-bx">
               <table className="info-table">
                 <colgroup>
                   <col style={{ width: '90px' }} />
@@ -187,6 +193,14 @@ function ContractListContent({
                   <tr>
                     <th>급여일</th>
                     <td>{salaryDay}</td>
+                  </tr>
+                  <tr>
+                    <th>계약기간</th>
+                    <td>
+                      {header?.contractStartDate
+                        ? `${formatDate(header.contractStartDate)} ~ ${header.contractEndDate && header.contractEndDate !== NO_END_DATE ? formatDate(header.contractEndDate) : '정함없음'}`
+                        : '-'}
+                    </td>
                   </tr>
                   <tr>
                     <th>계약일</th>

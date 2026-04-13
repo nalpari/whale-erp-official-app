@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "react-tooltip";
-import { useUpdateContractHeader } from "@/hooks/queries/use-contract-queries";
+import "../bottomsheet/css/date-input-fix.scss";
+import {
+  useUpdateContractHeader,
+  useContractsByEmployee,
+} from "@/hooks/queries/use-contract-queries";
+import { useCommonCodeHierarchy } from "@/hooks/queries/use-common-code-queries";
+import { usePopupControler } from "@/store/usePopupControler";
+import { CONTRACT_COMPREHENSIVE, DEFAULT_SALARY_CYCLE, DEFAULT_SALARY_MONTH, NO_END_DATE } from "@/types/contract";
 import { getErrorMessage } from "@/lib/api";
 import type { ContractDetail as ContractDetailType } from "@/types/contract";
 import type {
@@ -25,35 +32,10 @@ const JOB_DESCRIPTION_OPTIONS = [
   "직접입력",
 ];
 
-const CONTRACT_CLASSIFICATION_OPTIONS: {
-  value: ContractClassificationType;
-  label: string;
-}[] = [
-  { value: "CNTCFWK_001", label: "포괄임금" },
-  { value: "CNTCFWK_002", label: "비포괄임금" },
-  { value: "CNTCFWK_003", label: "파트타임" },
-];
-
-const SALARY_CYCLE_OPTIONS: { value: SalaryCycle; label: string }[] = [
-  { value: "SLRCC_001", label: "월급" },
-  { value: "SLRCC_002", label: "시급" },
-];
-
-const SALARY_MONTH_OPTIONS: { value: SalaryMonth; label: string }[] = [
-  { value: "SLRCF_001", label: "당월" },
-  { value: "SLRCF_002", label: "익월" },
-];
 
 const SALARY_DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => i + 1);
 
-function formatDateInput(dateStr?: string) {
-  if (!dateStr) return "";
-  return dateStr.slice(0, 10).replace(/-/g, ".");
-}
 
-function parseDateInput(value: string) {
-  return value.replace(/\./g, "-");
-}
 
 function getSelectedJobDescriptions(jobDescription: string): string[] {
   if (!jobDescription) return [];
@@ -74,7 +56,15 @@ function buildJobDescription(selected: string[], customText: string): string {
 
 export default function ContractEditInfo({ initialData }: ContractEditInfoProps) {
   const router = useRouter();
+  const openAlert = usePopupControler((s) => s.openAlert);
   const header = initialData?.employmentContractHeader;
+  const { data: contractClassifications = [] } = useCommonCodeHierarchy('CNTCFWK');
+  const { data: salaryCycleCodes = [] } = useCommonCodeHierarchy('SLRCC');
+  const { data: salaryMonthCodes = [] } = useCommonCodeHierarchy('SLRCF');
+  const { data: prevContracts } = useContractsByEmployee(
+    initialData?.employeeInfoId ?? 0,
+    !!initialData?.employeeInfoId,
+  );
 
   const initialJobDescriptions = header?.jobDescription
     ? getSelectedJobDescriptions(header.jobDescription)
@@ -92,12 +82,16 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
     customJobText.length > 0 ||
     initialJobDescriptions.includes("직접입력");
 
-  const [hasContractPeriod, setHasContractPeriod] = useState(true);
+  const [hasContractPeriod, setHasContractPeriod] = useState(
+    header?.contractEndDate ? header.contractEndDate !== NO_END_DATE : true
+  );
   const [contractStartDate, setContractStartDate] = useState(
-    formatDateInput(header?.contractStartDate)
+    header?.contractStartDate?.slice(0, 10) ?? ''
   );
   const [contractEndDate, setContractEndDate] = useState(
-    formatDateInput(header?.contractEndDate)
+    header?.contractEndDate && header.contractEndDate !== NO_END_DATE
+      ? header.contractEndDate.slice(0, 10)
+      : ''
   );
   const [selectedJobs, setSelectedJobs] = useState<string[]>([
     ...selectedPredefined,
@@ -107,7 +101,7 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
     useState(customJobText);
   const [contractClassification, setContractClassification] =
     useState<ContractClassificationType>(
-      header?.contractClassification ?? "CNTCFWK_001"
+      header?.contractClassification ?? CONTRACT_COMPREHENSIVE
     );
   const [nationalPensionEnrolled, setNationalPensionEnrolled] = useState(
     header?.nationalPensionEnrolled ?? false
@@ -120,18 +114,51 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
   const [workersCompensationEnrolled, setWorkersCompensationEnrolled] =
     useState(header?.workersCompensationEnrolled ?? false);
   const [salaryCycle, setSalaryCycle] = useState<SalaryCycle>(
-    header?.salaryCycle ?? "SLRCC_001"
+    header?.salaryCycle ?? DEFAULT_SALARY_CYCLE
   );
   const [salaryMonth, setSalaryMonth] = useState<SalaryMonth>(
-    header?.salaryMonth ?? "SLRCF_001"
+    header?.salaryMonth ?? DEFAULT_SALARY_MONTH
   );
   const [salaryDay, setSalaryDay] = useState<number>(header?.salaryDay ?? 15);
-  const [contractDate] = useState(formatDateInput(header?.contractDate));
+  const [contractDate] = useState(header?.contractDate?.slice(0, 10) ?? '');
 
   const [workContractFile, setWorkContractFile] = useState<File | null>(null);
   const [wageContractFile, setWageContractFile] = useState<File | null>(null);
+  const [removeWorkFile, setRemoveWorkFile] = useState(false);
+  const [removeWageFile, setRemoveWageFile] = useState(false);
 
   const updateMutation = useUpdateContractHeader();
+
+  const handleLoadPreviousContract = () => {
+    if (!prevContracts || prevContracts.length <= 1) {
+      openAlert({ message: '이전 계약 정보가 없습니다.', confirmText: '확인' })
+      return
+    }
+    const prev = [...prevContracts]
+      .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
+      .find((c) => c.id !== initialData?.id)
+    if (!prev?.employmentContractHeader) {
+      openAlert({ message: '이전 계약 정보를 불러올 수 없습니다.', confirmText: '확인' })
+      return
+    }
+    const h = prev.employmentContractHeader
+    setContractClassification(h.contractClassification ?? 'CNTCFWK_001')
+    setNationalPensionEnrolled(h.nationalPensionEnrolled ?? false)
+    setHealthInsuranceEnrolled(h.healthInsuranceEnrolled ?? false)
+    setEmploymentInsuranceEnrolled(h.employmentInsuranceEnrolled ?? false)
+    setWorkersCompensationEnrolled(h.workersCompensationEnrolled ?? false)
+    setSalaryCycle(h.salaryCycle ?? 'SLRCC_001')
+    setSalaryMonth(h.salaryMonth ?? 'SLRCF_001')
+    setSalaryDay(h.salaryDay ?? 15)
+    if (h.jobDescription) {
+      const jobs = getSelectedJobDescriptions(h.jobDescription)
+      const predefined = jobs.filter((d) => JOB_DESCRIPTION_OPTIONS.includes(d))
+      const custom = jobs.filter((d) => !JOB_DESCRIPTION_OPTIONS.includes(d)).join(', ')
+      setSelectedJobs([...predefined, ...(custom ? ['직접입력'] : [])])
+      setCustomJobDescription(custom)
+    }
+    openAlert({ message: '이전 계약정보를 불러왔습니다.', confirmText: '확인' })
+  }
 
   const toggleJob = (job: string) => {
     setSelectedJobs((prev) =>
@@ -141,7 +168,16 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
 
   const handleSave = async () => {
     if (!header?.id || !initialData?.id) {
-      alert("계약 정보를 불러오지 못했습니다.");
+      openAlert({ message: "계약 정보를 불러오지 못했습니다.", confirmText: "확인" });
+      return;
+    }
+
+    if (hasContractPeriod && !contractStartDate) {
+      openAlert({ message: "계약 시작일을 입력해주세요.", confirmText: "확인" });
+      return;
+    }
+    if (hasContractPeriod && contractEndDate && contractStartDate && contractEndDate < contractStartDate) {
+      openAlert({ message: "계약 종료일이 시작일보다 이전입니다.", confirmText: "확인" });
       return;
     }
 
@@ -162,24 +198,23 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
           salaryCycle,
           salaryMonth,
           salaryDay,
-          contractStartDate: hasContractPeriod
-            ? parseDateInput(contractStartDate)
-            : "",
-          contractEndDate: hasContractPeriod
-            ? parseDateInput(contractEndDate)
-            : "",
-          contractDate: parseDateInput(contractDate),
+          contractStartDate: hasContractPeriod ? contractStartDate : "",
+          contractEndDate: hasContractPeriod ? contractEndDate : "",
+          contractDate,
           jobDescription,
-          workContractFileId: header.workContractFile?.id,
-          wageContractFileId: header.wageContractFile?.id,
+          workContractFileId: removeWorkFile ? undefined : header.workContractFile?.id,
+          wageContractFileId: removeWageFile ? undefined : header.wageContractFile?.id,
         },
         workContractFile: workContractFile ?? undefined,
         wageContractFile: wageContractFile ?? undefined,
       });
-      alert("저장되었습니다.");
-      router.back();
+      openAlert({
+        message: "저장되었습니다.",
+        confirmText: "확인",
+        onConfirm: () => router.back(),
+      });
     } catch (error) {
-      alert(getErrorMessage(error, "저장에 실패했습니다."));
+      openAlert({ message: getErrorMessage(error, "저장에 실패했습니다."), confirmText: "확인" });
     }
   };
 
@@ -195,7 +230,7 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                     직원명 <span className="imp">*</span>
                   </div>
                   <div className="block mb8">
-                    <button className="btn-form block grey">
+                    <button className="btn-form block grey" onClick={handleLoadPreviousContract}>
                       이전 계약정보 불러오기
                     </button>
                   </div>
@@ -234,23 +269,21 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                     <div className="flex g6">
                       <div className="date-picker-custom">
                         <input
-                          type="text"
+                          type="date"
                           className="date-picker-input"
                           value={contractStartDate}
                           onChange={(e) =>
                             setContractStartDate(e.target.value)
                           }
-                          placeholder="YYYY.MM.DD"
                         />
                       </div>
                       <span>~</span>
                       <div className="date-picker-custom">
                         <input
-                          type="text"
+                          type="date"
                           className="date-picker-input"
                           value={contractEndDate}
                           onChange={(e) => setContractEndDate(e.target.value)}
-                          placeholder="YYYY.MM.DD"
                         />
                       </div>
                     </div>
@@ -304,7 +337,11 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                           anchorSelect="#tooltip-btn-anchor"
                           opacity={1}
                         >
-                          <div>tooltip text</div>
+                          <div>포괄연봉제와 비포괄연봉제 비교</div>
+                          <div>· 수당지급: 포괄은 일괄 지급, 비포괄은 실제 근무시간 계산</div>
+                          <div>· 근무기록: 포괄은 별도 기록 없음, 비포괄은 기록 필수</div>
+                          <div>· 급여계산: 포괄은 매월 정액, 비포괄은 초과분 추가 계산</div>
+                          <div>· 수당청구: 포괄은 초과시간 넘으면 추가 청구, 비포괄은 별도 청구</div>
                         </Tooltip>
                       </button>
                     </div>
@@ -319,9 +356,9 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                         )
                       }
                     >
-                      {CONTRACT_CLASSIFICATION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {contractClassifications.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.name}
                         </option>
                       ))}
                     </select>
@@ -380,9 +417,9 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                         setSalaryCycle(e.target.value as SalaryCycle)
                       }
                     >
-                      {SALARY_CYCLE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {salaryCycleCodes.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.name}
                         </option>
                       ))}
                     </select>
@@ -395,9 +432,9 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                         setSalaryMonth(e.target.value as SalaryMonth)
                       }
                     >
-                      {SALARY_MONTH_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {salaryMonthCodes.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.name}
                         </option>
                       ))}
                     </select>
@@ -483,7 +520,7 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                           ></button>
                         </div>
                       </div>
-                    ) : header?.workContractFile ? (
+                    ) : header?.workContractFile && !removeWorkFile ? (
                       <div className="store-img-bx">
                         <div className="store-img-tit">
                           <span className="img-tit">
@@ -499,7 +536,7 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                           </span>
                         </div>
                         <div className="store-img-btn-wrap">
-                          <button className="img-delete"></button>
+                          <button className="img-delete" onClick={() => setRemoveWorkFile(true)}></button>
                         </div>
                       </div>
                     ) : null}
@@ -555,7 +592,7 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                           ></button>
                         </div>
                       </div>
-                    ) : header?.wageContractFile ? (
+                    ) : header?.wageContractFile && !removeWageFile ? (
                       <div className="store-img-bx">
                         <div className="store-img-tit">
                           <span className="img-tit">
@@ -571,7 +608,7 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
                           </span>
                         </div>
                         <div className="store-img-btn-wrap">
-                          <button className="img-delete"></button>
+                          <button className="img-delete" onClick={() => setRemoveWageFile(true)}></button>
                         </div>
                       </div>
                     ) : null}

@@ -1,11 +1,22 @@
 import type { PaginatedResponse } from '@/types/payroll'
 
 // Enums
-export type ContractType = 'ECNT_001' | 'ECNT_002'  // 전자계약 | 서류계약
+export type ContractType = 'ECNT_001' | 'ECNT_002'  // 서류계약 | 전자계약
 export type ContractClassificationType = 'CNTCFWK_001' | 'CNTCFWK_002' | 'CNTCFWK_003'  // 포괄 | 비포괄 | 파트타임
 export type ElectronicContractStatus = 'WRITING' | 'PROGRESS' | 'COMPLETE' | 'REFUSAL'
-export type SalaryCycle = 'SLRCC_001' | 'SLRCC_002'  // 월급제 | 시급제
+export type SalaryCycle = 'SLRCC_001' | 'SLRCC_002'  // 시급제 | 월급제
 export type SalaryMonth = 'SLRCF_001' | 'SLRCF_002'  // 당월 | 익월
+
+// 계약분류 상수
+export const CONTRACT_COMPREHENSIVE: ContractClassificationType = 'CNTCFWK_001'  // 포괄연봉제
+export const CONTRACT_NON_COMPREHENSIVE: ContractClassificationType = 'CNTCFWK_002'  // 비포괄연봉제
+export const CONTRACT_PART_TIME: ContractClassificationType = 'CNTCFWK_003'  // 파트타임
+
+// 기본값 상수
+export const DEFAULT_CONTRACT_TYPE: ContractType = 'ECNT_001'
+export const DEFAULT_SALARY_CYCLE: SalaryCycle = 'SLRCC_001'
+export const DEFAULT_SALARY_MONTH: SalaryMonth = 'SLRCF_001'
+export const NO_END_DATE = '9999-12-31'
 export type DayType = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY' | 'WEEKDAY' | 'WEEKEND'
 
 // 계약 목록 항목
@@ -25,13 +36,21 @@ export interface ContractListItem {
     electronicContractStatus: ElectronicContractStatus
     contractClassification: ContractClassificationType
     contractClassificationName: string
+    nationalPensionEnrolled?: boolean
+    healthInsuranceEnrolled?: boolean
+    employmentInsuranceEnrolled?: boolean
+    workersCompensationEnrolled?: boolean
     salaryCycle: SalaryCycle
+    salaryCycleName: string
     salaryMonth: SalaryMonth
+    salaryMonthName: string
     salaryDay: number
     contractStartDate: string
     contractEndDate: string
     contractDate: string
     jobDescription: string
+    workContractFile?: ContractFile
+    wageContractFile?: ContractFile
   }
   workHours?: ContractWorkHour[]
   createdAt: string
@@ -119,6 +138,10 @@ export interface ContractDetail {
   storeName?: string
   workStatus?: string
   workStatusName?: string
+  contractSendDate?: string
+  contractViewDate?: string
+  signedDate?: string
+  rejectedDate?: string
   employmentContractHeader?: {
     id: number
     contractType: ContractType
@@ -131,7 +154,9 @@ export interface ContractDetail {
     employmentInsuranceEnrolled: boolean
     workersCompensationEnrolled: boolean
     salaryCycle: SalaryCycle
+    salaryCycleName: string
     salaryMonth: SalaryMonth
+    salaryMonthName: string
     salaryDay: number
     contractStartDate: string
     contractEndDate: string

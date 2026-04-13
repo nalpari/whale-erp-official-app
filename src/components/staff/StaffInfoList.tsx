@@ -9,6 +9,10 @@ import { useEmployeeList } from '@/hooks/queries/use-employee-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import { isHealthCheckExpired } from '@/lib/constants'
+import { getErrorMessage } from '@/lib/api'
+import { getContractsByEmployee } from '@/lib/api/contract'
+import { useQueryClient } from '@tanstack/react-query'
+import { contractKeys } from '@/hooks/queries/use-contract-queries'
 import type { EmployeeListItem } from '@/types/employee'
 
 const AVATAR_IMAGES = [
@@ -22,6 +26,7 @@ export default function StaffInfoList() {
   const setStaffSearchSheet = useBottomSheetControler(
     (state) => state.setStaffSearchSheet,
   )
+  const queryClient = useQueryClient()
   const searchParams = useEmployeeSearchStore((state) => state.searchParams)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
@@ -78,7 +83,22 @@ export default function StaffInfoList() {
           isError={isError}
           employeeList={employeeList}
           onDetailClick={(id) => router.push(`/staff/${id}`)}
-          onContractClick={() => router.push('/contract')}
+          onContractClick={async (employeeInfoId) => {
+            try {
+              const contracts = await queryClient.fetchQuery({
+                queryKey: contractKeys.byEmployee(employeeInfoId),
+                queryFn: () => getContractsByEmployee(employeeInfoId),
+              })
+              if (contracts.length > 0) {
+                router.push(`/contract/${contracts[0].id}`)
+              } else {
+                router.push('/contract')
+              }
+            } catch (err) {
+              console.error('[StaffInfoList] 계약 조회 실패:', getErrorMessage(err))
+              router.push('/contract')
+            }
+          }}
           onRetry={() => refetch()}
         />
       </div>
@@ -112,7 +132,7 @@ function StaffListContent({
   isError: boolean
   employeeList: EmployeeListItem[]
   onDetailClick: (id: number) => void
-  onContractClick: () => void
+  onContractClick: (employeeId: number) => void
   onRetry: () => void
 }) {
   if (!mounted) return null
@@ -221,11 +241,11 @@ function StaffListContent({
           {/* 근로계약서 */}
           <button
             className="contract-link"
-            onClick={(e) => { e.stopPropagation(); onContractClick() }}
+            onClick={(e) => { e.stopPropagation(); onContractClick(item.employeeInfoId) }}
           >
             <div className="contract-inner">
               <div className="contract-tit">근로계약서</div>
-              {/* TODO: 근로계약관리 PR에서 계약 상태 배지 연동 */}
+              {/* TODO: 직원 목록 API 응답에 electronicContractStatus 필드 추가 필요 (백엔드) */}
               <div className="auto-right">
                 <i className="contract-arr"></i>
               </div>

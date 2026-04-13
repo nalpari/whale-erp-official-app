@@ -14,14 +14,13 @@ import {
 import { getErrorMessage } from "@/lib/api";
 import ContractOptionSheet from "@/components/bottomsheet/ContractOptionSheet";
 import TaxExemptTable from "@/components/staff/employment/TaxExemptTable";
+import BonusTable from "@/components/contract/BonusTable";
 import { OVERTIME_RATE, NIGHT_RATE, HOLIDAY_RATE, ADD_HOLIDAY_RATE, formatAmount } from "@/lib/constants";
+import { CONTRACT_COMPREHENSIVE, CONTRACT_NON_COMPREHENSIVE, CONTRACT_PART_TIME } from "@/types/contract";
 import type { ContractDetail, ContractBonus } from "@/types/contract";
 import type { ContractClassificationType } from "@/types/employee";
 
 // 계약분류 코드 상수
-const CONTRACT_COMPREHENSIVE = "CNTCFWK_001" as const; // 포괄연봉제
-const CONTRACT_NON_COMPREHENSIVE = "CNTCFWK_002" as const; // 비포괄연봉제
-const CONTRACT_PART_TIME = "CNTCFWK_003" as const; // 파트타임
 
 interface EmploymentContractProps {
   initialData?: ContractDetail;
@@ -31,8 +30,11 @@ export default function EmploymentContract({
   initialData,
 }: EmploymentContractProps) {
   const router = useRouter();
-  const setContractOptionSheet = useBottomSheetControler(
-    (state) => state.setContractOptionSheet,
+  const openContractOption = useBottomSheetControler(
+    (state) => state.openContractOption,
+  );
+  const openBonusPaySheet = useBottomSheetControler(
+    (state) => state.openBonusPaySheet,
   );
   const openAlert = usePopupControler((s) => s.openAlert);
 
@@ -47,6 +49,12 @@ export default function EmploymentContract({
   );
   const inviteContractStartDate = useStaffInviteStore(
     (s) => s.stepTwo.contractStartDate,
+  );
+  const inviteHeadOfficeId = useStaffInviteStore(
+    (s) => s.stepOne.headOfficeOrganizationId,
+  );
+  const inviteFranchiseId = useStaffInviteStore(
+    (s) => s.stepOne.franchiseOrganizationId,
   );
   const contractClassification: ContractClassificationType = isContractPath
     ? (initialData?.employmentContractHeader?.contractClassification ??
@@ -147,8 +155,6 @@ export default function EmploymentContract({
   );
 
   // 시급 활성값: 계약분류에 따라 fallback 다르게 적용
-  // 비포괄: 통상시급 기반 (평일=통상시급, 연장/휴일=통상시급*배율)
-  // 파트타임: 최저시급
   const activeWeekdayWage = weekdayHourlyWage || (isNonComprehensive ? activeTimelyAmount : minimumWage);
   const activeOvertimeWage = overtimeHourlyWage || (isNonComprehensive ? Math.round(activeTimelyAmount * OVERTIME_RATE) : minimumWage);
   const activeHolidayWage = holidayHourlyWage || (isNonComprehensive ? Math.round(activeTimelyAmount * HOLIDAY_RATE) : minimumWage);
@@ -266,6 +272,12 @@ export default function EmploymentContract({
 
   // 저장 핸들러
   const handleSave = async () => {
+    // 최저임금 가드 (포괄/비포괄만 — 파트타임은 시급 테이블에서 별도 관리)
+    if (!isPartTime && timelyAmount > 0 && minimumWage > 0 && timelyAmount < minimumWage) {
+      openAlert({ message: `통상시급이 최저시급(${minimumWage.toLocaleString()}원) 미만입니다.`, confirmText: '확인' })
+      return
+    }
+
     if (isContractPath) {
       // 계약 수정 경로: API 호출
       const contractId = initialData?.id;
@@ -368,7 +380,7 @@ export default function EmploymentContract({
               {!isPartTime && (
                 <button
                   className="employment-header"
-                  onClick={() => setContractOptionSheet(true)}
+                  onClick={() => openContractOption(year, activeTimelyAmount, weeklyHours, handleOptionChange)}
                 >
                   <div className="employment-icon">
                     <Image
@@ -490,6 +502,17 @@ export default function EmploymentContract({
                 </div>
               )}
 
+              {/* 상여금 섹션 (공통) */}
+              <BonusTable
+                bonuses={bonuses}
+                onEdit={() => openBonusPaySheet(
+                  bonuses,
+                  initialData?.headOfficeOrganizationId ?? inviteHeadOfficeId,
+                  initialData?.franchiseOrganizationId ?? inviteFranchiseId,
+                  (newBonuses) => setBonuses(newBonuses),
+                )}
+              />
+
               {/* 하단 버튼 */}
               <div className="flex g8">
                 {!isPartTime && (
@@ -507,7 +530,6 @@ export default function EmploymentContract({
                       setWeekdayHourlyWage(0);
                       setOvertimeHourlyWage(0);
                       setHolidayHourlyWage(0);
-                      setBonuses([]);
                     }}
                   >
                     초기화
@@ -528,12 +550,7 @@ export default function EmploymentContract({
 
       {/* ContractOptionSheet: 포괄/비포괄만 */}
       {!isPartTime && (
-        <ContractOptionSheet
-          year={year}
-          timelyAmount={activeTimelyAmount}
-          weeklyHours={weeklyHours}
-          onChange={handleOptionChange}
-        />
+        <ContractOptionSheet />
       )}
 
     </>
@@ -622,6 +639,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={monthlyTime || ""}
@@ -638,6 +656,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={overtimeTime || ""}
@@ -658,6 +677,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={nightTime || ""}
@@ -676,6 +696,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={holidayTime || ""}
@@ -694,6 +715,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={addHolidayTime || ""}
@@ -935,6 +957,7 @@ function PartTimeTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={weekdayHourlyWage || ""}
@@ -952,6 +975,7 @@ function PartTimeTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={overtimeHourlyWage || ""}
@@ -969,6 +993,7 @@ function PartTimeTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={holidayHourlyWage || ""}

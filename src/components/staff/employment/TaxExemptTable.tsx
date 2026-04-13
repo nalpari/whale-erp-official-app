@@ -91,6 +91,7 @@ export default function TaxExemptTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   value={data.mealAllowance || ""}
                   placeholder="0"
@@ -123,6 +124,7 @@ export default function TaxExemptTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   value={data.vehicleAllowance || ""}
                   placeholder="0"
@@ -159,6 +161,7 @@ export default function TaxExemptTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   value={data.childcareAllowance || ""}
                   placeholder="0"

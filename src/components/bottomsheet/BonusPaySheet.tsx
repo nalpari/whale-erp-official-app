@@ -1,24 +1,22 @@
 'use client'
 import { useState } from 'react'
 import { useBottomSheetControler } from '@/store/useBottomSheetControler'
-import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import { useBonusCategories } from '@/hooks/queries/use-payroll-queries'
 import { Sheet } from 'react-modal-sheet'
 
 export default function BonusPaySheet() {
-  const bonusPaySheet = useBottomSheetControler((state) => state.bonusPaySheet)
-  const setBonusPaySheet = useBottomSheetControler(
-    (state) => state.setBonusPaySheet,
-  )
+  const bonusPaySheet = useBottomSheetControler((s) => s.bonusPaySheet)
+  const setBonusPaySheet = useBottomSheetControler((s) => s.setBonusPaySheet)
+  const storeData = useBottomSheetControler((s) => s.bonusPayData)
+  const storeHeadOfficeId = useBottomSheetControler((s) => s.bonusPayHeadOfficeId)
+  const storeFranchiseId = useBottomSheetControler((s) => s.bonusPayFranchiseId)
+  const storeOnChange = useBottomSheetControler((s) => s.bonusPayOnChange)
 
-  const headOfficeId = useStaffInviteStore((s) => s.stepOne.headOfficeOrganizationId)
-  const franchiseId = useStaffInviteStore((s) => s.stepOne.franchiseOrganizationId)
   const { data: bonusCategories = [] } = useBonusCategories(
-    headOfficeId ?? undefined,
-    franchiseId ?? undefined,
+    storeHeadOfficeId ?? undefined,
+    storeFranchiseId ?? undefined,
   )
 
-  // 각 상여금 항목의 금액과 사용 여부를 code 기준으로 관리
   const [amounts, setAmounts] = useState<Record<string, number>>({})
   const [toggles, setToggles] = useState<Record<string, boolean>>({})
 
@@ -40,17 +38,16 @@ export default function BonusPaySheet() {
         amount: amounts[cat.code] ?? 0,
         memo: '',
       }))
-    useStaffInviteStore.getState().setStepThreeSalary({ bonuses })
+    storeOnChange?.(bonuses)
     setBonusPaySheet(false)
   }
 
   const syncFromStore = () => {
-    const { bonuses } = useStaffInviteStore.getState().stepThreeSalary
     const newAmounts: Record<string, number> = {}
     const newToggles: Record<string, boolean> = {}
-    for (const bonus of bonuses) {
+    for (const bonus of storeData) {
       if (bonus.bonusCode) {
-        newAmounts[bonus.bonusCode] = bonus.amount
+        newAmounts[bonus.bonusCode] = bonus.amount ?? 0
         newToggles[bonus.bonusCode] = true
       }
     }
@@ -62,7 +59,7 @@ export default function BonusPaySheet() {
     <Sheet
       isOpen={bonusPaySheet}
       onClose={handleClose}
-      onOpenEnd={syncFromStore}
+      onOpenStart={syncFromStore}
       detent="content"
       disableScrollLocking={true}
     >

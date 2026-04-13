@@ -12,6 +12,7 @@ import {
   deleteContract,
   sendContractEmail,
   getMinimumWage,
+  downloadContractDocx,
 } from '@/lib/api/contract'
 import type {
   ContractSearchParams,
@@ -115,8 +116,9 @@ export const useUpdateContractHeader = () => {
       workContractFile?: File
       wageContractFile?: File
     }) => updateContractHeader(id, data, workContractFile, wageContractFile),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.all })
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
     },
   })
 }
@@ -132,8 +134,9 @@ export const useUpdateContractWorkHours = () => {
       contractId: number
       data: ContractWorkHoursRequest
     }) => updateContractWorkHours(contractId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.all })
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.detail(variables.contractId) })
+      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
     },
   })
 }
@@ -150,7 +153,8 @@ export const useUpdateContractSalaryInfo = () => {
       data: ContractSalaryInfoUpdateRequest
     }) => updateContractSalaryInfo(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.all })
+      queryClient.invalidateQueries({ queryKey: contractKeys.details() })
+      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
     },
   })
 }
@@ -166,13 +170,20 @@ export const useDeleteContract = () => {
   })
 }
 
+// 계약서 문서 다운로드 (DOCX)
+export const useDownloadContractDocx = () => {
+  return useMutation({
+    mutationFn: (contractId: number) => downloadContractDocx(contractId),
+  })
+}
+
 // 이메일 전송
 export const useSendContractEmail = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => sendContractEmail(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contractKeys.all })
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.detail(id) })
     },
   })
 }
