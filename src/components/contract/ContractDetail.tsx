@@ -571,7 +571,8 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                 <div className="sub-cont-tit">계약이력</div>
               </div>
               <div className="sub-item-bx">
-                {employeeContracts
+                {[...employeeContracts]
+                  .sort((a, b) => b.id - a.id)
                   .filter((c) => id != null && c.id !== id)
                   .map((c, i) => {
                     const h = c.employmentContractHeader

@@ -184,7 +184,6 @@ export const useSendContractEmail = () => {
     mutationFn: (id: number) => sendContractEmail(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: contractKeys.detail(id) })
-      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
     },
   })
 }

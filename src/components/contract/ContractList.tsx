@@ -9,6 +9,7 @@ import { useStoreStore } from '@/store/useStoreStore'
 import { useContractList } from '@/hooks/queries/use-contract-queries'
 import { useMounted } from '@/hooks/use-mounted'
 import { CONTRACT_STATUS_BADGE } from '@/lib/constants'
+import { NO_END_DATE } from '@/types/contract'
 import type { ContractListItem } from '@/types/contract'
 
 const AVATAR_IMAGES = [
@@ -197,7 +198,7 @@ function ContractListContent({
                     <th>계약기간</th>
                     <td>
                       {header?.contractStartDate
-                        ? `${formatDate(header.contractStartDate)} ~ ${header.contractEndDate ? formatDate(header.contractEndDate) : '미정'}`
+                        ? `${formatDate(header.contractStartDate)} ~ ${header.contractEndDate && header.contractEndDate !== NO_END_DATE ? formatDate(header.contractEndDate) : '정함없음'}`
                         : '-'}
                     </td>
                   </tr>

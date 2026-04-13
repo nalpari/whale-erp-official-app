@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useBottomSheetControler } from "@/store/useBottomSheetControler";
+import { usePopupControler } from "@/store/usePopupControler";
 import { useMinimumWage } from "@/hooks/queries/use-contract-queries";
 import { Sheet } from "react-modal-sheet";
 
@@ -43,8 +44,14 @@ export default function ContractOptionSheet() {
     setWeeklyHours(40);
   };
 
+  const openAlert = usePopupControler((s) => s.openAlert);
+
   const handleConfirm = () => {
     if (timelyAmount > 0 && minimumWage > 0 && timelyAmount < minimumWage) {
+      openAlert({
+        message: `통상시급이 최저시급(${minimumWage.toLocaleString()}원) 미만입니다.`,
+        confirmText: '확인',
+      })
       return
     }
     storeOnChange?.({ year, timelyAmount, weeklyHours });
