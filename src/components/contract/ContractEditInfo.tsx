@@ -10,7 +10,7 @@ import {
 } from "@/hooks/queries/use-contract-queries";
 import { useCommonCodeHierarchy } from "@/hooks/queries/use-common-code-queries";
 import { usePopupControler } from "@/store/usePopupControler";
-import { CONTRACT_COMPREHENSIVE, DEFAULT_SALARY_CYCLE, DEFAULT_SALARY_MONTH } from "@/types/contract";
+import { CONTRACT_COMPREHENSIVE, DEFAULT_SALARY_CYCLE, DEFAULT_SALARY_MONTH, NO_END_DATE } from "@/types/contract";
 import { getErrorMessage } from "@/lib/api";
 import type { ContractDetail as ContractDetailType } from "@/types/contract";
 import type {
@@ -83,13 +83,13 @@ export default function ContractEditInfo({ initialData }: ContractEditInfoProps)
     initialJobDescriptions.includes("직접입력");
 
   const [hasContractPeriod, setHasContractPeriod] = useState(
-    header?.contractEndDate ? header.contractEndDate !== '9999-12-31' : true
+    header?.contractEndDate ? header.contractEndDate !== NO_END_DATE : true
   );
   const [contractStartDate, setContractStartDate] = useState(
     header?.contractStartDate?.slice(0, 10) ?? ''
   );
   const [contractEndDate, setContractEndDate] = useState(
-    header?.contractEndDate && header.contractEndDate !== '9999-12-31'
+    header?.contractEndDate && header.contractEndDate !== NO_END_DATE
       ? header.contractEndDate.slice(0, 10)
       : ''
   );

@@ -556,8 +556,7 @@ export default function EmploymentContract({
                     onClick={() => {
                       setWeekdayHourlyWage(0);
                       setOvertimeHourlyWage(0);
-                                        setHolidayHourlyWage(0);
-                      setBonuses([]);
+                      setHolidayHourlyWage(0);
                     }}
                   >
                     초기화

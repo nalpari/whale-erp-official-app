@@ -16,6 +16,7 @@ export const CONTRACT_PART_TIME: ContractClassificationType = 'CNTCFWK_003'  // 
 export const DEFAULT_CONTRACT_TYPE: ContractType = 'ECNT_001'
 export const DEFAULT_SALARY_CYCLE: SalaryCycle = 'SLRCC_001'
 export const DEFAULT_SALARY_MONTH: SalaryMonth = 'SLRCF_001'
+export const NO_END_DATE = '9999-12-31'
 export type DayType = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY' | 'WEEKDAY' | 'WEEKEND'
 
 // 계약 목록 항목

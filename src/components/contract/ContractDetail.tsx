@@ -11,7 +11,7 @@ import { useEmployeeDetail } from '@/hooks/queries/use-employee-queries'
 import { downloadFile } from '@/lib/api/file'
 import { getErrorMessage } from '@/lib/api'
 import { CONTRACT_STATUS_BADGE } from '@/lib/constants'
-import { CONTRACT_COMPREHENSIVE, CONTRACT_NON_COMPREHENSIVE, CONTRACT_PART_TIME } from '@/types/contract'
+import { CONTRACT_COMPREHENSIVE, CONTRACT_NON_COMPREHENSIVE, CONTRACT_PART_TIME, NO_END_DATE } from '@/types/contract'
 import type { ContractDetail as ContractDetailType, DayType } from '@/types/contract'
 
 interface ContractDetailProps {
@@ -299,7 +299,7 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                       <th>계약기간</th>
                       <td>
                         {header?.contractStartDate
-                          ? `${formatDate(header.contractStartDate)} ~ ${header.contractEndDate && header.contractEndDate !== '9999-12-31' ? formatDate(header.contractEndDate) : '정함없음'}`
+                          ? `${formatDate(header.contractStartDate)} ~ ${header.contractEndDate && header.contractEndDate !== NO_END_DATE ? formatDate(header.contractEndDate) : '정함없음'}`
                           : '-'}
                       </td>
                     </tr>
@@ -596,7 +596,7 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
               </div>
               <div className="sub-item-bx">
                 {employeeContracts
-                  .filter((c) => c.id !== id)
+                  .filter((c) => id != null && c.id !== id)
                   .map((c, i) => {
                     const h = c.employmentContractHeader
                     const badge = h?.electronicContractStatus

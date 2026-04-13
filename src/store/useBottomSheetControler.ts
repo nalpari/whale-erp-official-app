@@ -158,7 +158,7 @@ export const useBottomSheetControler = create<BottomSheetControlerState>()(
           false,
           'bottomSheet/setContractOption',
         ),
-      contractOptionYear: new Date().getFullYear(),
+      contractOptionYear: 0,
       contractOptionTimelyAmount: 0,
       contractOptionWeeklyHours: 40,
       contractOptionOnChange: null,

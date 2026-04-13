@@ -11,6 +11,8 @@ import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import { isHealthCheckExpired } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/api'
 import { getContractsByEmployee } from '@/lib/api/contract'
+import { useQueryClient } from '@tanstack/react-query'
+import { contractKeys } from '@/hooks/queries/use-contract-queries'
 import type { EmployeeListItem } from '@/types/employee'
 
 const AVATAR_IMAGES = [
@@ -24,6 +26,7 @@ export default function StaffInfoList() {
   const setStaffSearchSheet = useBottomSheetControler(
     (state) => state.setStaffSearchSheet,
   )
+  const queryClient = useQueryClient()
   const searchParams = useEmployeeSearchStore((state) => state.searchParams)
   const authHeadOfficeId = useAuthStore((state) => state.headOfficeId)
   const selectedHeadOffice = useStoreStore((state) => state.selectedHeadOffice)
@@ -82,7 +85,10 @@ export default function StaffInfoList() {
           onDetailClick={(id) => router.push(`/staff/${id}`)}
           onContractClick={async (employeeInfoId) => {
             try {
-              const contracts = await getContractsByEmployee(employeeInfoId)
+              const contracts = await queryClient.fetchQuery({
+                queryKey: contractKeys.byEmployee(employeeInfoId),
+                queryFn: () => getContractsByEmployee(employeeInfoId),
+              })
               if (contracts.length > 0) {
                 router.push(`/contract/${contracts[0].id}`)
               } else {

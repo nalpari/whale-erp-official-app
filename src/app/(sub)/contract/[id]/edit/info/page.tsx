@@ -9,7 +9,7 @@ export default function ContractEditInfoPage() {
   const router = useRouter()
   const rawId = Number(params?.id)
   const id = isNaN(rawId) || rawId <= 0 ? undefined : rawId
-  const { data: detail, isLoading } = useContractDetail(id)
+  const { data: detail, isLoading, isError } = useContractDetail(id)
 
   useEffect(() => {
     if (!id) {
@@ -19,6 +19,13 @@ export default function ContractEditInfoPage() {
 
   if (!id) return null
 
+  if (isError) {
+    return (
+      <div className="container sub">
+        <div className="empty-data">계약 정보를 불러올 수 없습니다.</div>
+      </div>
+    )
+  }
   if (isLoading) {
     return (
       <div className="container sub">
