@@ -12,6 +12,7 @@ import { downloadFile } from '@/lib/api/file'
 import { getErrorMessage } from '@/lib/api'
 import { CONTRACT_STATUS_BADGE } from '@/lib/constants'
 import { CONTRACT_COMPREHENSIVE, CONTRACT_NON_COMPREHENSIVE, CONTRACT_PART_TIME, NO_END_DATE } from '@/types/contract'
+import BonusTable from '@/components/contract/BonusTable'
 import type { ContractDetail as ContractDetailType, DayType } from '@/types/contract'
 
 interface ContractDetailProps {
@@ -511,32 +512,7 @@ export default function ContractDetail({ initialData }: ContractDetailProps) {
                 </>
               )}
               {/* 공통: 상여금 (계약분류 무관, salary 유무 무관) */}
-              <div className="sub-item-bx">
-                <div className="pay-table-header">
-                  <div className="pay-table-tit">상여금</div>
-                </div>
-                <table className="pay-table">
-                  <colgroup>
-                    <col />
-                    <col />
-                  </colgroup>
-                  <tbody>
-                    {salary?.bonuses && salary.bonuses.length > 0 ? (
-                      salary.bonuses.map((bonus, i) => (
-                        <tr key={bonus.id ?? i}>
-                          <td className="tit">{bonus.bonusType}</td>
-                          <td className="al-r">{formatAmount(bonus.amount)}원</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td className="tit">-</td>
-                        <td className="al-r">0원</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <BonusTable bonuses={salary?.bonuses} />
             </div>
           </div>
           <div className="sub-cont-wrap">

@@ -96,6 +96,7 @@ export default function ContractOptionSheet() {
                   <div className="block">
                     <input
                       type="number"
+                      inputMode="numeric"
                       className="input-frame al-r"
                       min="0"
                       value={timelyAmount || ''}
@@ -117,6 +118,7 @@ export default function ContractOptionSheet() {
                   <div className="block">
                     <input
                       type="number"
+                      inputMode="numeric"
                       className="input-frame"
                       value={weeklyHours}
                       onChange={(e) => setWeeklyHours(Number(e.target.value))}

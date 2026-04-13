@@ -4,6 +4,7 @@ import { useBottomSheetControler } from '@/store/useBottomSheetControler'
 import { useStaffInviteStore } from '@/store/useStaffInviteStore'
 import { useMinimumWage } from '@/hooks/queries/use-contract-queries'
 import { OVERTIME_RATE, NIGHT_RATE, HOLIDAY_RATE, ADD_HOLIDAY_RATE, formatAmount } from '@/lib/constants'
+import BonusTable from '@/components/contract/BonusTable'
 
 const CONTRACT_LABEL: Record<string, string> = {
   CNTCFWK_001: '포괄연봉제',
@@ -223,49 +224,15 @@ export default function InviteForm03() {
         )}
 
         {/* 상여금 */}
-        <div className="sub-item-bx">
-          <div className="pay-table-header">
-            <div className="pay-table-tit">상여금</div>
-            <div className="auto-right">
-              <button
-                className="contract-arr"
-                onClick={() => openBonusPaySheet(
-                  sal.bonuses,
-                  stepOne.headOfficeOrganizationId,
-                  stepOne.franchiseOrganizationId,
-                  (newBonuses) => setStepThreeSalary({ bonuses: newBonuses }),
-                )}
-              ></button>
-            </div>
-          </div>
-          <table className="pay-table">
-            <colgroup>
-              <col />
-              <col />
-            </colgroup>
-            <tbody>
-              {sal.bonuses.length > 0 ? (
-                sal.bonuses.map((b, i) => (
-                  <tr key={i}>
-                    <td className="tit">{b.bonusType}</td>
-                    <td className="al-r">{formatAmount(b.amount ?? 0)}원</td>
-                  </tr>
-                ))
-              ) : (
-                <>
-                  <tr>
-                    <td className="tit">만근상여</td>
-                    <td className="al-r">0원</td>
-                  </tr>
-                  <tr>
-                    <td className="tit">직책상여</td>
-                    <td className="al-r">0원</td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <BonusTable
+          bonuses={sal.bonuses}
+          onEdit={() => openBonusPaySheet(
+            sal.bonuses,
+            stepOne.headOfficeOrganizationId,
+            stepOne.franchiseOrganizationId,
+            (newBonuses) => setStepThreeSalary({ bonuses: newBonuses }),
+          )}
+        />
       </div>
     </div>
   )

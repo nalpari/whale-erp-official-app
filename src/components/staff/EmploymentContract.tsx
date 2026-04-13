@@ -14,6 +14,7 @@ import {
 import { getErrorMessage } from "@/lib/api";
 import ContractOptionSheet from "@/components/bottomsheet/ContractOptionSheet";
 import TaxExemptTable from "@/components/staff/employment/TaxExemptTable";
+import BonusTable from "@/components/contract/BonusTable";
 import { OVERTIME_RATE, NIGHT_RATE, HOLIDAY_RATE, ADD_HOLIDAY_RATE, formatAmount } from "@/lib/constants";
 import { CONTRACT_COMPREHENSIVE, CONTRACT_NON_COMPREHENSIVE, CONTRACT_PART_TIME } from "@/types/contract";
 import type { ContractDetail, ContractBonus } from "@/types/contract";
@@ -502,43 +503,15 @@ export default function EmploymentContract({
               )}
 
               {/* 상여금 섹션 (공통) */}
-              <div className="sub-item-bx">
-                <div className="pay-table-header">
-                  <div className="pay-table-tit">상여금</div>
-                  <div className="auto-right">
-                    <button
-                      className="contract-arr"
-                      onClick={() => openBonusPaySheet(
-                        bonuses,
-                        initialData?.headOfficeOrganizationId ?? inviteHeadOfficeId,
-                        initialData?.franchiseOrganizationId ?? inviteFranchiseId,
-                        (newBonuses) => setBonuses(newBonuses),
-                      )}
-                    ></button>
-                  </div>
-                </div>
-                <table className="pay-table">
-                  <colgroup>
-                    <col />
-                    <col />
-                  </colgroup>
-                  <tbody>
-                    {bonuses.length > 0 ? (
-                      bonuses.map((b, i) => (
-                        <tr key={b.bonusCode ?? i}>
-                          <td className="tit">{b.bonusType}</td>
-                          <td className="al-r">{formatAmount(b.amount ?? 0)}원</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td className="tit">-</td>
-                        <td className="al-r">0원</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <BonusTable
+                bonuses={bonuses}
+                onEdit={() => openBonusPaySheet(
+                  bonuses,
+                  initialData?.headOfficeOrganizationId ?? inviteHeadOfficeId,
+                  initialData?.franchiseOrganizationId ?? inviteFranchiseId,
+                  (newBonuses) => setBonuses(newBonuses),
+                )}
+              />
 
               {/* 하단 버튼 */}
               <div className="flex g8">
@@ -666,6 +639,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={monthlyTime || ""}
@@ -682,6 +656,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={overtimeTime || ""}
@@ -702,6 +677,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={nightTime || ""}
@@ -720,6 +696,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={holidayTime || ""}
@@ -738,6 +715,7 @@ function ComprehensiveTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={addHolidayTime || ""}
@@ -979,6 +957,7 @@ function PartTimeTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={weekdayHourlyWage || ""}
@@ -996,6 +975,7 @@ function PartTimeTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={overtimeHourlyWage || ""}
@@ -1013,6 +993,7 @@ function PartTimeTable({
               <div className="block">
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="employ-input"
                   min="0"
                   value={holidayHourlyWage || ""}

@@ -1,3 +1,5 @@
+import type { ElectronicContractStatus } from '@/types/contract'
+
 // TODO: 요금제 페이지 경로가 맞는지 확인 필요
 export const EXTERNAL_URLS = {
   RATE_PLAN: "https://www.whaleerp.co.kr/customer/rate-plan",
@@ -18,7 +20,7 @@ export const ADD_HOLIDAY_RATE = 2.0
 export const formatAmount = (val: number) => val.toLocaleString('ko-KR')
 
 /** 전자계약 상태 배지 매핑 */
-export const CONTRACT_STATUS_BADGE: Record<string, { label: string; className: string }> = {
+export const CONTRACT_STATUS_BADGE: Record<ElectronicContractStatus, { label: string; className: string }> = {
   WRITING: { label: '작성중', className: 'badge blue' },
   PROGRESS: { label: '진행중', className: 'badge green' },
   COMPLETE: { label: '계약완료', className: 'badge org' },
